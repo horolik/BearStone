@@ -1,17 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Bear Debug System 🐻</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: monospace;
+  background: black;
+  color: #00ff9f;
+  overflow: hidden;
+}
+
+/* MATRIX */
+#matrix {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* TERMINAL */
+#terminal {
+  position: fixed;
+  inset: 0;
+  background: black;
+  color: #00ff9f;
+  padding: 20px;
+  z-index: 3;
+  font-size: 14px;
+}
+
+#terminalText {
+  white-space: pre-line;
+}
+
+#inputLine {
+  margin-top: 10px;
+}
+
+#commandInput {
+  background: black;
+  border: none;
+  color: #00ff9f;
+  outline: none;
+  font-family: monospace;
+}
+
+/* INTRO */
+#intro {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: black;
+  color: #00ff9f;
+  z-index: 4;
+  padding: 20px;
+}
+
+/* GAME */
+#app {
+  display: none;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+h1 {
+  text-shadow: 0 0 10px #00ff9f;
+}
+
+/* ENTITIES */
+.bug {
+  position: absolute;
+  font-size: 48px;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.2s;
+}
+
+.bug:hover {
+  transform: scale(1.2);
+}
+
+.feature {
+  color: #00ff9f;
+}
+
+.rat {
+  color: #ff4d4d;
+}
+
+.danger {
+  filter: drop-shadow(0 0 10px red);
+}
+
+/* ANIMATIONS */
+.fly-right {
+  animation: flyRight 0.6s forwards;
+}
+
+.fly-left {
+  animation: flyLeft 0.6s forwards;
+}
+
+@keyframes flyRight {
+  to {
+    transform: translateX(300px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes flyLeft {
+  to {
+    transform: translateX(-300px) scale(0.5);
+    opacity: 0;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="matrix"></canvas>
+
+<!-- TERMINAL -->
+<div id="terminal">
+  <div id="terminalText"></div>
+  <div id="inputLine" style="display:none;">
+    > <input id="commandInput" autofocus />
+  </div>
+</div>
+
+<!-- INTRO -->
+<div id="intro">
+  <h2>📘 DEBUG TRAINING</h2>
+
+  <pre>
+🐻 Bear Debug System
+
+ЭТАПЫ:
+1. Лови:
+   🐻 — фичи (в прод)
+   🐀 — баги (фикс)
+   ☠️🐀 — опасные (2 клика)
+
+2. Сделай 5 фич
+3. Зарелизь систему 🚀
+
+Удачи, дев.
+  </pre>
+
+  <button id="startBtn">START DEBUG MODE</button>
+</div>
+
+<!-- GAME -->
+<div id="app">
+  <h1>🐻 Bear Debug System</h1>
+
+  <p id="stats">
+    🐻 Features: 0 | 🐀 Bugs fixed: 0
+  </p>
+
+  <button id="releaseBtn" style="display:none;">
+    🚀 RELEASE TO PROD
+  </button>
+
+  <p id="log"></p>
+</div>
+
 <script>
 
 /* STATE */
 let started = false;
-let debugPoints = 0;
+let features = 0;
+let bugs = 0;
 
-/* GAME STATE (cards) */
-const Game = {
-  hp: 20,
-  mana: 1,
-  bossHp: 30
-};
-
-/* MATRIX — оставляем как есть */
+/* MATRIX */
 const canvas = document.getElementById("matrix");
 const ctx = canvas.getContext("2d");
 
@@ -40,9 +205,10 @@ function matrix() {
     drops[i]++;
   });
 }
+
 setInterval(matrix, 40);
 
-/* TERMINAL — без изменений */
+/* TERMINAL */
 const terminal = document.getElementById("terminal");
 const terminalText = document.getElementById("terminalText");
 const input = document.getElementById("commandInput");
@@ -94,143 +260,93 @@ document.getElementById("startBtn").onclick = ()=>{
   startBugMode();
 };
 
-/* ================= BUG GAME ================= */
+/* STATS */
+function updateStats(){
+  document.getElementById("stats").innerText =
+    `🐻 Features: ${features} | 🐀 Bugs fixed: ${bugs}`;
+
+  if(features >= 5){
+    document.getElementById("releaseBtn").style.display = "block";
+  }
+}
+
+/* SPAWN */
 function startBugMode(){
+  interval = setInterval(spawnEntity, 700);
+}
 
-  let interval = setInterval(spawn, 500);
+function spawnEntity(){
+  const entity = document.createElement("div");
 
-  function spawn(){
+  const rand = Math.random();
+  let type;
 
-    const isFeature = Math.random() > 0.5;
+  if(rand > 0.6){
+    type = "feature";
+  } else if(rand > 0.2){
+    type = "rat";
+  } else {
+    type = "danger";
+  }
 
-    const el = document.createElement("div");
-    el.className = "bug";
+  entity.className = "bug " + type;
 
-    if(isFeature){
-      el.innerText = "🐻";
-      el.style.fontSize = "40px";
-    } else {
-      el.innerText = "🐀";
-      el.style.fontSize = "34px";
+  if(type === "feature") entity.innerText = "🐻";
+  if(type === "rat") entity.innerText = "🐀";
+  if(type === "danger") entity.innerText = "☠️🐀";
+
+  entity.style.left = Math.random()*window.innerWidth + "px";
+  entity.style.top = Math.random()*window.innerHeight + "px";
+
+  let clicks = 0;
+
+  entity.onclick = ()=>{
+    clicks++;
+
+    if(type === "danger" && clicks < 2){
+      entity.style.transform = "scale(1.4)";
+      return;
     }
 
-    const x = Math.random()*window.innerWidth;
-    el.style.left = x + "px";
-    el.style.top = Math.random()*window.innerHeight + "px";
+    if(type === "feature"){
+      features++;
+      entity.classList.add("fly-right");
+    } else {
+      bugs++;
+      entity.classList.add("fly-left");
+    }
 
-    el.onclick = (e)=>{
-      const clickedRightSide = e.clientX > window.innerWidth / 2;
+    updateStats();
 
-      if(isFeature && clickedRightSide){
-        debugPoints++;
-      }
+    setTimeout(()=>entity.remove(), 600);
+  };
 
-      if(!isFeature){
-        debugPoints++;
-      }
+  document.body.appendChild(entity);
 
-      el.remove();
-
-      if(debugPoints >= 5){
-        clearInterval(interval);
-        startCardGame();
-      }
-    };
-
-    document.body.appendChild(el);
-
-    setTimeout(()=>el.remove(), 1500);
-  }
+  setTimeout(()=>entity.remove(), 2500);
 }
 
-/* ================= CARD GAME ================= */
+/* RELEASE */
+document.getElementById("releaseBtn").onclick = ()=>{
+  startGame();
+};
 
-const Cards = [
-  { name:"🐛 Bug Fix", cost:1, dmg:2 },
-  { name:"🔥 Hotfix", cost:2, dmg:4 },
-  { name:"🛡 Shield", cost:2, heal:3 }
-];
-
-function startCardGame(){
+/* FINAL */
+function startGame(){
   started = true;
 
-  const app = document.getElementById("app");
-  app.style.display = "block";
+  document.getElementById("app").style.display = "block";
 
-  app.innerHTML = `
-    <h1>🐻 BearStone</h1>
+  document.getElementById("log").innerText =
+`🚀 РЕЛИЗ УСПЕШЕН
 
-    <div>
-      Artem HP: <span id="hp">20</span> |
-      Mana: <span id="mana">1</span>
-    </div>
+🐻 Фичи: ${features}
+🐀 Баги пофиксены: ${bugs}
 
-    <div>
-      Boss HP: <span id="bossHp">30</span>
-    </div>
-
-    <hr>
-
-    <div id="hand"></div>
-
-    <button onclick="endTurn()">End Turn</button>
-  `;
-
-  renderCards();
-  updateUI();
-}
-
-function renderCards(){
-  const hand = document.getElementById("hand");
-  hand.innerHTML = "";
-
-  Cards.forEach(card=>{
-    const el = document.createElement("div");
-    el.className = "bug"; // reuse style
-    el.style.position = "static";
-    el.style.display = "inline-block";
-    el.style.margin = "5px";
-    el.style.fontSize = "14px";
-    el.innerText = `${card.name} (${card.cost})`;
-
-    el.onclick = ()=>playCard(card);
-
-    hand.appendChild(el);
-  });
-}
-
-function playCard(card){
-
-  if(Game.mana < card.cost) return;
-
-  Game.mana -= card.cost;
-
-  if(card.dmg){
-    Game.bossHp -= card.dmg;
-  }
-
-  if(card.heal){
-    Game.hp += card.heal;
-  }
-
-  updateUI();
-}
-
-function endTurn(){
-  Game.mana++;
-  Game.bossHp -= 2;
-
-  updateUI();
-
-  if(Game.bossHp <= 0){
-    document.body.innerHTML = "<h1>🐻 VICTORY</h1>";
-  }
-}
-
-function updateUI(){
-  document.getElementById("hp").innerText = Game.hp;
-  document.getElementById("mana").innerText = Game.mana;
-  document.getElementById("bossHp").innerText = Game.bossHp;
+Прод стабилен.`;
 }
 
 </script>
+
+</body>
+</html>
