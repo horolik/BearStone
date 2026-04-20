@@ -31,10 +31,7 @@ body{
   z-index:10;
 }
 
-#terminalHeader{
-  opacity:0.8;
-  margin-bottom:10px;
-}
+#terminalHeader{opacity:0.8;margin-bottom:10px;}
 
 #terminalLog{
   flex:1;
@@ -78,7 +75,6 @@ body{
   left:50%;
   transform:translateX(-50%);
   font-size:22px;
-  z-index:5;
 }
 
 /* ENTITIES */
@@ -110,25 +106,14 @@ body{
   transition:.3s;
 }
 
-/* WIN */
-#win{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:40px;
-  z-index:999;
-}
-
-/* ===== BOSS MODAL HC STYLE ===== */
+/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
   display:none;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,0.85);
+  background:rgba(0,0,0,0.9);
   z-index:999;
   flex-direction:column;
 }
@@ -147,10 +132,6 @@ body{
   font-size:20px;
   margin-bottom:10px;
   color:#ff4d4d;
-}
-
-#bossQuestion{
-  margin:10px 0;
 }
 
 #options{
@@ -172,6 +153,16 @@ body{
   background:#00ff9f;
   color:black;
 }
+
+/* WIN */
+#win{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:40px;
+}
 </style>
 </head>
 
@@ -179,7 +170,6 @@ body{
 
 <canvas id="matrix"></canvas>
 
-<!-- TERMINAL -->
 <div id="console">
   <div id="terminalHeader">SYSTEM TERMINAL // PROD CRASH</div>
 
@@ -195,7 +185,6 @@ body{
   </div>
 </div>
 
-<!-- HUD -->
 <div id="hud">
   <div id="left">🐻 0</div>
   <div id="right">🐀 0</div>
@@ -203,22 +192,17 @@ body{
 
 <div id="level"></div>
 
-<!-- LOVE -->
-<div id="loveWrap">
-  <div id="loveBar"></div>
-</div>
+<div id="loveWrap"><div id="loveBar"></div></div>
 
-<!-- WIN -->
-<div id="win"></div>
-
-<!-- BOSS MODAL -->
 <div id="bossModal">
   <div id="bossCard">
-    <div id="bossTitle">🐀 БОСС: ОЛЬГА КРЫСА</div>
-    <div id="bossQuestion">вопрос...</div>
+    <div id="bossTitle">🐀 ОЛЬГА КРЫСА</div>
+    <div id="bossQuestion">...</div>
     <div id="options"></div>
   </div>
 </div>
+
+<div id="win"></div>
 
 <script>
 
@@ -242,10 +226,10 @@ setInterval(()=>{
 },50);
 
 /* ===== SOUND ===== */
-function drawSound(){
+function sound(){
   new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg").play();
 }
-function legendarySound(){
+function legendary(){
   new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
 }
 
@@ -255,52 +239,49 @@ let lvl=0;
 let run=false;
 let love=50;
 
+/* ===== LEVELS ===== */
 const levels=[
   {name:"JUNIOR",goal:4},
   {name:"MIDDLE",goal:6},
   {name:"SENIOR",goal:8}
 ];
 
-/* ===== TERMINAL ===== */
+/* ===== START ===== */
 const cmd=document.getElementById("cmd");
 const log=document.getElementById("terminalLog");
 
-cmd.addEventListener("keydown",(e)=>{
+cmd.onkeydown=(e)=>{
   if(e.key!=="Enter") return;
 
-  const v=cmd.value.trim().toLowerCase();
-  log.innerHTML += "<br>> "+v;
+  const v=cmd.value.trim();
+
+  log.innerHTML+="<br>> "+v;
 
   if(v==="start"){
-    log.innerHTML += "<br>✔ unlocking system...";
     setTimeout(()=>{
       document.getElementById("console").style.display="none";
       document.getElementById("hud").style.display="flex";
-      startGame();
-    },800);
+      start();
+    },500);
   }
 
   cmd.value="";
-});
+};
 
-/* ===== GAME ===== */
-function startGame(){
+function start(){
   run=true;
-  nextLevel();
+  next();
 }
 
-function nextLevel(){
+/* ===== GAME ===== */
+function next(){
   if(lvl>=levels.length){
     boss();
     return;
   }
 
   document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
-  spawn(levels[lvl]);
-}
 
-/* ===== SPAWN ===== */
-function spawn(L){
   setInterval(()=>{
     if(!run) return;
 
@@ -314,13 +295,13 @@ function spawn(L){
     e.style.top=Math.random()*innerHeight+"px";
 
     e.onclick=()=>{
-      drawSound();
-      if(type==="feature") f++; else b++;
+      sound();
+      type==="feature"?f++:b++;
       update();
 
-      if(f>=L.goal){
+      if(f>=levels[lvl].goal){
         lvl++;
-        nextLevel();
+        next();
       }
 
       e.remove();
@@ -337,12 +318,7 @@ function update(){
   right.innerText="🐀 "+b;
 }
 
-/* ===== LOVE ===== */
-function updateLove(){
-  document.getElementById("loveBar").style.width=love+"%";
-}
-
-/* ===== BOSS HC ===== */
+/* ===== BOSS ===== */
 const questions=[
   "А ты меня любишь?",
   "А если я толстая?",
@@ -355,65 +331,104 @@ const answers=[
   "🍕 пицца"
 ];
 
+let bossIndex=0;
+
 function boss(){
+
   const modal=document.getElementById("bossModal");
-  const qBox=document.getElementById("bossQuestion");
-  const options=document.getElementById("options");
+  const q=document.getElementById("bossQuestion");
+  const opt=document.getElementById("options");
 
   modal.style.display="flex";
+  bossIndex=0;
 
-  setInterval(()=>{
-    const q=questions[Math.floor(Math.random()*questions.length)];
-    qBox.innerText="👩 Ольга: "+q;
+  render();
 
-    options.innerHTML="";
+  function render(){
 
-    let shuffled=[...answers].sort(()=>Math.random()-0.5);
+    if(bossIndex>=questions.length){
+      end();
+      return;
+    }
 
-    shuffled.forEach(a=>{
-      let btn=document.createElement("div");
-      btn.className="optionBtn";
-      btn.innerText=a;
+    q.innerText="👩 Ольга: "+questions[bossIndex];
+    opt.innerHTML="";
 
-      btn.onclick=()=>{
-        legendarySound();
-        love+=12;
+    answers.forEach(a=>{
+      let b=document.createElement("div");
+      b.className="optionBtn";
+      b.innerText=a;
+
+      b.onclick=()=>{
+        legendary();
+        love+=15;
         updateLove();
-        showArtemJoke();
+
+        showArtem();
+
+        bossIndex++;
+        setTimeout(render,600);
       };
 
-      options.appendChild(btn);
+      opt.appendChild(b);
     });
-
-  },1500);
+  }
 }
 
-/* ===== ARTEM JOKE ===== */
-function showArtemJoke(){
-
-  let c=document.createElement("div");
-  c.className="card";
+/* ===== ARTEM ===== */
+function showArtem(){
 
   const jokes=[
-    "я вообще в проде не виноват",
-    "это feature, не баг",
-    "у меня локально работает",
-    "давай потом обсудим"
+    "я вообще не при чём",
+    "работает — не трогай",
+    "у меня локально норм",
+    "давай потом"
   ];
 
-  c.innerText="🧑 Артем: "+jokes[Math.floor(Math.random()*jokes.length)];
+  let d=document.createElement("div");
+  d.style.position="fixed";
+  d.style.bottom="30px";
+  d.style.left="50%";
+  d.style.transform="translateX(-50%)";
+  d.style.background="#111";
+  d.style.border="1px solid gold";
+  d.style.padding="10px";
+  d.style.color="white";
+  d.innerText="🧑 Артем: "+jokes[Math.floor(Math.random()*jokes.length)];
 
-  c.style.position="fixed";
-  c.style.left="50%";
-  c.style.top="70%";
-  c.style.transform="translateX(-50%)";
-  c.style.background="#111";
-  c.style.border="1px solid gold";
-  c.style.padding="10px";
-  c.style.color="white";
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1500);
+}
 
-  document.body.appendChild(c);
-  setTimeout(()=>c.remove(),2000);
+/* ===== END (GIANT RAT) ===== */
+function end(){
+
+  const m=document.getElementById("bossModal");
+
+  m.innerHTML=`
+    <div style="
+      position:fixed;
+      inset:0;
+      background:black;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      color:#ff4d4d;
+      text-align:center;
+    ">
+      <div style="font-size:40px;">🐀 ОГРОМНАЯ ОЛЬГА</div>
+      <img src="https://i.imgur.com/8QfQ2dZ.png"
+           style="width:90vw;margin-top:20px;">
+      <div style="margin-top:20px;">SYSTEM STABLE</div>
+    </div>
+  `;
+
+  legendary();
+}
+
+function updateLove(){
+  document.getElementById("loveBar").style.width=love+"%";
 }
 
 </script>
