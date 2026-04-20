@@ -13,14 +13,12 @@ body {
   overflow: hidden;
 }
 
-/* MATRIX */
 #matrix {
   position: fixed;
   inset: 0;
   z-index: 0;
 }
 
-/* HUD */
 #hud {
   position: fixed;
   top: 10px;
@@ -32,7 +30,6 @@ body {
   z-index: 10;
 }
 
-/* LEAD */
 #lead {
   position: fixed;
   bottom: 10px;
@@ -41,7 +38,6 @@ body {
   max-width: 60%;
 }
 
-/* TERMINAL */
 #terminal {
   position: fixed;
   inset: 0;
@@ -51,7 +47,6 @@ body {
   z-index: 3;
 }
 
-/* INTRO */
 #intro {
   display: none;
   position: fixed;
@@ -61,14 +56,12 @@ body {
   z-index: 4;
 }
 
-/* GAME */
 #app {
   display: none;
   padding: 20px;
   z-index: 2;
 }
 
-/* ENTITIES */
 .bug {
   position: absolute;
   font-size: 48px;
@@ -81,7 +74,6 @@ body {
 .rat { color: #ff4d4d; }
 .danger { filter: drop-shadow(0 0 10px red); }
 
-/* SHAKE */
 @keyframes shake {
   0% { transform: translate(0,0); }
   25% { transform: translate(5px,-5px); }
@@ -105,22 +97,22 @@ body {
 </div>
 
 <div id="terminal">
-  Boot...<br>
-  Loading system...<br>
-  OK<br><br>
-  Press START
+Boot...<br>
+Loading system...<br>
+OK<br><br>
+Press START
 </div>
 
 <div id="intro">
-  <h2>DEBUG SYSTEM</h2>
+<h2>DEBUG SYSTEM</h2>
 
-  <select id="diff">
-    <option value="junior">Junior</option>
-    <option value="middle" selected>Middle</option>
-    <option value="senior">Senior</option>
-  </select>
+<select id="diff">
+  <option value="junior">Junior</option>
+  <option value="middle" selected>Middle</option>
+  <option value="senior">Senior</option>
+</select>
 
-  <button id="start">START</button>
+<button id="start">START</button>
 </div>
 
 <div id="app">
@@ -131,7 +123,7 @@ body {
 
 <script>
 
-/* ================= STATE ================= */
+/* ===== STATE ===== */
 let features=0, bugs=0, missed=0;
 let time=0;
 let settings={};
@@ -140,9 +132,13 @@ let gameRunning=false;
 let lastTime=0;
 let spawnAcc=0;
 
-/* LIMIT */
-const MAX_ENTITIES = 25;
+/* 🔥 ЖЁСТКИЙ КАП — главное исправление */
+const MAX_ENTITIES = 18;
 const entities = [];
+
+/* интервалы */
+let timerInterval=null;
+let leadInterval=null;
 
 /* CONFIG */
 const cfg={
@@ -151,46 +147,47 @@ const cfg={
  senior:{spawn:380,danger:0.3,goal:9,time:22,miss:3}
 };
 
-const phrases=["Где фичи?","Мы горим 🔥","Клиент пишет..."];
-const code=["if(bugs>features){deploy();}","console.log('works')","try{release()}catch(e){}"];
-
 /* MATRIX */
 const c=document.getElementById("matrix");
 const x=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
 
-const drops=Array(100).fill(1);
+const drops=Array(80).fill(1);
 
 setInterval(()=>{
-  x.fillStyle="rgba(0,0,0,0.05)";
+  x.fillStyle="rgba(0,0,0,0.06)";
   x.fillRect(0,0,c.width,c.height);
   x.fillStyle="#00ff9f";
 
   drops.forEach((y,i)=>{
-    x.fillText(Math.random()>0.5?0:1,i*14,y*14);
-    drops[i]=y*14>c.height?0:y+1;
+    x.fillText(Math.random()>0.5?0:1,i*16,y*16);
+    drops[i]=y*16>c.height?0:y+1;
   });
-},40);
+},50);
 
-/* ================= BOOT ================= */
-window.onload = () => {
-  setTimeout(() => {
-    document.getElementById("terminal").style.display = "none";
-    document.getElementById("intro").style.display = "block";
-  }, 800);
+/* ===== BOOT ===== */
+window.onload=()=>{
+  setTimeout(()=>{
+    document.getElementById("terminal").style.display="none";
+    document.getElementById("intro").style.display="block";
+  },800);
 };
 
-/* ================= START ================= */
+/* ===== START ===== */
 document.getElementById("start").onclick=()=>{
+
   stopAll();
 
-  settings=cfg[document.getElementById("diff").value];
+  settings=cfg[diff.value];
   time=settings.time;
 
   features=0;
   bugs=0;
   missed=0;
+
+  document.getElementById("log").innerText="";
+  document.body.classList.remove("shake");
 
   document.getElementById("intro").style.display="none";
   document.getElementById("app").style.display="block";
@@ -204,40 +201,40 @@ document.getElementById("start").onclick=()=>{
   requestAnimationFrame(loop);
 };
 
-/* ================= LOOP ================= */
+/* ===== LOOP ===== */
 function loop(t){
   if(!gameRunning) return;
 
   const dt=t-lastTime;
   lastTime=t;
 
-  spawnAcc+=dt;
+  spawnAcc += dt;
 
-  const speed=1+(1-time/settings.time);
-  const delay=settings.spawn/speed;
+  /* ❗ УБРАН РАЗГОН СПАВНА (главный фикс) */
+  const spawnDelay = settings.spawn;
 
-  if(spawnAcc>delay){
-    spawnAcc=0;
+  if(spawnAcc > spawnDelay){
+    spawnAcc = 0;
     spawnEntity();
   }
 
   const now = Date.now();
 
-  for (let i = entities.length - 1; i >= 0; i--) {
-    const ent = entities[i];
+  for(let i=entities.length-1;i>=0;i--){
+    const e = entities[i];
 
-    if (!document.body.contains(ent.el)) {
+    if(!document.body.contains(e.el)){
       entities.splice(i,1);
       continue;
     }
 
-    if (now - ent.born > 2000) {
-      if (ent.type !== "feature") {
+    if(now - e.born > 2200){
+      if(e.type !== "feature"){
         missed++;
         shake();
-        if (missed >= settings.miss) gameOver("💣 PROD DOWN");
+        if(missed >= settings.miss) gameOver("💣 PROD DOWN");
       }
-      ent.el.remove();
+      e.el.remove();
       entities.splice(i,1);
     }
   }
@@ -245,24 +242,22 @@ function loop(t){
   requestAnimationFrame(loop);
 }
 
-/* ================= SPAWN ================= */
+/* ===== SPAWN ===== */
 function spawnEntity(){
-  if (document.querySelectorAll(".bug").length > MAX_ENTITIES) return;
+
+  /* ❗ ЖЁСТКИЙ БЛОК ПЕРЕГРУЗА */
+  if(entities.length >= MAX_ENTITIES) return;
 
   const e=document.createElement("div");
 
   const r=Math.random();
-  let type;
-
-  if(r>0.6) type="feature";
-  else if(r>settings.danger) type="rat";
-  else type="danger";
+  let type = r>0.6 ? "feature" : (r>settings.danger ? "rat" : "danger");
 
   e.className="bug "+type;
-  e.innerText=type==="feature"?"🐻":"🐀";
+  e.innerText = type==="feature" ? "🐻" : "🐀";
 
-  e.style.left=(Math.random()*innerWidth)+"px";
-  e.style.top=(Math.random()*innerHeight)+"px";
+  e.style.left = (Math.random()*innerWidth)+"px";
+  e.style.top = (Math.random()*innerHeight)+"px";
 
   let clicks=0;
 
@@ -270,7 +265,7 @@ function spawnEntity(){
     clicks++;
 
     if(type==="danger" && clicks<2){
-      e.style.transform="scale(1.4)";
+      e.style.transform="scale(1.3)";
       return;
     }
 
@@ -282,82 +277,84 @@ function spawnEntity(){
   };
 
   document.body.appendChild(e);
-
   entities.push({el:e,type,born:Date.now()});
 }
 
-/* ================= TIMER ================= */
+/* ===== TIMER ===== */
 function startTimer(){
-  setInterval(()=>{
+  clearInterval(timerInterval);
+
+  timerInterval=setInterval(()=>{
     if(!gameRunning) return;
 
     time--;
-    document.getElementById("timer").innerText="⏳ "+time;
+    timer.innerText="⏳ "+time;
 
     if(time<=0) finish();
+
   },1000);
 }
 
-/* ================= LEAD ================= */
+/* ===== LEAD ===== */
 function startLead(){
-  setInterval(()=>{
+  clearInterval(leadInterval);
+
+  leadInterval=setInterval(()=>{
     if(!gameRunning) return;
 
-    let m;
+    lead.innerText = bugs>features
+      ? "❌ BUGS > FEATURES"
+      : "🧑‍💼 SYSTEM OK";
 
-    if(bugs>features) m="❌ BUGS > FEATURES";
-    else if(time<10) m="⏳ DEADLINE";
-    else if(Math.random()<0.3) m=code[Math.random()*code.length|0];
-    else m=phrases[Math.random()*phrases.length|0];
-
-    document.getElementById("lead").innerText="🧑‍💼 "+m;
-
-  },2500);
+  },2000);
 }
 
-/* ================= HUD ================= */
+/* ===== UPDATE ===== */
 function update(){
-  document.getElementById("features").innerText="🐻 "+features;
-  document.getElementById("bugs").innerText="🐀 "+bugs;
+  featuresEl.innerText="🐻 "+features;
+  bugsEl.innerText="🐀 "+bugs;
 
   if(features>=settings.goal){
-    document.getElementById("release").style.display="block";
+    release.style.display="block";
   }
 }
 
-/* ================= EFFECT ================= */
+/* ===== EFFECT ===== */
 function shake(){
   document.body.classList.add("shake");
-  setTimeout(()=>document.body.classList.remove("shake"),300);
+  setTimeout(()=>document.body.classList.remove("shake"),250);
 }
 
-/* ================= STOP ================= */
+/* ===== STOP ===== */
 function stopAll(){
   gameRunning=false;
+
+  clearInterval(timerInterval);
+  clearInterval(leadInterval);
+
   entities.length=0;
   document.querySelectorAll(".bug").forEach(e=>e.remove());
 }
 
-/* ================= GAME OVER ================= */
+/* ===== GAME OVER ===== */
 function gameOver(msg){
   stopAll();
   document.body.classList.add("shake");
 
-  document.getElementById("log").innerText=
-msg+"\n💀 FAIL\n🐻 "+features+"\n🐀 "+bugs;
+  log.innerText = msg+"\n🐻 "+features+"\n🐀 "+bugs;
 }
 
-/* ================= FINISH ================= */
+/* ===== FINISH ===== */
 function finish(){
   stopAll();
 
-  let res=bugs>features?"📉 FAIL":"🚀 SUCCESS";
-
-  document.getElementById("log").innerText=
-res+"\n🐻 "+features+"\n🐀 "+bugs;
+  log.innerText =
+    (bugs>features?"📉 FAIL":"🚀 SUCCESS")+
+    "\n🐻 "+features+
+    "\n🐀 "+bugs;
 }
 
-document.getElementById("release").onclick=finish;
+release.onclick=finish;
 
 </script>
 
