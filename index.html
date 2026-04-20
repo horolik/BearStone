@@ -1,9 +1,9 @@
-```html id="final_polished_game"
+```html id="hs_full_final"
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM DEBUG MODE</title>
+<title>SUPER ARTEEM // Hearthstone Debug</title>
 
 <style>
 body{
@@ -21,13 +21,12 @@ body{
   z-index:0;
 }
 
-/* INTRO */
-#intro{
+/* CONSOLE */
+#console{
   position:fixed;
   inset:0;
-  padding:30px;
+  padding:20px;
   z-index:10;
-  background:black;
 }
 
 /* HUD */
@@ -42,13 +41,13 @@ body{
   z-index:5;
 }
 
-/* TIMER */
-#timerBox{
+/* LEVEL */
+#level{
   position:fixed;
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:24px;
+  font-size:22px;
   z-index:6;
 }
 
@@ -61,28 +60,63 @@ body{
 
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
-.super{filter:drop-shadow(0 0 10px red);}
 
-/* BOSS CARD CENTER */
-#questionCard{
+/* ===== FLIP CARD ===== */
+.card-container{
   position:fixed;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  width:420px;
-  background:#111;
-  border:2px solid gold;
-  border-radius:12px;
-  padding:20px;
-  text-align:center;
+  width:320px;
+  height:180px;
+  perspective:1000px;
   display:none;
   z-index:20;
 }
 
-/* OPTIONS */
+.card{
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
+  transition:0.6s;
+  position:relative;
+}
+
+.card.flipped{
+  transform:rotateY(180deg);
+}
+
+.face{
+  position:absolute;
+  width:100%;
+  height:100%;
+  backface-visibility:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:12px;
+  border:2px solid gold;
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:10px;
+}
+
+.back{
+  transform:rotateY(180deg);
+}
+
+/* HUD TEXT */
+#info{
+  position:fixed;
+  bottom:10px;
+  left:20px;
+}
+
+/* BUTTON */
 .option{
   margin-top:10px;
-  padding:10px;
+  padding:8px;
   border:1px solid #00ff9f;
   cursor:pointer;
 }
@@ -90,21 +124,6 @@ body{
 .option:hover{
   background:#003322;
 }
-
-/* HEARTS */
-.heart{
-  position:fixed;
-  font-size:20px;
-  animation:floatUp 1s linear forwards;
-}
-
-@keyframes floatUp{
-  from{transform:translateY(0);opacity:1;}
-  to{transform:translateY(-100px);opacity:0;}
-}
-
-/* INTRO TEXT */
-h1{color:#00ff9f;}
 </style>
 </head>
 
@@ -112,27 +131,15 @@ h1{color:#00ff9f;}
 
 <canvas id="matrix"></canvas>
 
-<!-- INTRO -->
-<div id="intro">
-<h1>💥 PROD CRASH</h1>
+<!-- CONSOLE -->
+<div id="console">
+> PROD CRASH 🐀<br>
+> баги в системе<br><br>
 
-<p>
-О нет… прод сломался.<br><br>
+> Введите: start<br>
 
-🧠 Система говорит:<br>
-Только <b>SUPER ARTEEM</b> может его починить.
-</p>
-
-<p>
-📘 Задача:
-<br>
-1. Лови баги 🐀 (влево)<br>
-2. Собирай фичи 🐻 (вправо)<br>
-3. Пройди 3 уровня<br>
-4. Победи босса Ольгу ❤️
-</p>
-
-<button onclick="startGame()">START</button>
+<input id="cmd" autofocus>
+<div id="out"></div>
 </div>
 
 <!-- HUD -->
@@ -141,20 +148,37 @@ h1{color:#00ff9f;}
   <div id="right">🐀 0</div>
 </div>
 
-<div id="timerBox">⏱ 0</div>
+<div id="level"></div>
 
-<!-- QUESTION -->
-<div id="questionCard"></div>
+<div id="info"></div>
+
+<!-- CARD -->
+<div class="card-container" id="cardBox">
+  <div class="card" id="card">
+    <div class="face" id="front">QUESTION</div>
+    <div class="face back" id="back">ANSWER</div>
+  </div>
+</div>
 
 <script>
+
+/* ===== AUDIO (HS STYLE SIMULATION) ===== */
+function playDraw(){
+  new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg").play();
+}
+
+function playLegendary(){
+  new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
+}
 
 /* ===== MATRIX ===== */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
+
 c.width=innerWidth;
 c.height=innerHeight;
 
-const drops=Array(70).fill(1);
+const drops=Array(60).fill(1);
 
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -168,43 +192,83 @@ setInterval(()=>{
 },50);
 
 /* ===== STATE ===== */
-let f=0,b=0,t=20;
+let f=0,b=0;
+let lvl=0;
 let run=false;
-let love=50;
+
+/* ===== LEVELS ===== */
+const levels=[
+  {name:"JUNIOR",goal:4},
+  {name:"MIDDLE",goal:6},
+  {name:"SENIOR",goal:8}
+];
+
+/* ===== START FIX (ВАЖНО) ===== */
+cmd.addEventListener("keydown",(e)=>{
+  if(e.key!=="Enter") return;
+
+  const v=e.target.value.trim().toLowerCase();
+
+  out.innerHTML+="<br>> "+v;
+
+  if(v==="start"){
+    startGame();
+  }
+
+  e.target.value="";
+});
 
 /* ===== START ===== */
 function startGame(){
-  document.getElementById("intro").style.display="none";
+  document.getElementById("console").style.display="none";
   document.getElementById("hud").style.display="flex";
 
   run=true;
+  nextLevel();
+}
 
-  spawn();
-  timer();
-  boss();
+/* ===== LEVEL FLOW ===== */
+function nextLevel(){
+
+  if(lvl>=levels.length){
+    boss();
+    return;
+  }
+
+  document.getElementById("level").innerText=
+    "LEVEL: "+levels[lvl].name;
+
+  spawn(levels[lvl]);
 }
 
 /* ===== SPAWN ===== */
-function spawn(){
+function spawn(L){
   setInterval(()=>{
     if(!run) return;
 
     let e=document.createElement("div");
 
-    let r=Math.random();
-    let type = r<0.5?"feature":"rat";
+    let type=Math.random()>0.5?"feature":"rat";
 
     e.className="entity "+type;
-    e.innerText = type==="feature"?"🐻":"🐀";
+    e.innerText=type==="feature"?"🐻":"🐀";
 
     e.style.left=Math.random()*innerWidth+"px";
     e.style.top=Math.random()*innerHeight+"px";
 
     e.onclick=()=>{
+      playDraw();
+
       if(type==="feature") f++;
       else b++;
 
       update();
+
+      if(f>=L.goal){
+        lvl++;
+        nextLevel();
+      }
+
       e.remove();
     };
 
@@ -212,23 +276,7 @@ function spawn(){
 
     setTimeout(()=>e.remove(),2000);
 
-  },700);
-}
-
-/* ===== TIMER ===== */
-function timer(){
-  setInterval(()=>{
-    if(!run) return;
-
-    t--;
-    document.getElementById("timerBox").innerText="⏱ "+t;
-
-    if(t<=0){
-      run=false;
-      startBoss();
-    }
-
-  },1000);
+  },600);
 }
 
 /* ===== UPDATE ===== */
@@ -237,86 +285,74 @@ function update(){
   right.innerText="🐀 "+b;
 }
 
-/* ===== BOSS QUESTIONS ===== */
+/* ===== BOSS ===== */
 const questions=[
   "А ты меня любишь?",
-  "А если я потолстею?",
-  "Я красивая?"
+  "А я красивая?",
+  "А если я толстая?"
 ];
 
-const options=[
-  ["❤️ да","💨 кальян","🍕 пицца"],
-  ["❤️ конечно","😎 ты фича","💨 кальян"],
-  ["❤️ ты лучшая","🍕 пицца","😎 люблю"]
+const answers=[
+  "❤️ да",
+  "💨 кальян",
+  "🍕 пицца"
 ];
 
-let qIndex=0;
+function boss(){
 
-/* ===== BOSS ===== */
-function startBoss(){
+  showCard();
 
-  showQuestion();
 }
 
-/* ===== SHOW QUESTION CENTER ===== */
-function showQuestion(){
+/* ===== FLIP CARD (HEARTHSTONE STYLE) ===== */
+function showCard(){
 
-  const card=document.getElementById("questionCard");
-  card.style.display="block";
+  const box=document.getElementById("cardBox");
+  const card=document.getElementById("card");
+  const front=document.getElementById("front");
+  const back=document.getElementById("back");
 
-  card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
+  box.style.display="block";
 
-  options[qIndex].forEach(opt=>{
-    let div=document.createElement("div");
-    div.className="option";
-    div.innerText=opt;
+  let i=0;
 
-    div.onclick=()=>{
-      onAnswer();
-    };
+  function next(){
 
-    card.appendChild(div);
-  });
-}
+    if(i>=questions.length){
+      playLegendary();
+      back.innerText="🏆 ARTEEM WIN";
+      card.classList.add("flipped");
+      return;
+    }
 
-/* ===== ANSWER ===== */
-function onAnswer(){
+    playDraw();
 
-  love+=10;
-  showHearts();
+    front.innerText="👩 Ольга:\n"+questions[i];
+    back.innerHTML="🧑 Ответ:<br>";
 
-  qIndex++;
+    answers.forEach(a=>{
+      let d=document.createElement("div");
+      d.className="option";
+      d.innerText=a;
 
-  if(qIndex>=questions.length){
-    win();
-    return;
+      d.onclick=()=>{
+        playLegendary();
+
+        card.classList.add("flipped");
+
+        setTimeout(()=>{
+          card.classList.remove("flipped");
+          i++;
+          next();
+        },800);
+      };
+
+      back.appendChild(d);
+    });
+
   }
 
-  document.getElementById("questionCard").innerHTML="";
-  showQuestion();
-}
-
-/* ===== HEARTS ===== */
-function showHearts(){
-
-  for(let i=0;i<6;i++){
-    let h=document.createElement("div");
-    h.className="heart";
-    h.innerText="❤️";
-
-    h.style.left=Math.random()*innerWidth+"px";
-    h.style.top=(innerHeight/2)+"px";
-
-    document.body.appendChild(h);
-
-    setTimeout(()=>h.remove(),1000);
-  }
-}
-
-/* ===== WIN ===== */
-function win(){
-  document.getElementById("questionCard").innerHTML=
-  "🏆 ARTEEM WIN<br>LOVE MAX ❤️";
+  next();
 }
 
 </script>
