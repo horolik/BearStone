@@ -3,7 +3,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Bear Debug x Hearthstone 🔥</title>
+<title>Bear Debug x Cards 🔥</title>
 
 <style>
 body{
@@ -14,11 +14,19 @@ body{
   overflow:hidden;
 }
 
+/* MATRIX */
+#matrix{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
 /* CONSOLE */
 #console{
   position:fixed;
   inset:0;
   padding:20px;
+  z-index:2;
 }
 
 input{
@@ -38,36 +46,33 @@ input{
   right:20px;
   display:none;
   justify-content:space-between;
+  z-index:3;
 }
 
-/* GAME */
+/* ENTITIES */
 .entity{
   position:absolute;
-  font-size:42px;
+  font-size:48px;
   cursor:pointer;
+  z-index:3;
+  transition: transform 0.4s linear, opacity 0.4s;
 }
 
 .feature{ color:#00ff9f; }
 .rat{ color:#ff4d4d; }
 
-/* COMBO */
-#combo{
-  position:fixed;
-  top:80px;
-  left:50%;
-  transform:translateX(-50%);
-  color:yellow;
-}
-
-/* LEGEND */
-#legend{
+/* CARDS PHASE */
+#cards{
   position:fixed;
   inset:0;
   display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:40px;
-  color:orange;
+  z-index:4;
+}
+
+.card{
+  position:absolute;
+  font-size:42px;
+  cursor:pointer;
 }
 
 /* VICTORY */
@@ -77,66 +82,73 @@ input{
   display:none;
   align-items:center;
   justify-content:center;
-  flex-direction:column;
   font-size:40px;
+  z-index:5;
 }
 </style>
 </head>
 
 <body>
 
+<canvas id="matrix"></canvas>
+
 <div id="console">
-> Введите команду:<br><br>
+> SYSTEM ERROR...<br>
+> CRITICAL BUG DETECTED 🐀<br>
+> Требуется разработчик<br><br>
+> Введите команду (start / старт):<br>
 <input id="cmd" autofocus>
 <div id="out"></div>
 </div>
 
 <div id="hud">
-  <div id="left"></div>
-  <div id="timer"></div>
-  <div id="right"></div>
+  <div id="left">🐻 0</div>
+  <div id="timer">⏳ 30</div>
+  <div id="right">🐀 0</div>
 </div>
 
-<div id="combo"></div>
-<div id="legend">💨 ЛЕГЕНДАРНЫЙ КАЛЬЯН</div>
+<div id="cards"></div>
 <div id="victory"></div>
 
 <script>
 
-/* SOUND */
-const clickSound = new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg");
+/* MATRIX */
+const c=document.getElementById("matrix");
+const ctx=c.getContext("2d");
+c.width=innerWidth;
+c.height=innerHeight;
+
+const drops=Array(80).fill(1);
+
+setInterval(()=>{
+  ctx.fillStyle="rgba(0,0,0,0.06)";
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff9f";
+
+  drops.forEach((y,i)=>{
+    ctx.fillText(Math.random()>0.5?0:1,i*16,y*16);
+    drops[i]=y*16>c.height?0:y+1;
+  });
+},50);
 
 /* STATE */
-let phase = "console";
-let level = 0;
-let time = 0;
-let running = false;
-
 let features=0, bugs=0;
-let artem=0, olga=0;
-
-let combo=0, lastClick=0;
-
-const levels = [
-  {name:"junior", goal:4, time:25},
-  {name:"middle", goal:6, time:20},
-  {name:"senior", goal:8, time:18}
-];
-
-const entities=[];
+let time=30;
+let running=false;
 
 /* CONSOLE */
-cmd.onkeydown = (e)=>{
+cmd.onkeydown=(e)=>{
   if(e.key==="Enter"){
-    const val = cmd.value.trim().toLowerCase();
-    out.innerHTML += "<br>> "+val;
+    const val=cmd.value.trim().toLowerCase();
 
-    if(val==="старт"){
+    out.innerHTML+="<br>> "+val;
+
+    if(["start","старт"].includes(val)){
       startDebug();
       console.style.display="none";
       hud.style.display="flex";
     }else{
-      out.innerHTML += "<br>неизвестная команда";
+      out.innerHTML+="<br>доступно: start / старт";
     }
 
     cmd.value="";
@@ -145,40 +157,24 @@ cmd.onkeydown = (e)=>{
 
 /* DEBUG PHASE */
 function startDebug(){
-  phase="debug";
-  level=0;
-  nextLevel();
-}
-
-function nextLevel(){
-  if(level>=levels.length){
-    startBattle();
-    return;
-  }
-
-  const l = levels[level];
   features=0;
   bugs=0;
-  time=l.time;
+  time=30;
   running=true;
 
-  left.innerText="🐻 "+features+" / "+l.goal;
-  right.innerText="🐀 "+bugs;
-  timer.innerText="⏳ "+time;
-
   spawnLoop();
-  timerLoop(l);
+  timerLoop();
 }
 
-/* SPAWN DEBUG */
+/* SPAWN */
 function spawnLoop(){
-  const int = setInterval(()=>{
+  const int=setInterval(()=>{
     if(!running) return clearInterval(int);
 
-    if(entities.length>10) return;
+    if(document.querySelectorAll(".entity").length>15) return;
 
     const el=document.createElement("div");
-    const good = Math.random()>0.4;
+    const good=Math.random()>0.5;
 
     el.className="entity "+(good?"feature":"rat");
     el.innerText=good?"🐻":"🐀";
@@ -187,102 +183,32 @@ function spawnLoop(){
     el.style.top=Math.random()*innerHeight+"px";
 
     el.onclick=()=>{
-      clickSound.play();
+      if(good){
+        features++;
+        el.style.transform="translateX(-200px)";
+      }else{
+        bugs++;
+        el.style.transform="translateX(200px)";
+      }
 
-      if(good) features++;
-      else bugs++;
+      el.style.opacity="0";
 
-      left.innerText="🐻 "+features;
-      right.innerText="🐀 "+bugs;
+      setTimeout(()=>el.remove(),400);
 
-      el.remove();
+      update();
     };
 
     document.body.appendChild(el);
-    entities.push(el);
 
     setTimeout(()=>{
       el.remove();
-    },2000);
+    },2200);
 
   },600);
 }
 
-/* TIMER DEBUG */
-function timerLoop(l){
-  const t = setInterval(()=>{
-    if(!running) return clearInterval(t);
-
-    time--;
-    timer.innerText="⏳ "+time;
-
-    if(features>=l.goal){
-      running=false;
-      level++;
-      nextLevel();
-    }
-
-    if(time<=0){
-      running=false;
-      gameOver("💀 BUGS WIN");
-    }
-
-  },1000);
-}
-
-/* BATTLE */
-function startBattle(){
-  phase="battle";
-  artem=0;
-  olga=0;
-  time=30;
-  running=true;
-
-  spawnBattle();
-  timerBattle();
-}
-
-/* SPAWN BATTLE */
-function spawnBattle(){
-  const int=setInterval(()=>{
-    if(!running) return clearInterval(int);
-
-    const el=document.createElement("div");
-    const good=Math.random()>0.5;
-
-    el.className="entity";
-    el.innerText=good?"❓":"🥖";
-
-    el.style.left=Math.random()*innerWidth+"px";
-    el.style.top=Math.random()*innerHeight+"px";
-
-    el.onclick=()=>{
-      clickSound.play();
-
-      const now=Date.now();
-      combo = (now-lastClick<800)?combo+1:1;
-      lastClick=now;
-
-      comboEl.innerText=combo>1?"⚡ x"+combo:"";
-
-      const dmg = combo>=3?2:1;
-
-      if(good) artem+=dmg;
-      else olga+=dmg;
-
-      left.innerText="🧑 "+artem;
-      right.innerText="👩 "+olga;
-
-      el.remove();
-    };
-
-    document.body.appendChild(el);
-
-  },500);
-}
-
-/* TIMER BATTLE */
-function timerBattle(){
+/* TIMER */
+function timerLoop(){
   const t=setInterval(()=>{
     if(!running) return clearInterval(t);
 
@@ -291,27 +217,75 @@ function timerBattle(){
 
     if(time<=0){
       running=false;
-      finish();
+      startCards();
     }
 
   },1000);
 }
 
-/* FINISH */
-function finish(){
-  victory.style.display="flex";
-
-  if(artem>olga){
-    victory.innerHTML="🏆 АРТЕМ WIN<br>💨 Кальян решает";
-  }else{
-    victory.innerHTML="💀 ОЛЬГА WIN<br>🥖 Булка больно";
-  }
+/* UPDATE */
+function update(){
+  left.innerText="🐻 "+features;
+  right.innerText="🐀 "+bugs;
 }
 
-/* GAME OVER */
-function gameOver(msg){
+/* CARDS PHASE */
+function startCards(){
+  document.querySelectorAll(".entity").forEach(e=>e.remove());
+
+  cards.style.display="block";
+
+  let a=0,o=0;
+  let t=30;
+
+  const spawn=setInterval(()=>{
+    if(t<=0) return clearInterval(spawn);
+
+    const el=document.createElement("div");
+    const good=Math.random()>0.5;
+
+    el.className="card";
+    el.innerText=good?"❓":"🥖";
+
+    el.style.left=Math.random()*innerWidth+"px";
+    el.style.top=Math.random()*innerHeight+"px";
+
+    el.onclick=()=>{
+      if(good) a++;
+      else o++;
+
+      left.innerText="🧑 "+a;
+      right.innerText="👩 "+o;
+
+      el.remove();
+    };
+
+    cards.appendChild(el);
+
+    setTimeout(()=>el.remove(),2000);
+
+  },500);
+
+  const timer2=setInterval(()=>{
+    t--;
+    timer.innerText="⏳ "+t;
+
+    if(t<=0){
+      clearInterval(timer2);
+      finish(a,o);
+    }
+  },1000);
+}
+
+/* FINISH */
+function finish(a,o){
   victory.style.display="flex";
-  victory.innerText=msg;
+
+  if(a>o){
+    victory.innerText="🏆 АРТЕМ ПОБЕДИЛ";
+  }else{
+    victory.innerText="💀 ОЛЬГА ПОБЕДИЛА";
+  }
 }
 
 </script>
