@@ -20,6 +20,18 @@ body {
   z-index: 0;
 }
 
+/* HUD */
+#hud {
+  position: fixed;
+  top: 10px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 20px;
+  z-index: 10;
+}
+
 /* TERMINAL */
 #terminal {
   position: fixed;
@@ -28,23 +40,15 @@ body {
   color: #00ff9f;
   padding: 20px;
   z-index: 3;
-  font-size: 14px;
 }
 
-#terminalText {
-  white-space: pre-line;
-}
-
-#inputLine {
-  margin-top: 10px;
-}
+#terminalText { white-space: pre-line; }
 
 #commandInput {
   background: black;
   border: none;
   color: #00ff9f;
   outline: none;
-  font-family: monospace;
 }
 
 /* INTRO */
@@ -53,7 +57,6 @@ body {
   position: fixed;
   inset: 0;
   background: black;
-  color: #00ff9f;
   z-index: 4;
   padding: 20px;
 }
@@ -62,12 +65,7 @@ body {
 #app {
   display: none;
   padding: 20px;
-  position: relative;
   z-index: 2;
-}
-
-h1 {
-  text-shadow: 0 0 10px #00ff9f;
 }
 
 /* ENTITIES */
@@ -76,46 +74,21 @@ h1 {
   font-size: 48px;
   cursor: pointer;
   z-index: 5;
-  transition: transform 0.2s;
 }
 
-.bug:hover {
-  transform: scale(1.2);
-}
+.feature { color: #00ff9f; }
+.rat { color: #ff4d4d; }
+.danger { filter: drop-shadow(0 0 10px red); }
 
-.feature {
-  color: #00ff9f;
-}
-
-.rat {
-  color: #ff4d4d;
-}
-
-.danger {
-  filter: drop-shadow(0 0 10px red);
-}
-
-/* ANIMATIONS */
-.fly-right {
-  animation: flyRight 0.6s forwards;
-}
-
-.fly-left {
-  animation: flyLeft 0.6s forwards;
-}
+/* ANIM */
+.fly-right { animation: flyRight 0.6s forwards; }
+.fly-left { animation: flyLeft 0.6s forwards; }
 
 @keyframes flyRight {
-  to {
-    transform: translateX(300px) scale(0.5);
-    opacity: 0;
-  }
+  to { transform: translateX(300px) scale(0.5); opacity: 0; }
 }
-
 @keyframes flyLeft {
-  to {
-    transform: translateX(-300px) scale(0.5);
-    opacity: 0;
-  }
+  to { transform: translateX(-300px) scale(0.5); opacity: 0; }
 }
 </style>
 </head>
@@ -124,51 +97,35 @@ h1 {
 
 <canvas id="matrix"></canvas>
 
+<div id="hud">
+  <span id="featuresCount">🐻 0</span>
+  <span id="bugsCount">🐀 0</span>
+  <span id="timer">⏳ 0</span>
+</div>
+
 <!-- TERMINAL -->
 <div id="terminal">
   <div id="terminalText"></div>
-  <div id="inputLine" style="display:none;">
-    > <input id="commandInput" autofocus />
-  </div>
+  <div>> <input id="commandInput"></div>
 </div>
 
 <!-- INTRO -->
 <div id="intro">
-  <h2>📘 DEBUG TRAINING</h2>
+  <h2>DEBUG TRAINING</h2>
 
-  <p>Выбери сложность:</p>
   <select id="difficulty">
-    <option value="junior">🟢 Junior</option>
-    <option value="middle" selected>🟡 Middle</option>
-    <option value="senior">🔴 Senior</option>
+    <option value="junior">Junior</option>
+    <option value="middle" selected>Middle</option>
+    <option value="senior">Senior</option>
   </select>
 
-  <pre>
-🐻 Bear Debug System
-
-Лови:
-🐻 — фичи
-🐀 — баги
-☠️🐀 — опасные (2 клика)
-
-Сделай релиз и не урони прод 😈
-  </pre>
-
-  <button id="startBtn">START DEBUG MODE</button>
+  <button id="startBtn">START</button>
 </div>
 
 <!-- GAME -->
 <div id="app">
-  <h1>🐻 Bear Debug System</h1>
-
-  <p id="stats">🐻 Features: 0 | 🐀 Bugs fixed: 0</p>
-  <p id="timer">⏳ Time: 30</p>
   <p id="lead"></p>
-
-  <button id="releaseBtn" style="display:none;">
-    🚀 RELEASE TO PROD
-  </button>
-
+  <button id="releaseBtn" style="display:none;">🚀 RELEASE</button>
   <p id="log"></p>
 </div>
 
@@ -179,254 +136,216 @@ let features = 0;
 let bugs = 0;
 let missedRats = 0;
 
+let timeLeft;
+let settings = {};
 let interval;
 let timerInterval;
 
-let timeLeft = 30;
-let maxMissed = 3;
-
-let settings = {};
-
+/* BALANCE */
 const difficultyConfig = {
-  junior: { spawnRate: 900, dangerChance: 0.1, featureGoal: 3 },
-  middle: { spawnRate: 700, dangerChance: 0.2, featureGoal: 5 },
-  senior: { spawnRate: 400, dangerChance: 0.35, featureGoal: 8 }
+  junior: { spawnRate: 850, dangerChance: 0.08, featureGoal: 4, time: 40, maxMissed: 5 },
+  middle: { spawnRate: 600, dangerChance: 0.18, featureGoal: 6, time: 30, maxMissed: 4 },
+  senior: { spawnRate: 380, dangerChance: 0.30, featureGoal: 9, time: 22, maxMissed: 3 }
 };
 
 const leadPhrases = [
   "Где фичи?",
   "Почему столько багов?",
   "Мы горим 🔥",
-  "Это точно протестировано?",
-  "Клиент уже пишет..."
+  "Клиент пишет..."
 ];
 
 /* MATRIX */
 const canvas = document.getElementById("matrix");
 const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const drops = Array.from({length: canvas.width/14}).fill(1);
 
-const letters = "01";
-const fontSize = 14;
-const columns = canvas.width / fontSize;
-const drops = Array.from({ length: columns }).fill(1);
-
-function matrix() {
-  ctx.fillStyle = "rgba(0,0,0,0.05)";
+setInterval(()=>{
+  ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.fillStyle = "#00ff9f";
-  ctx.font = fontSize + "px monospace";
+  ctx.fillStyle="#00ff9f";
 
   drops.forEach((y,i)=>{
-    const text = letters[Math.floor(Math.random()*letters.length)];
-    ctx.fillText(text, i*fontSize, y*fontSize);
-
-    if(y*fontSize > canvas.height && Math.random()>0.975){
-      drops[i]=0;
-    }
+    ctx.fillText(Math.random()>0.5?"0":"1", i*14, y*14);
+    if(y*14>canvas.height) drops[i]=0;
     drops[i]++;
   });
-}
-
-setInterval(matrix, 40);
+},40);
 
 /* TERMINAL */
-const terminal = document.getElementById("terminal");
-const terminalText = document.getElementById("terminalText");
+const termText = document.getElementById("terminalText");
 const input = document.getElementById("commandInput");
-const inputLine = document.getElementById("inputLine");
 
-const lines = [
-  "Booting Bear System...",
-  "Loading modules...",
-  "User detected: Артём",
-  "Scanning environment...",
-  "⚠️ Bugs detected",
-  "",
-  "Type 'start'"
-];
-
-let i = 0;
-
-function typeLine(){
-  if(i < lines.length){
-    terminalText.innerText += lines[i] + "\n";
-    i++;
-    setTimeout(typeLine, 500);
-  } else {
-    inputLine.style.display = "block";
-    input.focus();
-  }
-}
-typeLine();
+termText.innerText = "Booting...\nType 'start'";
 
 input.addEventListener("keydown", e=>{
-  if(e.key === "Enter"){
-    const cmd = input.value.trim().toLowerCase();
-    terminalText.innerText += "> " + cmd + "\n";
-
-    if(cmd === "start"){
-      terminal.style.display = "none";
-      document.getElementById("intro").style.display = "block";
-    } else {
-      terminalText.innerText += "command not found\n";
+  if(e.key==="Enter"){
+    if(input.value==="start"){
+      document.getElementById("terminal").style.display="none";
+      document.getElementById("intro").style.display="block";
     }
-
-    input.value = "";
+    input.value="";
   }
 });
 
 /* START */
-document.getElementById("startBtn").onclick = ()=>{
-  const level = document.getElementById("difficulty").value;
-  settings = difficultyConfig[level];
+document.getElementById("startBtn").onclick=()=>{
+  settings = difficultyConfig[document.getElementById("difficulty").value];
+  timeLeft = settings.time;
 
-  document.getElementById("intro").style.display = "none";
+  document.getElementById("intro").style.display="none";
+  startGameLoop();
+};
 
-  startBugMode();
+/* GAME LOOP */
+function startGameLoop(){
+  spawnLoop();
   startTimer();
   startLead();
-};
+}
+
+function spawnLoop(){
+  spawnEntity();
+
+  const speed = 1 + (1 - timeLeft/settings.time);
+  const delay = settings.spawnRate / speed;
+
+  interval = setTimeout(spawnLoop, delay);
+}
+
+/* ENTITY */
+function spawnEntity(){
+  const el = document.createElement("div");
+
+  const r = Math.random();
+  let type;
+
+  if(r>0.6) type="feature";
+  else if(r>settings.dangerChance) type="rat";
+  else type="danger";
+
+  el.className="bug "+type;
+  el.innerText = type==="feature"?"🐻":type==="rat"?"🐀":"☠️🐀";
+
+  el.style.left=Math.random()*innerWidth+"px";
+  el.style.top=Math.random()*innerHeight+"px";
+
+  let clicks=0;
+
+  el.onclick=()=>{
+    clicks++;
+
+    if(type==="danger" && clicks<2){
+      el.style.transform="scale(1.4)";
+      return;
+    }
+
+    if(type==="feature"){
+      features++;
+      el.classList.add("fly-right");
+    } else {
+      bugs++;
+      el.classList.add("fly-left");
+    }
+
+    updateHUD();
+    setTimeout(()=>el.remove(),600);
+  };
+
+  document.body.appendChild(el);
+
+  setTimeout(()=>{
+    if(document.body.contains(el)){
+      if(type!=="feature"){
+        missedRats++;
+        punish();
+
+        if(missedRats>=settings.maxMissed){
+          gameOver("💣 Прод упал");
+        }
+      }
+      el.remove();
+    }
+  },2000);
+}
+
+/* HUD */
+function updateHUD(){
+  document.getElementById("featuresCount").innerText = `🐻 ${features}/${settings.featureGoal}`;
+  document.getElementById("bugsCount").innerText = `🐀 ${bugs}`;
+
+  if(features>=settings.featureGoal){
+    document.getElementById("releaseBtn").style.display="block";
+  }
+}
 
 /* TIMER */
 function startTimer(){
-  timeLeft = 30;
   timerInterval = setInterval(()=>{
     timeLeft--;
-    document.getElementById("timer").innerText = `⏳ Time: ${timeLeft}`;
+    document.getElementById("timer").innerText=`⏳ ${timeLeft}`;
 
-    if(timeLeft <= 0){
+    if(timeLeft<=0){
       gameOver("⏳ Время вышло");
     }
-  }, 1000);
+  },1000);
 }
 
 /* LEAD */
 function startLead(){
   setInterval(()=>{
-    const msg = leadPhrases[Math.floor(Math.random()*leadPhrases.length)];
-    document.getElementById("lead").innerText = "🧑‍💼 " + msg;
-  }, 4000);
+    let msg;
+
+    if(bugs>features) msg="Почему багов больше?!";
+    else if(timeLeft<10) msg="ДЕДЛАЙН!";
+    else msg=leadPhrases[Math.random()*leadPhrases.length|0];
+
+    document.getElementById("lead").innerText="🧑‍💼 "+msg;
+  },3000);
 }
 
-/* STATS */
-function updateStats(){
-  document.getElementById("stats").innerText =
-    `🐻 Features: ${features}/${settings.featureGoal} | 🐀 Bugs fixed: ${bugs}`;
-
-  if(features >= settings.featureGoal){
-    document.getElementById("releaseBtn").style.display = "block";
-  }
-}
-
-/* SPAWN */
-function startBugMode(){
-  interval = setInterval(spawnEntity, settings.spawnRate);
-}
-
-function spawnEntity(){
-  const entity = document.createElement("div");
-
-  const rand = Math.random();
-  let type;
-
-  if(rand > 0.6){
-    type = "feature";
-  } else if(rand > settings.dangerChance){
-    type = "rat";
-  } else {
-    type = "danger";
-  }
-
-  entity.className = "bug " + type;
-
-  if(type === "feature") entity.innerText = "🐻";
-  if(type === "rat") entity.innerText = "🐀";
-  if(type === "danger") entity.innerText = "☠️🐀";
-
-  entity.style.left = Math.random()*window.innerWidth + "px";
-  entity.style.top = Math.random()*window.innerHeight + "px";
-
-  let clicks = 0;
-
-  entity.onclick = ()=>{
-    clicks++;
-
-    if(type === "danger" && clicks < 2){
-      entity.style.transform = "scale(1.4)";
-      return;
-    }
-
-    if(type === "feature"){
-      features++;
-      entity.classList.add("fly-right");
-    } else {
-      bugs++;
-      entity.classList.add("fly-left");
-    }
-
-    updateStats();
-
-    setTimeout(()=>entity.remove(), 600);
-  };
-
-  document.body.appendChild(entity);
-
-  setTimeout(()=>{
-    if(document.body.contains(entity)){
-      if(type === "rat" || type === "danger"){
-        missedRats++;
-        if(missedRats >= maxMissed){
-          gameOver("💣 Прод упал из-за багов");
-        }
-      }
-      entity.remove();
-    }
-  }, 2500);
+/* PUNISH */
+function punish(){
+  document.body.style.background="#220000";
+  setTimeout(()=>document.body.style.background="black",150);
 }
 
 /* RELEASE */
-document.getElementById("releaseBtn").onclick = ()=>{
-  startGame();
-};
+document.getElementById("releaseBtn").onclick=finish;
 
-/* GAME OVER */
-function gameOver(reason){
-  clearInterval(interval);
-  clearInterval(timerInterval);
+/* END */
+function finish(){
+  clearAll();
 
-  document.getElementById("app").style.display = "block";
+  const result = bugs>features ? "📉 ПРОВАЛ" : "🚀 УСПЕХ";
 
-  document.getElementById("log").innerText =
-`${reason}
-
-🐻 Фичи: ${features}
-🐀 Баги: ${bugs}
-
-💀 Релиз провален.`;
-}
-
-/* FINAL */
-function startGame(){
-  clearInterval(interval);
-  clearInterval(timerInterval);
-
-  document.getElementById("app").style.display = "block";
-
-  let result = bugs >= features
-    ? "📉 ПЛОХОЙ РЕЛИЗ"
-    : "🚀 УСПЕШНЫЙ РЕЛИЗ";
-
-  document.getElementById("log").innerText =
+  document.getElementById("app").style.display="block";
+  document.getElementById("log").innerText=
 `${result}
 
-🐻 Фичи: ${features}
-🐀 Баги: ${bugs}
+🐻 ${features}
+🐀 ${bugs}`;
+}
 
-${bugs >= features ? "Клиент недоволен." : "Прод стабилен."}`;
+function gameOver(reason){
+  clearAll();
+
+  document.getElementById("app").style.display="block";
+  document.getElementById("log").innerText=
+`${reason}
+
+🐻 ${features}
+🐀 ${bugs}
+
+💀 Game Over`;
+}
+
+function clearAll(){
+  clearTimeout(interval);
+  clearInterval(timerInterval);
 }
 
 </script>
