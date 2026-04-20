@@ -55,7 +55,18 @@ body{
 
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
-.super{filter:drop-shadow(0 0 10px red);}
+
+.option{
+  margin-top:10px;
+  padding:10px;
+  border:1px solid #00ff9f;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.option:hover{
+  background:#003322;
+}
 
 #questionCard{
   position:fixed;
@@ -70,44 +81,36 @@ body{
   text-align:center;
   display:none;
   z-index:20;
-  perspective:1000px;
 }
 
-.option{
-  margin-top:10px;
-  padding:10px;
-  border:1px solid #00ff9f;
-  cursor:pointer;
-  transform-style:preserve-3d;
-  transition:transform 0.6s;
-}
-
-.option:hover{
-  background:#003322;
-  transform:rotateY(180deg);
-}
-
-.flip{
-  animation:flipCard 0.6s ease;
-}
-
-@keyframes flipCard{
-  0%{transform:rotateY(0deg);}
-  100%{transform:rotateY(180deg);}
-}
-
-.heart{
+/* БОСС */
+#boss{
   position:fixed;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:80px;
+  text-align:center;
+  z-index:15;
+  display:none;
+  filter:drop-shadow(0 0 20px red);
+}
+
+#bossHp{
   font-size:20px;
-  animation:floatUp 1s linear forwards;
+  color:red;
 }
 
-@keyframes floatUp{
-  from{transform:translateY(0);opacity:1;}
-  to{transform:translateY(-100px);opacity:0;}
+#heart{
+  font-size:120px;
+  animation:beat 1s infinite;
 }
 
-h1{color:#00ff9f;}
+@keyframes beat{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.4);}
+  100%{transform:scale(1);}
+}
 
 /* TERMINAL */
 #terminal{
@@ -128,7 +131,6 @@ h1{color:#00ff9f;}
   border:none;
   outline:none;
   padding:10px;
-  font-family:monospace;
 }
 
 #log{
@@ -154,15 +156,8 @@ h1{color:#00ff9f;}
 </p>
 
 <p>
-📘 Задача:
-<br>
-1. Лови баги 🐀
-2. Собирай фичи 🐻
-3. 3 уровня: junior → middle → senior
-4. Победи босса Ольгу ❤️
+👉 Введите в терминал: <b>start</b>
 </p>
-
-<p>👉 Введите в терминал: <b>start</b></p>
 </div>
 
 <div id="hud">
@@ -172,6 +167,12 @@ h1{color:#00ff9f;}
 </div>
 
 <div id="timerBox">⏱ 0</div>
+
+<!-- БОСС -->
+<div id="boss">
+  🐀 ОЛЬГА БОСС
+  <div id="bossHp">❤️❤️❤️❤️❤️</div>
+</div>
 
 <div id="questionCard"></div>
 
@@ -188,6 +189,7 @@ const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
 const drops=Array(70).fill(1);
+
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
@@ -198,18 +200,22 @@ setInterval(()=>{
   });
 },50);
 
-const sDraw = new Audio("draw.mp3");
-const sLegendary = new Audio("legendary.mp3");
-function playDraw(){try{sDraw.play()}catch(e){}}
-function playLegendary(){try{sLegendary.play()}catch(e){}}
-
 let f=0,b=0;
 let run=false;
-let love=50;
 let levelIndex=0;
 const levels=["junior","middle","senior"];
 const levelSpeed=[700,500,300];
 let t=7;
+
+let bossHp = 5;
+let qIndex = 0;
+
+const questions=["А ты меня любишь?","А если я потолстею?","Я красивая?"];
+const options=[
+["❤️ да","💨 кальян","🍕 пицца"],
+["❤️ конечно","😎 ты фича","💨 кальян"],
+["❤️ ты лучшая","🍕 пицца","😎 люблю"]
+];
 
 window.start = startGame;
 
@@ -221,13 +227,6 @@ function startGame(){
   timer();
 }
 
-function nextLevel(){
-  levelIndex++;
-  if(levelIndex>=levels.length){startBoss();return;}
-  document.getElementById("level").innerText=levels[levelIndex];
-  t=7;
-}
-
 function spawn(){
   setInterval(()=>{
     if(!run) return;
@@ -237,12 +236,13 @@ function spawn(){
     e.innerText=type==="feature"?"🐻":"🐀";
     e.style.left=Math.random()*innerWidth+"px";
     e.style.top=Math.random()*innerHeight+"px";
+
     e.onclick=()=>{
-      playDraw();
       if(type==="feature") f++; else b++;
       update();
       e.remove();
     };
+
     document.body.appendChild(e);
     setTimeout(()=>e.remove(),2000);
   }, levelSpeed[levelIndex]);
@@ -253,7 +253,7 @@ function timer(){
     if(!run) return;
     t--;
     timerBox.innerText="⏱ "+t;
-    if(t<=0) nextLevel();
+    if(t<=0) startBoss();
   },1000);
 }
 
@@ -262,50 +262,82 @@ function update(){
   right.innerText="🐀 "+b;
 }
 
-function startBoss(){run=false;showQuestion();}
+function startBoss(){
+  run=false;
+  document.getElementById("boss").style.display="block";
+  showQuestion();
+}
 
-const questions=["А ты меня любишь?","А если я потолстею?","Я красивая?"];
-const options=[
-["❤️ да","💨 кальян","🍕 пицца"],
-["❤️ конечно","😎 ты фича","💨 кальян"],
-["❤️ ты лучшая","🍕 пицца","😎 люблю"]
-];
-
-let qIndex=0;
+function hitBoss(){
+  bossHp--;
+  document.getElementById("bossHp").innerText="❤️".repeat(Math.max(0,bossHp));
+  if(bossHp<=0) bossWin();
+}
 
 function showQuestion(){
   const card=document.getElementById("questionCard");
   card.style.display="block";
   card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
+
   options[qIndex].forEach(opt=>{
     let div=document.createElement("div");
-    div.className="option flip";
+    div.className="option";
     div.innerText=opt;
-    div.onclick=()=>onAnswer();
+
+    div.onclick=()=>{
+      hitBoss();
+      qIndex++;
+
+      if(qIndex>=questions.length){
+        bossWin();
+        return;
+      }
+
+      card.innerHTML="";
+      showQuestion();
+    };
+
     card.appendChild(div);
   });
 }
 
-function onAnswer(){
-  playLegendary();
-  qIndex++;
-  if(qIndex>=questions.length){win();return;}
-  document.getElementById("questionCard").innerHTML="";
-  showQuestion();
-}
+function bossWin(){
+  document.getElementById("questionCard").style.display="none";
+  document.getElementById("boss").style.display="none";
 
-function win(){
-  document.getElementById("questionCard").innerHTML="🏆 ARTEEM WIN<br>LOVE MAX ❤️";
+  document.body.innerHTML+=`
+    <div id="end">
+      <div id="heart">❤️</div>
+      <div>LOVE ∞</div>
+      <div style="font-size:28px;margin-top:20px;">
+        🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉
+      </div>
+    </div>
+  `;
+
+  const style=document.createElement("style");
+  style.innerHTML=`
+    #end{
+      position:fixed;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      background:black;
+      color:#00ff9f;
+      z-index:999;
+      font-family:monospace;
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 /* TERMINAL */
 const cmd=document.getElementById("cmd");
-const log=document.getElementById("log");
 cmd.addEventListener("keydown",(e)=>{
   if(e.key==="Enter"){
-    let v=cmd.value.trim();
-    log.innerText="> "+v;
-    if(v==="start") startGame();
+    if(cmd.value.trim()==="start") startGame();
     cmd.value="";
   }
 });
