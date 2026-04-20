@@ -1,32 +1,66 @@
+```html id="full_terminal_game"
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM DEBUG MODE</title>
+<title>SUPER ARTEEM // PROD DEBUG GAME</title>
 
 <style>
 body{
   margin:0;
   background:black;
-  color:#00ff9f;
   font-family:monospace;
   overflow:hidden;
+  color:#00ff9f;
 }
 
+/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-#intro{
+/* TERMINAL */
+#console{
   position:fixed;
   inset:0;
-  padding:30px;
-  z-index:10;
   background:black;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  z-index:10;
 }
 
+#terminalHeader{
+  opacity:0.8;
+  margin-bottom:10px;
+}
+
+#terminalLog{
+  flex:1;
+  overflow:auto;
+  font-size:14px;
+  line-height:1.4;
+}
+
+#terminalInputLine{
+  display:flex;
+  gap:10px;
+  border-top:1px solid #00ff9f;
+  padding-top:10px;
+}
+
+#cmd{
+  flex:1;
+  background:black;
+  border:none;
+  color:#00ff9f;
+  outline:none;
+  font-size:16px;
+}
+
+/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -38,15 +72,16 @@ body{
   z-index:5;
 }
 
-#timerBox{
+/* LEVEL */
+#level{
   position:fixed;
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:24px;
-  z-index:6;
+  font-size:22px;
 }
 
+/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
@@ -56,105 +91,84 @@ body{
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
 
-#questionCard{
+/* BOSS AREA */
+#boss{
   position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  width:420px;
+  bottom:0;
+  left:0;
+  right:0;
+  height:220px;
   background:#111;
-  border:2px solid gold;
-  border-radius:12px;
-  padding:20px;
-  text-align:center;
+  border-top:2px solid #ff4d4d;
   display:none;
-  z-index:20;
-  perspective:1000px;
-}
-
-.option{
-  margin-top:10px;
+  align-items:center;
   padding:10px;
-  border:1px solid #00ff9f;
-  cursor:pointer;
-  transition:transform 0.4s;
+  z-index:10;
 }
 
-.option:hover{
-  transform:scale(1.05);
+#boss img{
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  margin-right:10px;
 }
 
-.heart{
+/* LOVE */
+#loveWrap{
   position:fixed;
-  font-size:20px;
-  animation:floatUp 1s linear forwards;
-}
-
-@keyframes floatUp{
-  from{transform:translateY(0);opacity:1;}
-  to{transform:translateY(-100px);opacity:0;}
-}
-
-/* ===== CARDS (HEARTHSTONE STYLE) ===== */
-#hand{
-  position:fixed;
-  bottom:60px;
+  top:110px;
   left:50%;
   transform:translateX(-50%);
-  display:flex;
-  gap:10px;
-  z-index:25;
+  width:300px;
+  height:16px;
+  border:2px solid #ff4d4d;
 }
 
+#loveBar{
+  width:50%;
+  height:100%;
+  background:#ff4d4d;
+  transition:.3s;
+}
+
+/* CARD FLIP */
 .card{
-  width:90px;
-  height:120px;
-  background:#1a1a1a;
-  border:2px solid #00ff9f;
+  position:absolute;
+  width:220px;
+  padding:10px;
+  background:#111;
+  border:2px solid gold;
   border-radius:10px;
-  color:#00ff9f;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  cursor:pointer;
-  transform:translateY(200px);
-  animation:draw 0.6s forwards;
+  color:white;
+  text-align:center;
+  animation:pop .3s ease-out;
 }
 
-@keyframes draw{
-  to{transform:translateY(0);}
+@keyframes pop{
+  from{transform:translateY(120px);opacity:0;}
+  to{transform:translateY(0);opacity:1;}
 }
 
-.legendary{
-  border-color:gold;
-  color:gold;
-  box-shadow:0 0 10px gold;
-}
-
-.epic{
-  border-color:violet;
-  color:violet;
-}
-
-.common{
-  border-color:#00ff9f;
-}
-
-#winScreen{
+/* LEGEND */
+#legend{
   position:fixed;
   inset:0;
-  background:black;
   display:none;
-  justify-content:center;
   align-items:center;
-  flex-direction:column;
-  z-index:100;
-  text-align:center;
+  justify-content:center;
+  font-size:40px;
+  color:orange;
 }
 
-h1{color:#00ff9f;}
-
+/* WIN */
+#win{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:40px;
+}
 </style>
 </head>
 
@@ -162,113 +176,255 @@ h1{color:#00ff9f;}
 
 <canvas id="matrix"></canvas>
 
-<div id="intro">
-<h1>💥 PROD CRASH</h1>
-<p>Введи: start</p>
+<!-- TERMINAL -->
+<div id="console">
+  <div id="terminalHeader">SYSTEM TERMINAL // PROD CRASH</div>
+
+  <div id="terminalLog">
+    > PROD BROKEN DETECTED<br>
+    > only SUPER ARTEEM can fix it<br><br>
+
+    > type: start<br>
+  </div>
+
+  <div id="terminalInputLine">
+    >
+    <input id="cmd" autocomplete="off">
+  </div>
 </div>
 
+<!-- HUD -->
 <div id="hud">
   <div id="left">🐻 0</div>
   <div id="right">🐀 0</div>
-  <div id="level">junior</div>
 </div>
 
-<div id="timerBox">⏱ 0</div>
+<div id="level"></div>
 
-<div id="questionCard"></div>
-
-<div id="hand"></div>
-
-<div id="winScreen">
-  <h1>🎉 ПОЗДРАВЛЯЕМ!</h1>
-  <p>SUPER ARTEEM ПОЧИНИЛ PROD</p>
-  <p>Ты прошёл все уровни и победил босса ❤️</p>
+<!-- LOVE -->
+<div id="loveWrap">
+  <div id="loveBar"></div>
 </div>
+
+<!-- BOSS -->
+<div id="boss">
+  <img src="https://i.imgur.com/8QfQ2dZ.png">
+  <div>👩 Ольга: вопросик...</div>
+</div>
+
+<div id="legend">💨 LEGENDARY</div>
+<div id="win"></div>
 
 <script>
 
+/* ===== MATRIX ===== */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
-const drops=Array(70).fill(1);
+
+const drops=Array(60).fill(1);
+
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
+
   drops.forEach((y,i)=>{
     ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
     drops[i]=y*18>c.height?0:y+1;
   });
 },50);
 
-let run=false;
-let level=0;
-let t=7;
-const levels=["junior","middle","senior"];
-const speed=[700,500,300];
-
-window.start=start;
-
-function start(){
-  document.getElementById("intro").style.display="none";
-  document.getElementById("hud").style.display="flex";
-  run=true;
-  spawnCards();
-  timer();
+/* ===== SOUND ===== */
+function drawSound(){
+  new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg").play();
+}
+function legendarySound(){
+  new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
 }
 
-function spawnCards(){
-  const hand=document.getElementById("hand");
+/* ===== STATE ===== */
+let f=0,b=0;
+let lvl=0;
+let run=false;
+let love=50;
+
+/* ===== LEVELS ===== */
+const levels=[
+  {name:"JUNIOR",goal:4},
+  {name:"MIDDLE",goal:6},
+  {name:"SENIOR",goal:8}
+];
+
+/* ===== TERMINAL START ===== */
+const cmd=document.getElementById("cmd");
+const log=document.getElementById("terminalLog");
+
+cmd.addEventListener("keydown",(e)=>{
+  if(e.key!=="Enter") return;
+
+  const v=cmd.value.trim().toLowerCase();
+
+  log.innerHTML += "<br>> "+v;
+
+  if(v==="start"){
+    log.innerHTML += "<br>✔ unlocking system...";
+    log.innerHTML += "<br>✔ SUPER ARTEEM detected";
+
+    setTimeout(()=>{
+      document.getElementById("console").style.display="none";
+      document.getElementById("hud").style.display="flex";
+
+      startGame();
+    },800);
+  }
+
+  cmd.value="";
+});
+
+/* ===== START ===== */
+function startGame(){
+  run=true;
+  nextLevel();
+}
+
+/* ===== LEVEL FLOW ===== */
+function nextLevel(){
+
+  if(lvl>=levels.length){
+    boss();
+    return;
+  }
+
+  document.getElementById("level").innerText=
+    "LEVEL: "+levels[lvl].name;
+
+  spawn(levels[lvl]);
+}
+
+/* ===== SPAWN ===== */
+function spawn(L){
 
   setInterval(()=>{
     if(!run) return;
+
+    let e=document.createElement("div");
+    let type=Math.random()>0.5?"feature":"rat";
+
+    e.className="entity "+type;
+    e.innerText=type==="feature"?"🐻":"🐀";
+
+    e.style.left=Math.random()*innerWidth+"px";
+    e.style.top=Math.random()*innerHeight+"px";
+
+    e.onclick=()=>{
+      drawSound();
+
+      if(type==="feature") f++;
+      else b++;
+
+      update();
+
+      if(f>=L.goal){
+        lvl++;
+        nextLevel();
+      }
+
+      e.remove();
+    };
+
+    document.body.appendChild(e);
+
+    setTimeout(()=>e.remove(),2000);
+
+  },600);
+}
+
+/* ===== UPDATE ===== */
+function update(){
+  left.innerText="🐻 "+f;
+  right.innerText="🐀 "+b;
+}
+
+/* ===== LOVE ===== */
+function updateLove(){
+  document.getElementById("loveBar").style.width=love+"%";
+
+  if(love>=100) win("🏆 ARTEEM WIN");
+}
+
+/* ===== BOSS ===== */
+const questions=[
+  "А ты меня любишь?",
+  "А если я толстая?",
+  "Я красивая?"
+];
+
+const answers=[
+  "❤️ да",
+  "💨 кальян",
+  "🍕 пицца"
+];
+
+function boss(){
+
+  document.getElementById("boss").style.display="flex";
+
+  setInterval(()=>{
 
     let card=document.createElement("div");
     card.className="card";
 
-    let r=Math.random();
-    if(r<0.1){card.classList.add("legendary");card.innerText="LEGENDARY\n🔥";}
-    else if(r<0.3){card.classList.add("epic");card.innerText="EPIC\n⚡";}
-    else{card.classList.add("common");card.innerText="COMMON\n🧩";}
+    card.innerText="👩 Ольга: "+questions[Math.floor(Math.random()*questions.length)];
+
+    card.style.left=Math.random()*innerWidth+"px";
+    card.style.top=Math.random()*innerHeight*0.4+"px";
 
     card.onclick=()=>{
-      card.style.transform="scale(1.2) rotateY(180deg)";
-      setTimeout(()=>card.remove(),300);
+      legendarySound();
+
+      love+=10;
+      updateLove();
+
+      showAnswer();
+
+      card.remove();
     };
 
-    hand.appendChild(card);
+    document.body.appendChild(card);
 
-    if(hand.children.length>5){hand.removeChild(hand.firstChild);}
+    setTimeout(()=>card.remove(),3000);
 
   },1200);
 }
 
-function timer(){
-  setInterval(()=>{
-    if(!run) return;
-    t--;
-    timerBox.innerText="⏱ "+t;
+/* ===== ANSWER ===== */
+function showAnswer(){
 
-    if(t<=0){
-      level++;
-      if(level>=levels.length){
-        win();
-        return;
-      }
-      document.getElementById("level").innerText=levels[level];
-      t=7;
-    }
+  let c=document.createElement("div");
+  c.className="card";
 
-  },1000);
+  c.innerText="🧑 Артем: "+answers[Math.floor(Math.random()*answers.length)];
+
+  c.style.left=Math.random()*innerWidth+"px";
+  c.style.bottom="250px";
+
+  document.body.appendChild(c);
+
+  setTimeout(()=>c.remove(),2000);
 }
 
-function win(){
-  run=false;
-  document.getElementById("winScreen").style.display="flex";
+/* ===== WIN ===== */
+function win(t){
+  winBox.style.display="flex";
+  winBox.innerText=t;
 }
+
+const winBox=document.getElementById("win");
 
 </script>
 
 </body>
 </html>
+```
