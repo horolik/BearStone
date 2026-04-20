@@ -1,9 +1,9 @@
-```html id="full_game_final"
+```html id="clean_rewrite_game"
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Artem Debug → Hearthstone Olga</title>
+<title>Debug → Hearthstone Boss</title>
 
 <style>
 body{
@@ -48,14 +48,6 @@ body{
   left:50%;
   transform:translateX(-50%);
   font-size:22px;
-  z-index:5;
-}
-
-#info{
-  position:fixed;
-  bottom:10px;
-  left:20px;
-  z-index:5;
 }
 
 /* ENTITIES */
@@ -70,7 +62,7 @@ body{
 .rat{color:#ff4d4d;}
 .super{filter:drop-shadow(0 0 10px red);}
 
-/* ===== BOSS ===== */
+/* BOSS */
 #boss{
   position:fixed;
   bottom:0;
@@ -92,21 +84,21 @@ body{
   margin-right:20px;
 }
 
-/* CARDS */
+/* CARD */
 .card{
   position:absolute;
-  width:200px;
+  width:180px;
   padding:10px;
   background:#111;
   border:2px solid gold;
-  border-radius:12px;
+  border-radius:10px;
   color:white;
   text-align:center;
-  animation:fly .4s ease-out;
+  animation:fly .3s ease-out;
 }
 
 @keyframes fly{
-  from{transform:translateY(200px);opacity:0;}
+  from{transform:translateY(150px);opacity:0;}
   to{transform:translateY(0);opacity:1;}
 }
 
@@ -117,14 +109,13 @@ body{
   left:50%;
   transform:translateX(-50%);
   width:300px;
-  height:18px;
+  height:16px;
   border:2px solid #ff4d4d;
-  z-index:6;
 }
 
 #loveBar{
-  height:100%;
   width:50%;
+  height:100%;
   background:#ff4d4d;
   transition:.3s;
 }
@@ -140,8 +131,8 @@ body{
   color:orange;
 }
 
-/* VICTORY */
-#victory{
+/* WIN */
+#win{
   position:fixed;
   inset:0;
   display:none;
@@ -158,14 +149,14 @@ body{
 
 <!-- CONSOLE -->
 <div id="console">
-> SYSTEM FAILURE 🐀<br>
-> баг в проде обнаружен<br><br>
+> SYSTEM ERROR 🐀<br>
+> баг в проде<br><br>
 
-> 🐻 фичи → вправо<br>
-> 🐀 баги → влево<br>
-> 🔥 супер-крыса = -2<br><br>
+> 🐻 = фичи → вправо<br>
+> 🐀 = баги → влево<br>
+> 🔥 = супер-крыса<br><br>
 
-> Введите: start / старт<br>
+> start / старт<br>
 <input id="cmd" autofocus>
 <div id="out"></div>
 </div>
@@ -178,7 +169,6 @@ body{
 </div>
 
 <div id="level"></div>
-<div id="info"></div>
 
 <!-- LOVE -->
 <div id="loveWrap">
@@ -188,21 +178,22 @@ body{
 <!-- BOSS -->
 <div id="boss">
   <img src="https://i.imgur.com/8QfQ2dZ.png">
-  <div id="bossText">👩 Ольга: вопросик...</div>
+  <div>👩 Ольга: вопросик...</div>
 </div>
 
 <div id="legend">💨 LEGENDARY!</div>
-<div id="victory"></div>
+<div id="win"></div>
 
 <script>
 
 /* ===== MATRIX ===== */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
+
 c.width=innerWidth;
 c.height=innerHeight;
 
-const drops=Array(80).fill(1);
+const drops=Array(60).fill(1);
 
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -210,8 +201,8 @@ setInterval(()=>{
   ctx.fillStyle="#00ff9f";
 
   drops.forEach((y,i)=>{
-    ctx.fillText(Math.random()>0.5?0:1,i*16,y*16);
-    drops[i]=y*16>c.height?0:y+1;
+    ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
+    drops[i]=y*18>c.height?0:y+1;
   });
 },50);
 
@@ -228,35 +219,35 @@ const levels=[
   {name:"SENIOR",time:25,goal:8}
 ];
 
-/* ===== INPUT FIX ===== */
-cmd.addEventListener("keydown",(e)=>{
+/* ===== SAFE START (ГЛАВНЫЙ ФИКС) ===== */
+document.getElementById("cmd").addEventListener("keydown",(e)=>{
   if(e.key!=="Enter") return;
 
-  const v=cmd.value.trim().toLowerCase();
+  const v=e.target.value.trim().toLowerCase();
 
   out.innerHTML+="<br>> "+v;
 
   if(v==="start"||v==="старт"){
     start();
   }else{
-    out.innerHTML+="<br>start / старт";
+    out.innerHTML+="<br>нужно: start";
   }
 
-  cmd.value="";
+  e.target.value="";
 });
 
 /* ===== START ===== */
 function start(){
-  console.style.display="none";
-  hud.style.display="flex";
-  nextLevel();
+  document.getElementById("console").style.display="none";
+  document.getElementById("hud").style.display="flex";
+  next();
 }
 
 /* ===== LEVEL FLOW ===== */
-function nextLevel(){
+function next(){
 
   if(lvl>=levels.length){
-    startBoss();
+    boss();
     return;
   }
 
@@ -265,8 +256,7 @@ function nextLevel(){
   f=0;b=0;t=L.time;
   run=true;
 
-  level.innerText="LEVEL: "+L.name;
-  info.innerText="🐻 вправо / 🐀 влево";
+  level.innerText=L.name;
 
   spawn();
   timer(L);
@@ -294,14 +284,11 @@ function spawn(){
     el.style.top=Math.random()*innerHeight+"px";
 
     el.onclick=()=>{
-
       if(type==="feature") f++;
       else if(type==="rat") b++;
       else b+=2;
 
-      el.style.opacity=0;
-      setTimeout(()=>el.remove(),300);
-
+      el.remove();
       update();
     };
 
@@ -324,12 +311,12 @@ function timer(L){
     if(f>=L.goal){
       run=false;
       lvl++;
-      setTimeout(nextLevel,1000);
+      setTimeout(next,1000);
     }
 
     if(t<=0){
       run=false;
-      startBoss();
+      boss();
     }
 
   },1000);
@@ -341,73 +328,66 @@ function update(){
   right.innerText="🐀 "+b;
 }
 
-/* ===== LOVE METER ===== */
+/* ===== LOVE ===== */
 function updateLove(){
   document.getElementById("loveBar").style.width=love+"%";
 
-  if(love<=0){
-    win("💀 ОЛЬГА WIN");
-  }
-
-  if(love>=100){
-    win("🏆 АРТЕМ WIN");
-  }
+  if(love<=0) win("💀 ОЛЬГА WIN");
+  if(love>=100) win("🏆 АРТЕМ WIN");
 }
 
-/* ===== BOSS QUESTIONS ===== */
+/* ===== BOSS ===== */
 const q=[
   "А ты меня любишь?",
-  "А если я толстая?",
+  "А если я потолстею?",
   "Я красивая?",
-  "Я тебе мешаю?"
+  "Я мешаю?"
 ];
 
 const a=[
-  "🍕 пицца в ответ",
-  "💨 кальян передан",
-  "❤️ конечно люблю",
-  "😎 ты фича, не баг"
+  "🍕 пицца",
+  "💨 кальян",
+  "❤️ люблю",
+  "😎 ты фича"
 ];
 
-/* ===== BOSS ===== */
-function startBoss(){
+function boss(){
 
   document.getElementById("boss").style.display="flex";
 
   setInterval(()=>{
 
-    let card=document.createElement("div");
-    card.className="card";
+    let c=document.createElement("div");
+    c.className="card";
 
-    card.innerText="👩 Ольга: "+q[Math.floor(Math.random()*q.length)];
+    c.innerText="👩 "+q[Math.floor(Math.random()*q.length)];
 
-    card.style.left=Math.random()*innerWidth+"px";
-    card.style.top=Math.random()*innerHeight*0.5+"px";
+    c.style.left=Math.random()*innerWidth+"px";
+    c.style.top=Math.random()*innerHeight*0.5+"px";
 
-    card.onclick=()=>{
+    c.onclick=()=>{
 
       love+=10;
-      spawnAnswer();
+      answer();
       updateLove();
       legend();
 
-      card.remove();
+      c.remove();
     };
 
-    document.body.appendChild(card);
-
-    setTimeout(()=>card.remove(),3000);
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),3000);
 
   },1200);
 }
 
-/* ===== ANSWERS ===== */
-function spawnAnswer(){
+/* ANSWER */
+function answer(){
 
   let c=document.createElement("div");
   c.className="card";
 
-  c.innerText="🧑 Артем: "+a[Math.floor(Math.random()*a.length)];
+  c.innerText="🧑 "+a[Math.floor(Math.random()*a.length)];
 
   c.style.left=Math.random()*innerWidth+"px";
   c.style.bottom="260px";
@@ -417,19 +397,20 @@ function spawnAnswer(){
   setTimeout(()=>c.remove(),2000);
 }
 
-/* ===== LEGEND ===== */
+/* LEGEND */
 function legend(){
-  const el=document.getElementById("legend");
+  let el=document.getElementById("legend");
   el.style.display="flex";
-
   setTimeout(()=>el.style.display="none",800);
 }
 
-/* ===== WIN ===== */
-function win(text){
-  victory.style.display="flex";
-  victory.innerText=text;
+/* WIN */
+function win(t){
+  winBox.style.display="flex";
+  winBox.innerText=t;
 }
+
+const winBox=document.getElementById("win");
 
 </script>
 
