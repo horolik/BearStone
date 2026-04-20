@@ -55,7 +55,8 @@ body{
   cursor:pointer;
   transition:0.3s;
 }
-.option:hover{background:#003322;}
+.option:hover{ background:#003322; }
+
 #questionCard{
   position:fixed;
   top:50%;
@@ -70,6 +71,7 @@ body{
   display:none;
   z-index:20;
 }
+
 #boss{
   position:fixed;
   bottom:0;
@@ -81,13 +83,8 @@ body{
   display:none;
   filter:drop-shadow(0 0 20px red);
 }
-#bossHp{font-size:20px;color:red;}
-#heart{font-size:120px;animation:beat 1s infinite;}
-@keyframes beat{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.4);}
-  100%{transform:scale(1);}
-}
+#bossHp{ font-size:20px; color:red; }
+
 #terminal{
   position:fixed;
   bottom:0;
@@ -108,13 +105,18 @@ body{
 }
 </style>
 </head>
+
 <body>
 
 <canvas id="matrix"></canvas>
 
 <div id="intro">
 <h1>💥 PROD CRASH</h1>
-<p>О нет… прод сломался.<br><br>👉 Введите: <b>start</b></p>
+<p>
+О нет… прод сломался.<br><br>
+🧠 Только SUPER ARTEEM может его починить.
+</p>
+<p>👉 Введите: <b>start</b></p>
 </div>
 
 <div id="hud">
@@ -123,8 +125,13 @@ body{
   <div id="level">junior</div>
 </div>
 
-<div id="timerBox">⏱ 7</div>
-<div id="boss">🐀 ОЛЬГА БОСС<div id="bossHp">❤️❤️❤️❤️❤️</div></div>
+<div id="timerBox">⏱ 0</div>
+
+<div id="boss">
+ 🐀 ОЛЬГА БОСС
+ <div id="bossHp">❤️❤️❤️❤️❤️</div>
+</div>
+
 <div id="questionCard"></div>
 
 <div id="terminal">
@@ -132,124 +139,189 @@ body{
 </div>
 
 <script>
+
+/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
-c.width=innerWidth;c.height=innerHeight;
-const drops=Array(60).fill(1);
-setInterval(()=>{
-ctx.fillStyle="rgba(0,0,0,0.05)";
-ctx.fillRect(0,0,c.width,c.height);
-ctx.fillStyle="#00ff9f";
-drops.forEach((y,i)=>{
-ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
-drops[i]=y*18>c.height?0:y+1;
-});},50);
+c.width=innerWidth;
+c.height=innerHeight;
 
-let f=0,b=0,run=false;
+const drops=Array(70).fill(1);
+
+setInterval(()=>{
+  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff9f";
+  drops.forEach((y,i)=>{
+    ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
+    drops[i]=y*18>c.height?0:y+1;
+  });
+},50);
+
+let f=0,b=0;
+let run=false;
 let levelIndex=0;
+
 const levels=["junior","middle","senior"];
-const levelSpeed=[800,500,250];
-let spawnInterval;
-let levelInterval;
+const levelSpeed=[700,500,300];
+
 let t=7;
+let bossHp=5;
+let qIndex=0;
+
+/* 🧠 PROGRAMMER HUMOR ANSWERS (UPDATED) */
+const questions=[
+  "А ты меня любишь?",
+  "А если я потолстею?",
+  "Я красивая?"
+];
+
+const options=[
+  [
+    "console.log('да') // true",
+    "if (love) return true",
+    "sudo love --force ❤️"
+  ],
+  [
+    "git commit -m 'люблю тебя даже с багами'",
+    "docker run love:latest",
+    "try { love++ } catch(e){ still love }"
+  ],
+  [
+    "SELECT * FROM girls WHERE beauty = 'infinite'",
+    "return you === bestGirl;",
+    "love.exe успешно запущен"
+  ]
+];
+
+window.start = startGame;
 
 function startGame(){
-intro.style.display="none";
-hud.style.display="flex";
-run=true;
-spawn();
-startLevels();
-timer();
-}
-
-function startLevels(){
-levelInterval=setInterval(()=>{
-if(!run) return;
-levelIndex++;
-if(levelIndex>=levels.length) levelIndex=levels.length-1;
-
-level.innerText=levels[levelIndex];
-resetSpawn();
-t=7;
-},7000);
-}
-
-function resetSpawn(){
-clearInterval(spawnInterval);
-spawn();
+  document.getElementById("intro").style.display="none";
+  document.getElementById("hud").style.display="flex";
+  run=true;
+  spawn();
+  timer();
 }
 
 function spawn(){
-spawnInterval=setInterval(()=>{
-if(!run) return;
-let e=document.createElement("div");
-let type=Math.random()<0.5?"feature":"rat";
-e.className="entity "+type;
-e.innerText=type==="feature"?"🐻":"🐀";
-e.style.left=Math.random()*innerWidth+"px";
-e.style.top=Math.random()*innerHeight+"px";
-e.onclick=()=>{
-if(type==="feature") f++; else b++;
-update();e.remove();
-};
-document.body.appendChild(e);
-setTimeout(()=>e.remove(),2000);
-},levelSpeed[levelIndex]);
+  setInterval(()=>{
+    if(!run) return;
+
+    let e=document.createElement("div");
+    let type=Math.random()<0.5?"feature":"rat";
+
+    e.className="entity "+type;
+    e.innerText=type==="feature"?"🐻":"🐀";
+    e.style.left=Math.random()*innerWidth+"px";
+    e.style.top=Math.random()*innerHeight+"px";
+
+    e.onclick=()=>{
+      if(type==="feature") f++; else b++;
+      update();
+      e.remove();
+    };
+
+    document.body.appendChild(e);
+    setTimeout(()=>e.remove(),2000);
+
+  }, levelSpeed[levelIndex]);
 }
 
 function timer(){
-setInterval(()=>{
-if(!run) return;
-t--;
-timerBox.innerText="⏱ "+t;
-if(t<=0) startBoss();
-},1000);
+  setInterval(()=>{
+    if(!run) return;
+    t--;
+    timerBox.innerText="⏱ "+t;
+    if(t<=0) startBoss();
+  },1000);
 }
 
 function update(){
-left.innerText="🐻 "+f;
-right.innerText="🐀 "+b;
+  left.innerText="🐻 "+f;
+  right.innerText="🐀 "+b;
 }
 
 function startBoss(){
-run=false;
-boss.style.display="block";
-showQ();
+  run=false;
+  document.getElementById("boss").style.display="block";
+  showQuestion();
 }
 
-const q=["А ты меня любишь?","А если я баг?","Я красивая?"];
-const a=[
-["да ❤️","нет 💀","пицца"],
-["конечно","ты фича","краш"],
-["лучше всех","ошибка","люблю"]
-];
+function hitBoss(){
+  bossHp--;
+  document.getElementById("bossHp").innerText="❤️".repeat(Math.max(0,bossHp));
+  if(bossHp<=0) bossWin();
+}
 
-let qi=0;
+function showQuestion(){
+  const card=document.getElementById("questionCard");
+  card.style.display="block";
+  card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
 
-function showQ(){
-const c=questionCard;
-c.style.display="block";
-c.innerHTML="👩 Ольга:<br><br>"+q[qi];
-a[qi].forEach(o=>{
-let d=document.createElement("div");
-d.className="option";
-d.innerText=o;
-d.onclick=()=>{
-qi++;
-if(qi>=q.length) win(); else showQ();
-};
-c.appendChild(d);
+  options[qIndex].forEach(opt=>{
+    let div=document.createElement("div");
+    div.className="option";
+    div.innerText=opt;
+
+    div.onclick=()=>{
+      hitBoss();
+      qIndex++;
+
+      if(qIndex>=questions.length){
+        bossWin();
+        return;
+      }
+
+      card.innerHTML="";
+      showQuestion();
+    };
+
+    card.appendChild(div);
+  });
+}
+
+function bossWin(){
+  document.getElementById("questionCard").style.display="none";
+  document.getElementById("boss").style.display="none";
+
+  document.body.innerHTML+=`
+  <div id="end">
+    <div id="heart">❤️</div>
+    <div>LOVE ∞</div>
+    <div style="font-size:28px;margin-top:20px;">
+      🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉
+    </div>
+  </div>`;
+
+  const style=document.createElement("style");
+  style.innerHTML=`
+    #end{
+      position:fixed;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      background:black;
+      color:#00ff9f;
+      z-index:999;
+      font-family:monospace;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/* TERMINAL */
+const cmd=document.getElementById("cmd");
+cmd.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"){
+    if(cmd.value.trim()==="start") startGame();
+    cmd.value="";
+  }
 });
-}
 
-function win(){
-document.body.innerHTML+="<div id='end'><div id='heart'>❤️</div><div>LOVE ∞</div></div>";
-}
-
-cmd.onkeydown=e=>{
-if(e.key=="Enter"&&cmd.value=="start") startGame();
-cmd.value="";
-};
 </script>
+
 </body>
 </html>
