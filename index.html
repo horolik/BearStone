@@ -3,20 +3,66 @@
 <head>
 <meta charset="UTF-8">
 <title>🐻 BearStone</title>
-<link rel="stylesheet" href="style.css">
+
+<style>
+body {
+  margin: 0;
+  background: radial-gradient(circle, #0b0f14, #000);
+  color: #00ff9f;
+  font-family: monospace;
+}
+
+/* BOARD */
+#board {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+/* HERO */
+.hero {
+  width: 200px;
+  border: 2px solid #00ff9f;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+/* HAND */
+#hand {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+}
+
+/* CARD */
+.card {
+  border: 1px solid #00ff9f;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  border-color: white;
+}
+</style>
 </head>
 
 <body>
 
 <div id="board">
-  <div class="hero" id="player">
+  <div class="hero">
     <h3>Artem</h3>
     HP: <span id="php">20</span><br>
     Mana: <span id="mana">1</span>
   </div>
 
-  <div class="hero" id="boss">
-    <h3 id="bossName">Boss</h3>
+  <div class="hero">
+    <h3 id="bossName">Toxic PM</h3>
     HP: <span id="bhp">40</span><br>
     Phase: <span id="phase">1</span>
   </div>
@@ -24,9 +70,167 @@
 
 <div id="hand"></div>
 
-<button id="endTurn">End Turn</button>
+<button onclick="endTurn()">End Turn</button>
 
-<script type="module" src="./js/game.js"></script>
+<script>
+/* ================= GAME STATE ================= */
+const Game = {
+  turn: 1,
+  mana: 1,
+  playerHp: 20,
+  boss: {
+    hp: 40,
+    phase: 1,
+    memory: { DEV:0, INFRA:0, QA:0 }
+  }
+};
+
+/* ================= CARDS ================= */
+const Cards = [
+  {
+    name: "Bug Fix",
+    cost: 1,
+    type: "DEV",
+    play(){
+      Game.boss.hp -= 2;
+      Game.boss.memory.DEV++;
+    }
+  },
+
+  {
+    name: "Hotfix",
+    cost: 2,
+    type: "DEV",
+    play(){
+      Game.boss.hp -= 4;
+      Game.boss.memory.DEV++;
+    }
+  },
+
+  {
+    name: "Rollback Shield",
+    cost: 2,
+    type: "INFRA",
+    play(){
+      Game.playerHp += 3;
+    }
+  },
+
+  {
+    name: "Edge Case",
+    cost: 1,
+    type: "QA",
+    play(){
+      if(Math.random() > 0.5){
+        Game.boss.hp -= 3;
+      } else {
+        Game.playerHp -= 2;
+      }
+      Game.boss.memory.QA++;
+    }
+  }
+];
+
+/* ================= COMBO SYSTEM ================= */
+let history = [];
+
+function addCombo(type){
+  history.push(type);
+  if(history.length > 3) history.shift();
+
+  const seq = history.join("+");
+
+  if(seq === "DEV+DEV+DEV"){
+    Game.boss.hp -= 5;
+  }
+
+  if(seq === "DEV+INFRA+DEV"){
+    Game.playerHp += 5;
+  }
+}
+
+/* ================= AI BOSS ================= */
+function bossTurn(){
+
+  const mem = Game.boss.memory;
+
+  const dominant = Object.entries(mem)
+    .sort((a,b)=>b[1]-a[1])[0][0];
+
+  if(dominant === "DEV"){
+    Game.playerHp -= 3;
+  }
+
+  if(dominant === "QA"){
+    Game.playerHp -= 2;
+    Game.mana = Math.max(0, Game.mana - 1);
+  }
+
+  if(Game.boss.hp < 20){
+    Game.boss.phase = 2;
+  }
+}
+
+/* ================= UI ================= */
+const hand = document.getElementById("hand");
+
+function render(){
+  hand.innerHTML = "";
+
+  Cards.forEach((c,i)=>{
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `${c.name}<br>cost: ${c.cost}`;
+
+    el.onclick = ()=>play(i);
+
+    hand.appendChild(el);
+  });
+
+  updateUI();
+}
+
+function play(i){
+  const card = Cards[i];
+
+  if(Game.mana < card.cost) return;
+
+  Game.mana -= card.cost;
+
+  card.play();
+
+  addCombo(card.type);
+
+  updateUI();
+}
+
+function endTurn(){
+  Game.turn++;
+  Game.mana++;
+
+  bossTurn();
+
+  updateUI();
+}
+
+/* ================= UPDATE ================= */
+function updateUI(){
+  document.getElementById("php").innerText = Game.playerHp;
+  document.getElementById("bhp").innerText = Game.boss.hp;
+  document.getElementById("mana").innerText = Game.mana;
+  document.getElementById("phase").innerText = Game.boss.phase;
+
+  if(Game.boss.hp <= 0){
+    document.body.innerHTML = "<h1>🐻 YOU WIN BEARSTONE</h1>";
+  }
+
+  if(Game.playerHp <= 0){
+    document.body.innerHTML = "<h1>💀 SYSTEM CRASH</h1>";
+  }
+}
+
+render();
+</script>
 
 </body>
 </html>
