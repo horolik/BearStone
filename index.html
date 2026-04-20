@@ -13,14 +13,12 @@ body {
   overflow: hidden;
 }
 
-/* MATRIX */
 #matrix {
   position: fixed;
   inset: 0;
   z-index: 0;
 }
 
-/* HUD */
 #hud {
   position: fixed;
   top: 10px;
@@ -32,7 +30,6 @@ body {
   z-index: 10;
 }
 
-/* LEAD */
 #lead {
   position: fixed;
   bottom: 10px;
@@ -41,7 +38,6 @@ body {
   max-width: 60%;
 }
 
-/* TERMINAL */
 #terminal {
   position: fixed;
   inset: 0;
@@ -51,9 +47,6 @@ body {
   z-index: 3;
 }
 
-#terminalText { white-space: pre-line; }
-
-/* INTRO */
 #intro {
   display: none;
   position: fixed;
@@ -63,14 +56,12 @@ body {
   z-index: 4;
 }
 
-/* GAME */
 #app {
   display: none;
   padding: 20px;
   z-index: 2;
 }
 
-/* ENTITIES */
 .bug {
   position: absolute;
   font-size: 48px;
@@ -83,18 +74,6 @@ body {
 .rat { color: #ff4d4d; }
 .danger { filter: drop-shadow(0 0 10px red); }
 
-/* ANIM */
-.fly-right { animation: right 0.4s forwards; }
-.fly-left { animation: left 0.4s forwards; }
-
-@keyframes right {
-  to { transform: translateX(300px) scale(0.5); opacity: 0; }
-}
-@keyframes left {
-  to { transform: translateX(-300px) scale(0.5); opacity: 0; }
-}
-
-/* SHAKE */
 @keyframes shake {
   0% { transform: translate(0,0); }
   25% { transform: translate(5px,-5px); }
@@ -103,7 +82,6 @@ body {
   100% { transform: translate(0,0); }
 }
 .shake { animation: shake 0.2s infinite; }
-
 </style>
 </head>
 
@@ -123,13 +101,11 @@ body {
 
 <div id="intro">
   <h2>DEBUG SYSTEM</h2>
-
   <select id="diff">
     <option value="junior">Junior</option>
     <option value="middle" selected>Middle</option>
     <option value="senior">Senior</option>
   </select>
-
   <button id="start">START</button>
 </div>
 
@@ -141,19 +117,19 @@ body {
 
 <script>
 
-/* ================= STATE ================= */
+/* STATE */
 let features=0, bugs=0, missed=0;
 let time=0;
 let settings={};
 let gameRunning=false;
 
-/* LOOP CONTROL */
+/* CONTROL */
 let lastTime=0;
 let spawnAcc=0;
 
-/* IDS */
-let timerId=null;
-let leadId=null;
+/* LIMITS */
+const MAX_ENTITIES = 25;
+const entities = [];
 
 /* CONFIG */
 const cfg={
@@ -162,19 +138,10 @@ const cfg={
  senior:{spawn:380,danger:0.3,goal:9,time:22,miss:3}
 };
 
-const phrases=[
-"Где фичи?",
-"Мы горим 🔥",
-"Клиент пишет..."
-];
+const phrases=["Где фичи?","Мы горим 🔥","Клиент пишет..."];
+const code=["if(bugs>features){deploy();}","console.log('works')","try{release()}catch(e){}"];
 
-const code=[
-"if(bugs>features){deploy();}",
-"console.log('works')",
-"try{release()}catch(e){}"
-];
-
-/* ================= MATRIX ================= */
+/* MATRIX */
 const c=document.getElementById("matrix");
 const x=c.getContext("2d");
 c.width=innerWidth;
@@ -193,7 +160,7 @@ setInterval(()=>{
   });
 },40);
 
-/* ================= START ================= */
+/* START */
 document.getElementById("start").onclick=()=>{
   stopAll();
 
@@ -216,7 +183,7 @@ document.getElementById("start").onclick=()=>{
   requestAnimationFrame(loop);
 };
 
-/* ================= MAIN LOOP ================= */
+/* LOOP */
 function loop(t){
   if(!gameRunning) return;
 
@@ -233,11 +200,35 @@ function loop(t){
     spawnEntity();
   }
 
+  /* CLEANUP (ВАЖНО) */
+  const now = Date.now();
+
+  for (let i = entities.length - 1; i >= 0; i--) {
+    const ent = entities[i];
+
+    if (!document.body.contains(ent.el)) {
+      entities.splice(i,1);
+      continue;
+    }
+
+    if (now - ent.born > 2000) {
+      if (ent.type !== "feature") {
+        missed++;
+        shake();
+        if (missed >= settings.miss) gameOver("💣 PROD DOWN");
+      }
+      ent.el.remove();
+      entities.splice(i,1);
+    }
+  }
+
   requestAnimationFrame(loop);
 }
 
-/* ================= SPAWN ================= */
+/* SPAWN */
 function spawnEntity(){
+  if (document.querySelectorAll(".bug").length > MAX_ENTITIES) return;
+
   const e=document.createElement("div");
 
   const r=Math.random();
@@ -250,8 +241,8 @@ function spawnEntity(){
   e.className="bug "+type;
   e.innerText=type==="feature"?"🐻":"🐀";
 
-  e.style.left=Math.random()*innerWidth+"px";
-  e.style.top=Math.random()*innerHeight+"px";
+  e.style.left=(Math.random()*innerWidth)+"px";
+  e.style.top=(Math.random()*innerHeight)+"px";
 
   let clicks=0;
 
@@ -272,37 +263,24 @@ function spawnEntity(){
 
   document.body.appendChild(e);
 
-  setTimeout(()=>{
-    if(document.body.contains(e)){
-      if(type!=="feature"){
-        missed++;
-        shake();
-
-        if(missed>=settings.miss){
-          gameOver("💣 PROD DOWN");
-        }
-      }
-      e.remove();
-    }
-  },2000);
+  entities.push({el:e,type,born:Date.now()});
 }
 
-/* ================= TIMER ================= */
+/* TIMER */
 function startTimer(){
-  timerId=setInterval(()=>{
+  setInterval(()=>{
     if(!gameRunning) return;
 
     time--;
     document.getElementById("timer").innerText="⏳ "+time;
 
     if(time<=0) finish();
-
   },1000);
 }
 
-/* ================= LEAD ================= */
+/* LEAD */
 function startLead(){
-  leadId=setInterval(()=>{
+  setInterval(()=>{
     if(!gameRunning) return;
 
     let m;
@@ -317,7 +295,7 @@ function startLead(){
   },2500);
 }
 
-/* ================= HUD ================= */
+/* HUD */
 function update(){
   document.getElementById("features").innerText="🐻 "+features;
   document.getElementById("bugs").innerText="🐀 "+bugs;
@@ -327,33 +305,29 @@ function update(){
   }
 }
 
-/* ================= EFFECT ================= */
+/* EFFECT */
 function shake(){
   document.body.classList.add("shake");
   setTimeout(()=>document.body.classList.remove("shake"),300);
 }
 
-/* ================= STOP ================= */
+/* STOP */
 function stopAll(){
   gameRunning=false;
-
-  clearInterval(timerId);
-  clearInterval(leadId);
-
+  entities.length = 0;
   document.querySelectorAll(".bug").forEach(e=>e.remove());
 }
 
-/* ================= GAME OVER ================= */
+/* GAME OVER */
 function gameOver(msg){
   stopAll();
-
   document.body.classList.add("shake");
 
   document.getElementById("log").innerText=
 msg+"\n💀 FAIL\n🐻 "+features+"\n🐀 "+bugs;
 }
 
-/* ================= FINISH ================= */
+/* FINISH */
 function finish(){
   stopAll();
 
@@ -363,10 +337,8 @@ function finish(){
 res+"\n🐻 "+features+"\n🐀 "+bugs;
 }
 
-/* RELEASE */
 document.getElementById("release").onclick=finish;
 
 </script>
-
 </body>
 </html>
