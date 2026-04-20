@@ -1,9 +1,8 @@
-```html id="full_terminal_game"
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM // PROD DEBUG GAME</title>
+<title>SUPER ARTEEM // OLGA BOSS MODE</title>
 
 <style>
 body{
@@ -14,14 +13,12 @@ body{
   color:#00ff9f;
 }
 
-/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -32,35 +29,8 @@ body{
   z-index:10;
 }
 
-#terminalHeader{
-  opacity:0.8;
-  margin-bottom:10px;
-}
+#terminalLog{flex:1;overflow:auto;font-size:14px;}
 
-#terminalLog{
-  flex:1;
-  overflow:auto;
-  font-size:14px;
-  line-height:1.4;
-}
-
-#terminalInputLine{
-  display:flex;
-  gap:10px;
-  border-top:1px solid #00ff9f;
-  padding-top:10px;
-}
-
-#cmd{
-  flex:1;
-  background:black;
-  border:none;
-  color:#00ff9f;
-  outline:none;
-  font-size:16px;
-}
-
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -72,7 +42,6 @@ body{
   z-index:5;
 }
 
-/* LEVEL */
 #level{
   position:fixed;
   top:60px;
@@ -81,39 +50,6 @@ body{
   font-size:22px;
 }
 
-/* ENTITIES */
-.entity{
-  position:absolute;
-  font-size:60px;
-  cursor:pointer;
-}
-
-.feature{color:#00ff9f;}
-.rat{color:#ff4d4d;}
-
-/* BOSS AREA */
-#boss{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  height:220px;
-  background:#111;
-  border-top:2px solid #ff4d4d;
-  display:none;
-  align-items:center;
-  padding:10px;
-  z-index:10;
-}
-
-#boss img{
-  width:100px;
-  height:100px;
-  border-radius:50%;
-  margin-right:10px;
-}
-
-/* LOVE */
 #loveWrap{
   position:fixed;
   top:110px;
@@ -131,36 +67,49 @@ body{
   transition:.3s;
 }
 
-/* CARD FLIP */
-.card{
-  position:absolute;
-  width:220px;
-  padding:10px;
-  background:#111;
-  border:2px solid gold;
-  border-radius:10px;
-  color:white;
-  text-align:center;
-  animation:pop .3s ease-out;
-}
-
-@keyframes pop{
-  from{transform:translateY(120px);opacity:0;}
-  to{transform:translateY(0);opacity:1;}
-}
-
-/* LEGEND */
-#legend{
+/* ===== BOSS MODAL ===== */
+#bossModal{
   position:fixed;
   inset:0;
   display:none;
   align-items:center;
   justify-content:center;
-  font-size:40px;
-  color:orange;
+  background:rgba(0,0,0,0.8);
+  z-index:20;
 }
 
-/* WIN */
+#bossCard{
+  width:420px;
+  background:#111;
+  border:2px solid #ff4d4d;
+  padding:20px;
+  border-radius:12px;
+  text-align:center;
+}
+
+#bossTitle{
+  font-size:20px;
+  margin-bottom:10px;
+}
+
+#answers button{
+  display:block;
+  width:100%;
+  margin:6px 0;
+  padding:10px;
+  background:#00ff9f;
+  border:none;
+  cursor:pointer;
+  font-family:monospace;
+}
+
+#hitFx{
+  position:fixed;
+  font-size:40px;
+  display:none;
+  z-index:30;
+}
+
 #win{
   position:fixed;
   inset:0;
@@ -169,6 +118,29 @@ body{
   justify-content:center;
   font-size:40px;
 }
+
+/* HEART ENDLESS */
+#heartScreen{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:black;
+  z-index:50;
+}
+
+#heart{
+  font-size:80px;
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.3);}
+  100%{transform:scale(1);}
+}
 </style>
 </head>
 
@@ -176,255 +148,143 @@ body{
 
 <canvas id="matrix"></canvas>
 
-<!-- TERMINAL -->
 <div id="console">
-  <div id="terminalHeader">SYSTEM TERMINAL // PROD CRASH</div>
-
   <div id="terminalLog">
-    > PROD BROKEN DETECTED<br>
-    > only SUPER ARTEEM can fix it<br><br>
-
-    > type: start<br>
-  </div>
-
-  <div id="terminalInputLine">
-    >
-    <input id="cmd" autocomplete="off">
+> PROD BROKEN DETECTED<br>
+> type start
   </div>
 </div>
 
-<!-- HUD -->
-<div id="hud">
-  <div id="left">🐻 0</div>
-  <div id="right">🐀 0</div>
-</div>
-
+<div id="hud"><div id="left">🐻 0</div><div id="right">🐀 0</div></div>
 <div id="level"></div>
+<div id="loveWrap"><div id="loveBar"></div></div>
 
-<!-- LOVE -->
-<div id="loveWrap">
-  <div id="loveBar"></div>
+<!-- BOSS MODAL -->
+<div id="bossModal">
+  <div id="bossCard">
+    <div id="bossTitle">👩 Ольга-Босс 🐀</div>
+    <div id="question">...</div>
+    <div id="answers"></div>
+  </div>
 </div>
 
-<!-- BOSS -->
-<div id="boss">
-  <img src="https://i.imgur.com/8QfQ2dZ.png">
-  <div>👩 Ольга: вопросик...</div>
-</div>
-
-<div id="legend">💨 LEGENDARY</div>
+<div id="hitFx">💥</div>
 <div id="win"></div>
+
+<div id="heartScreen">
+  <div id="heart">❤️</div>
+  <div>LOVE INFINITY</div>
+  <div>🎉 С ДНЁМ РОЖДЕНИЯ 🎉</div>
+</div>
 
 <script>
 
-/* ===== MATRIX ===== */
+/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
-c.width=innerWidth;
-c.height=innerHeight;
-
+c.width=innerWidth;c.height=innerHeight;
 const drops=Array(60).fill(1);
-
 setInterval(()=>{
-  ctx.fillStyle="rgba(0,0,0,0.05)";
-  ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#00ff9f";
-
-  drops.forEach((y,i)=>{
-    ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
-    drops[i]=y*18>c.height?0:y+1;
-  });
+ctx.fillStyle="rgba(0,0,0,0.05)";
+ctx.fillRect(0,0,c.width,c.height);
+ctx.fillStyle="#00ff9f";
+drops.forEach((y,i)=>{
+ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
+drops[i]=y*18>c.height?0:y+1;
+});
 },50);
 
-/* ===== SOUND ===== */
-function drawSound(){
-  new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg").play();
-}
-function legendarySound(){
-  new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
-}
+/* STATE */
+let f=0,b=0,lvl=0,love=50,run=false;
+const levels=[{goal:3},{goal:5},{goal:7}];
 
-/* ===== STATE ===== */
-let f=0,b=0;
-let lvl=0;
-let run=false;
-let love=50;
-
-/* ===== LEVELS ===== */
-const levels=[
-  {name:"JUNIOR",goal:4},
-  {name:"MIDDLE",goal:6},
-  {name:"SENIOR",goal:8}
-];
-
-/* ===== TERMINAL START ===== */
-const cmd=document.getElementById("cmd");
-const log=document.getElementById("terminalLog");
-
-cmd.addEventListener("keydown",(e)=>{
-  if(e.key!=="Enter") return;
-
-  const v=cmd.value.trim().toLowerCase();
-
-  log.innerHTML += "<br>> "+v;
-
-  if(v==="start"){
-    log.innerHTML += "<br>✔ unlocking system...";
-    log.innerHTML += "<br>✔ SUPER ARTEEM detected";
-
-    setTimeout(()=>{
-      document.getElementById("console").style.display="none";
-      document.getElementById("hud").style.display="flex";
-
-      startGame();
-    },800);
-  }
-
-  cmd.value="";
-});
-
-/* ===== START ===== */
-function startGame(){
+/* TERMINAL START */
+console.onclick=()=>{
+  document.getElementById("console").style.display="none";
+  document.getElementById("hud").style.display="flex";
   run=true;
   nextLevel();
-}
+};
 
-/* ===== LEVEL FLOW ===== */
 function nextLevel(){
-
-  if(lvl>=levels.length){
-    boss();
-    return;
-  }
-
-  document.getElementById("level").innerText=
-    "LEVEL: "+levels[lvl].name;
-
+  if(lvl>=levels.length){startBoss();return;}
+  document.getElementById("level").innerText="LEVEL " + (lvl+1);
   spawn(levels[lvl]);
 }
 
-/* ===== SPAWN ===== */
 function spawn(L){
+setInterval(()=>{
+if(!run) return;
+let e=document.createElement("div");
+let type=Math.random()>0.5?"feature":"rat";
+e.innerText=type==="feature"?"🐻":"🐀";
+e.style.position="absolute";
+e.style.left=Math.random()*innerWidth+"px";
+e.style.top=Math.random()*innerHeight+"px";
 
-  setInterval(()=>{
-    if(!run) return;
+e.onclick=()=>{
+if(type==="feature")f++;else b++;
+if(f>=L.goal){lvl++;nextLevel();}
+update();e.remove();
+};
 
-    let e=document.createElement("div");
-    let type=Math.random()>0.5?"feature":"rat";
-
-    e.className="entity "+type;
-    e.innerText=type==="feature"?"🐻":"🐀";
-
-    e.style.left=Math.random()*innerWidth+"px";
-    e.style.top=Math.random()*innerHeight+"px";
-
-    e.onclick=()=>{
-      drawSound();
-
-      if(type==="feature") f++;
-      else b++;
-
-      update();
-
-      if(f>=L.goal){
-        lvl++;
-        nextLevel();
-      }
-
-      e.remove();
-    };
-
-    document.body.appendChild(e);
-
-    setTimeout(()=>e.remove(),2000);
-
-  },600);
+document.body.appendChild(e);
+setTimeout(()=>e.remove(),2000);
+},700);
 }
 
-/* ===== UPDATE ===== */
 function update(){
-  left.innerText="🐻 "+f;
-  right.innerText="🐀 "+b;
+left.innerText="🐻 "+f;
+right.innerText="🐀 "+b;
 }
 
-/* ===== LOVE ===== */
 function updateLove(){
   document.getElementById("loveBar").style.width=love+"%";
-
-  if(love>=100) win("🏆 ARTEEM WIN");
+  if(love>=100) endGame();
 }
 
 /* ===== BOSS ===== */
-const questions=[
-  "А ты меня любишь?",
-  "А если я толстая?",
-  "Я красивая?"
-];
+const q=["Ты меня любишь?","Я красивая?","А если я крыса?"];
+const a=["❤️ да","🍕 конечно","💥 хахах"];
 
-const answers=[
-  "❤️ да",
-  "💨 кальян",
-  "🍕 пицца"
-];
-
-function boss(){
-
-  document.getElementById("boss").style.display="flex";
-
-  setInterval(()=>{
-
-    let card=document.createElement("div");
-    card.className="card";
-
-    card.innerText="👩 Ольга: "+questions[Math.floor(Math.random()*questions.length)];
-
-    card.style.left=Math.random()*innerWidth+"px";
-    card.style.top=Math.random()*innerHeight*0.4+"px";
-
-    card.onclick=()=>{
-      legendarySound();
-
-      love+=10;
-      updateLove();
-
-      showAnswer();
-
-      card.remove();
-    };
-
-    document.body.appendChild(card);
-
-    setTimeout(()=>card.remove(),3000);
-
-  },1200);
+function startBoss(){
+  document.getElementById("bossModal").style.display="flex";
+  showQuestion();
 }
 
-/* ===== ANSWER ===== */
-function showAnswer(){
+function showQuestion(){
+  document.getElementById("question").innerText=
+    "👩 Ольга: " + q[Math.floor(Math.random()*q.length)];
 
-  let c=document.createElement("div");
-  c.className="card";
+  let box=document.getElementById("answers");
+  box.innerHTML="";
 
-  c.innerText="🧑 Артем: "+answers[Math.floor(Math.random()*answers.length)];
-
-  c.style.left=Math.random()*innerWidth+"px";
-  c.style.bottom="250px";
-
-  document.body.appendChild(c);
-
-  setTimeout(()=>c.remove(),2000);
+  a.forEach(txt=>{
+    let b=document.createElement("button");
+    b.innerText=txt;
+    b.onclick=()=>hit();
+    box.appendChild(b);
+  });
 }
 
-/* ===== WIN ===== */
-function win(t){
-  winBox.style.display="flex";
-  winBox.innerText=t;
+function hit(){
+  love+=10;
+  updateLove();
+
+  let fx=document.getElementById("hitFx");
+  fx.style.display="block";
+  fx.style.left=Math.random()*innerWidth+"px";
+  fx.style.top=Math.random()*innerHeight+"px";
+  setTimeout(()=>fx.style.display="none",300);
+
+  showQuestion();
 }
 
-const winBox=document.getElementById("win");
+function endGame(){
+  document.getElementById("bossModal").style.display="none";
+  document.getElementById("heartScreen").style.display="flex";
+}
 
 </script>
-
 </body>
 </html>
-```
