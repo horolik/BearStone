@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM BOSS FIGHT</title>
+<title>SUPER ARTEEM DEBUG MODE</title>
 
 <style>
 body{
@@ -13,14 +13,20 @@ body{
   overflow:hidden;
 }
 
-/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* HUD */
+#intro{
+  position:fixed;
+  inset:0;
+  padding:30px;
+  z-index:10;
+  background:black;
+}
+
 #hud{
   position:fixed;
   top:10px;
@@ -28,10 +34,10 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
+  font-size:20px;
   z-index:5;
 }
 
-/* TIMER */
 #timerBox{
   position:fixed;
   top:60px;
@@ -41,41 +47,53 @@ body{
   z-index:6;
 }
 
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
   cursor:pointer;
 }
+
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
 
-/* CARD (Hearthstone style flip) */
+/* FLIP CARD */
+.card{
+  perspective:1000px;
+}
+
+.card-inner{
+  position:relative;
+  width:100%;
+  transform-style:preserve-3d;
+  transition:transform 0.6s;
+}
+
+.card.flipped .card-inner{
+  transform:rotateY(180deg);
+}
+
+.card-face{
+  position:absolute;
+  width:100%;
+  backface-visibility:hidden;
+}
+
+.card-back{
+  transform:rotateY(180deg);
+}
+
 .option{
   margin-top:10px;
-  padding:12px;
+  padding:10px;
   border:1px solid #00ff9f;
   cursor:pointer;
-  perspective:1000px;
-  transition:0.6s;
-  transform-style:preserve-3d;
+  transition:0.3s;
 }
 
 .option:hover{
   background:#003322;
-  transform:rotateY(180deg);
 }
 
-.flip{
-  animation:flipCard 0.6s ease;
-}
-
-@keyframes flipCard{
-  0%{transform:rotateY(0);}
-  100%{transform:rotateY(180deg);}
-}
-
-/* QUESTION */
 #questionCard{
   position:fixed;
   top:50%;
@@ -91,7 +109,6 @@ body{
   z-index:20;
 }
 
-/* BOSS */
 #boss{
   position:fixed;
   bottom:0;
@@ -104,12 +121,37 @@ body{
   filter:drop-shadow(0 0 20px red);
 }
 
-#bossHp{
-  font-size:22px;
-  color:red;
+#bossHp{font-size:20px;color:red;}
+
+#terminal{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:30;
+  display:flex;
+  background:#000;
+  border-top:1px solid #00ff9f;
 }
 
-/* END SCREEN */
+#cmd{
+  flex:1;
+  background:black;
+  color:#00ff9f;
+  border:none;
+  outline:none;
+  padding:10px;
+}
+
+#log{
+  position:fixed;
+  bottom:40px;
+  left:10px;
+  font-size:12px;
+  opacity:0.7;
+}
+
+/* END ANIMATION */
 #end{
   position:fixed;
   inset:0;
@@ -119,52 +161,21 @@ body{
   align-items:center;
   background:black;
   color:#00ff9f;
-  font-size:40px;
   z-index:999;
-}
-
-#heart{
-  font-size:120px;
-  animation:beat 1s infinite;
+  font-family:monospace;
 }
 
 #infinity{
-  font-size:140px;
-  display:none;
-  animation:spin 3s infinite linear;
-}
-
-@keyframes beat{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.4);}
-  100%{transform:scale(1);}
+  font-size:120px;
+  animation:spin 3s linear infinite;
 }
 
 @keyframes spin{
-  0%{transform:rotate(0);}
-  100%{transform:rotate(360deg);}
+  0%{transform:rotate(0deg) scale(1);}
+  50%{transform:rotate(180deg) scale(1.3);}
+  100%{transform:rotate(360deg) scale(1);}
 }
 
-/* TERMINAL */
-#terminal{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  display:flex;
-  z-index:30;
-  background:black;
-  border-top:1px solid #00ff9f;
-}
-
-#cmd{
-  flex:1;
-  background:black;
-  color:#00ff9f;
-  border:none;
-  padding:10px;
-  outline:none;
-}
 </style>
 </head>
 
@@ -172,13 +183,19 @@ body{
 
 <canvas id="matrix"></canvas>
 
+<div id="intro">
+<h1>💥 PROD CRASH</h1>
+<p>О нет… прод сломался.<br><br>🧠 Только SUPER ARTEEM может его починить.</p>
+<p>👉 Введите в терминал: <b>start</b></p>
+</div>
+
 <div id="hud">
   <div id="left">🐻 0</div>
   <div id="right">🐀 0</div>
   <div id="level">junior</div>
 </div>
 
-<div id="timerBox">⏱ 7</div>
+<div id="timerBox">⏱ 0</div>
 
 <div id="boss">
   🐀 ОЛЬГА БОСС
@@ -187,8 +204,10 @@ body{
 
 <div id="questionCard"></div>
 
+<div id="log"></div>
+
 <div id="terminal">
-  <input id="cmd" placeholder="type start..." />
+  <input id="cmd" placeholder="type command..." />
 </div>
 
 <script>
@@ -198,74 +217,87 @@ const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
-const drops=Array(60).fill(1);
-
+const drops=Array(70).fill(1);
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
   drops.forEach((y,i)=>{
-    ctx.fillText(Math.random()>0.5?0:1,i*20,y*20);
-    drops[i]=y*20>c.height?0:y+1;
+    ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
+    drops[i]=y*18>c.height?0:y+1;
   });
 },50);
 
-/* SOUNDS */
-const sDraw = new Audio("draw.mp3"); // card draw
-const sLegendary = new Audio("legendary.mp3"); // legendary hit
+/* AUDIO (synthetic Hearthstone-like) */
+function playSound(type){
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=ctx.createOscillator();
+  const g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
 
-function draw(){try{sDraw.play()}catch(e){}}
-function legendary(){try{sLegendary.play()}catch(e){}}
+  if(type==="legendary") o.frequency.value=120;
+  if(type==="draw") o.frequency.value=420;
 
-/* GAME STATE */
-let run=false;
+  g.gain.value=0.2;
+  o.start();
+  setTimeout(()=>o.stop(),200);
+}
+
 let f=0,b=0;
+let run=false;
 
 let levelIndex=0;
 const levels=["junior","middle","senior"];
-const speed=[900,600,350];
+const levelSpeed=[900,500,250];
 
 let t=7;
 let bossHp=5;
 let qIndex=0;
 
-const questions=[
-"Ты меня любишь?",
-"А если я изменюсь?",
-"Я идеальная?"
-];
-
+const questions=["А ты меня любишь?","А если я потолстею?","Я красивая?"];
 const options=[
-["❤️ да","💨 нет","🍕 пицца"],
-["❤️ всегда","😎 да","💨 не знаю"],
-["❤️ ты богиня","🍕 пицца","😎 люблю"]
+["❤️ да","💨 кальян","🍕 пицца"],
+["❤️ конечно","😎 ты фича","💨 кальян"],
+["❤️ ты лучшая","🍕 пицца","😎 люблю"]
 ];
 
-window.startGame=startGame;
+window.start=startGame;
 
-/* START */
 function startGame(){
+  document.getElementById("intro").style.display="none";
   document.getElementById("hud").style.display="flex";
   run=true;
   spawn();
+  levelLoop();
   timer();
 }
 
-/* SPAWN */
+function levelLoop(){
+  const lvl=setInterval(()=>{
+    if(!run) return;
+
+    levelIndex++;
+    if(levelIndex>=levels.length){clearInterval(lvl);return;}
+
+    document.getElementById("level").innerText=levels[levelIndex];
+    playSound("legendary");
+
+    t=7;
+  },7000);
+}
+
 function spawn(){
   setInterval(()=>{
     if(!run) return;
-
     let e=document.createElement("div");
     let type=Math.random()<0.5?"feature":"rat";
-
     e.className="entity "+type;
     e.innerText=type==="feature"?"🐻":"🐀";
     e.style.left=Math.random()*innerWidth+"px";
     e.style.top=Math.random()*innerHeight+"px";
 
     e.onclick=()=>{
-      draw();
+      playSound("draw");
       if(type==="feature") f++; else b++;
       update();
       e.remove();
@@ -273,44 +305,23 @@ function spawn(){
 
     document.body.appendChild(e);
     setTimeout(()=>e.remove(),2000);
-
-  }, speed[levelIndex]);
+  }, levelSpeed[levelIndex]);
 }
 
-/* TIMER LEVELS */
 function timer(){
   setInterval(()=>{
     if(!run) return;
-
     t--;
     timerBox.innerText="⏱ "+t;
-
-    if(t<=0){
-      nextLevel();
-    }
+    if(t<=0) startBoss();
   },1000);
 }
 
-/* LEVEL SYSTEM */
-function nextLevel(){
-  levelIndex++;
-
-  if(levelIndex>=levels.length){
-    startBoss();
-    return;
-  }
-
-  document.getElementById("level").innerText=levels[levelIndex];
-  t=7;
-}
-
-/* HUD */
 function update(){
   left.innerText="🐻 "+f;
   right.innerText="🐀 "+b;
 }
 
-/* BOSS */
 function startBoss(){
   run=false;
   document.getElementById("boss").style.display="block";
@@ -319,67 +330,52 @@ function startBoss(){
 
 function hitBoss(){
   bossHp--;
-  legendary();
-
-  document.getElementById("bossHp").innerText =
-    "❤️".repeat(Math.max(0,bossHp));
-
-  if(bossHp<=0){
-    win();
-  }
+  playSound("legendary");
+  document.getElementById("bossHp").innerText="❤️".repeat(Math.max(0,bossHp));
+  if(bossHp<=0) bossWin();
 }
 
-/* CARDS */
 function showQuestion(){
   const card=document.getElementById("questionCard");
   card.style.display="block";
 
-  card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
+  card.innerHTML=`<div class='card'><div class='card-inner'><div class='card-face'>👩 Ольга:<br><br>${questions[qIndex]}</div></div></div>`;
 
   options[qIndex].forEach(opt=>{
-    let d=document.createElement("div");
-    d.className="option flip";
-    d.innerText=opt;
+    let div=document.createElement("div");
+    div.className="option";
+    div.innerText=opt;
 
-    d.onclick=()=>{
+    div.onclick=()=>{
+      playSound("draw");
       hitBoss();
       qIndex++;
 
-      if(qIndex>=questions.length){
-        win();
-        return;
-      }
+      if(qIndex>=questions.length){bossWin();return;}
 
-      card.innerHTML="";
       showQuestion();
     };
 
-    card.appendChild(d);
+    card.appendChild(div);
   });
 }
 
-/* END GAME + INFINITY */
-function win(){
+function bossWin(){
+  document.getElementById("questionCard").style.display="none";
+  document.getElementById("boss").style.display="none";
+
   document.body.innerHTML+=`
     <div id="end">
-      <div id="heart">❤️</div>
       <div id="infinity">∞</div>
-      <div style="margin-top:20px">LOVE MAX</div>
-      <div style="font-size:28px;margin-top:20px">
-        🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉
-      </div>
+      <div>LOVE INFINITY</div>
+      <div style="font-size:28px;margin-top:20px;">🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉</div>
     </div>
   `;
-
-  setTimeout(()=>{
-    document.getElementById("heart").style.display="none";
-    document.getElementById("infinity").style.display="block";
-  },2000);
 }
 
 /* TERMINAL */
 const cmd=document.getElementById("cmd");
-cmd.addEventListener("keydown",(e)=>{
+cmd.addEventListener("keydown",e=>{
   if(e.key==="Enter"){
     if(cmd.value.trim()==="start") startGame();
     cmd.value="";
