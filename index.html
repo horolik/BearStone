@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM BOSS FIGHT</title>
+<title>SUPER ARTEEM DEBUG MODE</title>
 
 <style>
 body{
@@ -13,14 +13,20 @@ body{
   overflow:hidden;
 }
 
-/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* HUD */
+#intro{
+  position:fixed;
+  inset:0;
+  padding:30px;
+  z-index:10;
+  background:black;
+}
+
 #hud{
   position:fixed;
   top:10px;
@@ -28,10 +34,10 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
+  font-size:20px;
   z-index:5;
 }
 
-/* TIMER */
 #timerBox{
   position:fixed;
   top:60px;
@@ -41,41 +47,27 @@ body{
   z-index:6;
 }
 
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
   cursor:pointer;
 }
+
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
 
-/* CARD (Hearthstone style flip) */
 .option{
   margin-top:10px;
-  padding:12px;
+  padding:10px;
   border:1px solid #00ff9f;
   cursor:pointer;
-  perspective:1000px;
-  transition:0.6s;
-  transform-style:preserve-3d;
+  transition:0.3s;
 }
 
 .option:hover{
   background:#003322;
-  transform:rotateY(180deg);
 }
 
-.flip{
-  animation:flipCard 0.6s ease;
-}
-
-@keyframes flipCard{
-  0%{transform:rotateY(0);}
-  100%{transform:rotateY(180deg);}
-}
-
-/* QUESTION */
 #questionCard{
   position:fixed;
   top:50%;
@@ -91,7 +83,7 @@ body{
   z-index:20;
 }
 
-/* BOSS */
+/* БОСС */
 #boss{
   position:fixed;
   bottom:0;
@@ -105,33 +97,13 @@ body{
 }
 
 #bossHp{
-  font-size:22px;
+  font-size:20px;
   color:red;
-}
-
-/* END SCREEN */
-#end{
-  position:fixed;
-  inset:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  background:black;
-  color:#00ff9f;
-  font-size:40px;
-  z-index:999;
 }
 
 #heart{
   font-size:120px;
   animation:beat 1s infinite;
-}
-
-#infinity{
-  font-size:140px;
-  display:none;
-  animation:spin 3s infinite linear;
 }
 
 @keyframes beat{
@@ -140,20 +112,15 @@ body{
   100%{transform:scale(1);}
 }
 
-@keyframes spin{
-  0%{transform:rotate(0);}
-  100%{transform:rotate(360deg);}
-}
-
 /* TERMINAL */
 #terminal{
   position:fixed;
   bottom:0;
   left:0;
   right:0;
-  display:flex;
   z-index:30;
-  background:black;
+  display:flex;
+  background:#000;
   border-top:1px solid #00ff9f;
 }
 
@@ -162,8 +129,16 @@ body{
   background:black;
   color:#00ff9f;
   border:none;
-  padding:10px;
   outline:none;
+  padding:10px;
+}
+
+#log{
+  position:fixed;
+  bottom:40px;
+  left:10px;
+  font-size:12px;
+  opacity:0.7;
 }
 </style>
 </head>
@@ -172,14 +147,28 @@ body{
 
 <canvas id="matrix"></canvas>
 
+<div id="intro">
+<h1>💥 PROD CRASH</h1>
+
+<p>
+О нет… прод сломался.<br><br>
+🧠 Только SUPER ARTEEM может его починить.
+</p>
+
+<p>
+👉 Введите в терминал: <b>start</b>
+</p>
+</div>
+
 <div id="hud">
   <div id="left">🐻 0</div>
   <div id="right">🐀 0</div>
   <div id="level">junior</div>
 </div>
 
-<div id="timerBox">⏱ 7</div>
+<div id="timerBox">⏱ 0</div>
 
+<!-- БОСС -->
 <div id="boss">
   🐀 ОЛЬГА БОСС
   <div id="bossHp">❤️❤️❤️❤️❤️</div>
@@ -187,85 +176,68 @@ body{
 
 <div id="questionCard"></div>
 
+<div id="log"></div>
+
 <div id="terminal">
-  <input id="cmd" placeholder="type start..." />
+  <input id="cmd" placeholder="type command..." />
 </div>
 
 <script>
 
-/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
-const drops=Array(60).fill(1);
+const drops=Array(70).fill(1);
 
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
   drops.forEach((y,i)=>{
-    ctx.fillText(Math.random()>0.5?0:1,i*20,y*20);
-    drops[i]=y*20>c.height?0:y+1;
+    ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
+    drops[i]=y*18>c.height?0:y+1;
   });
 },50);
 
-/* SOUNDS */
-const sDraw = new Audio("draw.mp3"); // card draw
-const sLegendary = new Audio("legendary.mp3"); // legendary hit
-
-function draw(){try{sDraw.play()}catch(e){}}
-function legendary(){try{sLegendary.play()}catch(e){}}
-
-/* GAME STATE */
-let run=false;
 let f=0,b=0;
-
+let run=false;
 let levelIndex=0;
 const levels=["junior","middle","senior"];
-const speed=[900,600,350];
-
+const levelSpeed=[700,500,300];
 let t=7;
-let bossHp=5;
-let qIndex=0;
 
-const questions=[
-"Ты меня любишь?",
-"А если я изменюсь?",
-"Я идеальная?"
-];
+let bossHp = 5;
+let qIndex = 0;
 
+const questions=["А ты меня любишь?","А если я потолстею?","Я красивая?"];
 const options=[
-["❤️ да","💨 нет","🍕 пицца"],
-["❤️ всегда","😎 да","💨 не знаю"],
-["❤️ ты богиня","🍕 пицца","😎 люблю"]
+["❤️ да","💨 кальян","🍕 пицца"],
+["❤️ конечно","😎 ты фича","💨 кальян"],
+["❤️ ты лучшая","🍕 пицца","😎 люблю"]
 ];
 
-window.startGame=startGame;
+window.start = startGame;
 
-/* START */
 function startGame(){
+  document.getElementById("intro").style.display="none";
   document.getElementById("hud").style.display="flex";
   run=true;
   spawn();
   timer();
 }
 
-/* SPAWN */
 function spawn(){
   setInterval(()=>{
     if(!run) return;
-
     let e=document.createElement("div");
     let type=Math.random()<0.5?"feature":"rat";
-
     e.className="entity "+type;
     e.innerText=type==="feature"?"🐻":"🐀";
     e.style.left=Math.random()*innerWidth+"px";
     e.style.top=Math.random()*innerHeight+"px";
 
     e.onclick=()=>{
-      draw();
       if(type==="feature") f++; else b++;
       update();
       e.remove();
@@ -273,44 +245,23 @@ function spawn(){
 
     document.body.appendChild(e);
     setTimeout(()=>e.remove(),2000);
-
-  }, speed[levelIndex]);
+  }, levelSpeed[levelIndex]);
 }
 
-/* TIMER LEVELS */
 function timer(){
   setInterval(()=>{
     if(!run) return;
-
     t--;
     timerBox.innerText="⏱ "+t;
-
-    if(t<=0){
-      nextLevel();
-    }
+    if(t<=0) startBoss();
   },1000);
 }
 
-/* LEVEL SYSTEM */
-function nextLevel(){
-  levelIndex++;
-
-  if(levelIndex>=levels.length){
-    startBoss();
-    return;
-  }
-
-  document.getElementById("level").innerText=levels[levelIndex];
-  t=7;
-}
-
-/* HUD */
 function update(){
   left.innerText="🐻 "+f;
   right.innerText="🐀 "+b;
 }
 
-/* BOSS */
 function startBoss(){
   run=false;
   document.getElementById("boss").style.display="block";
@@ -319,34 +270,26 @@ function startBoss(){
 
 function hitBoss(){
   bossHp--;
-  legendary();
-
-  document.getElementById("bossHp").innerText =
-    "❤️".repeat(Math.max(0,bossHp));
-
-  if(bossHp<=0){
-    win();
-  }
+  document.getElementById("bossHp").innerText="❤️".repeat(Math.max(0,bossHp));
+  if(bossHp<=0) bossWin();
 }
 
-/* CARDS */
 function showQuestion(){
   const card=document.getElementById("questionCard");
   card.style.display="block";
-
   card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
 
   options[qIndex].forEach(opt=>{
-    let d=document.createElement("div");
-    d.className="option flip";
-    d.innerText=opt;
+    let div=document.createElement("div");
+    div.className="option";
+    div.innerText=opt;
 
-    d.onclick=()=>{
+    div.onclick=()=>{
       hitBoss();
       qIndex++;
 
       if(qIndex>=questions.length){
-        win();
+        bossWin();
         return;
       }
 
@@ -354,27 +297,40 @@ function showQuestion(){
       showQuestion();
     };
 
-    card.appendChild(d);
+    card.appendChild(div);
   });
 }
 
-/* END GAME + INFINITY */
-function win(){
+function bossWin(){
+  document.getElementById("questionCard").style.display="none";
+  document.getElementById("boss").style.display="none";
+
   document.body.innerHTML+=`
     <div id="end">
       <div id="heart">❤️</div>
-      <div id="infinity">∞</div>
-      <div style="margin-top:20px">LOVE MAX</div>
-      <div style="font-size:28px;margin-top:20px">
+      <div>LOVE ∞</div>
+      <div style="font-size:28px;margin-top:20px;">
         🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉
       </div>
     </div>
   `;
 
-  setTimeout(()=>{
-    document.getElementById("heart").style.display="none";
-    document.getElementById("infinity").style.display="block";
-  },2000);
+  const style=document.createElement("style");
+  style.innerHTML=`
+    #end{
+      position:fixed;
+      inset:0;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      background:black;
+      color:#00ff9f;
+      z-index:999;
+      font-family:monospace;
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 /* TERMINAL */
