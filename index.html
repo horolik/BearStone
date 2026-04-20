@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>SUPER ARTEEM DEBUG MODE</title>
+
 <style>
 body{
   margin:0;
@@ -11,11 +12,13 @@ body{
   font-family:monospace;
   overflow:hidden;
 }
+
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
+
 #intro{
   position:fixed;
   inset:0;
@@ -23,6 +26,7 @@ body{
   z-index:10;
   background:black;
 }
+
 #hud{
   position:fixed;
   top:10px;
@@ -33,6 +37,7 @@ body{
   font-size:20px;
   z-index:5;
 }
+
 #timerBox{
   position:fixed;
   top:60px;
@@ -41,21 +46,15 @@ body{
   font-size:24px;
   z-index:6;
 }
+
 .entity{
   position:absolute;
   font-size:60px;
   cursor:pointer;
 }
+
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
-.option{
-  margin-top:10px;
-  padding:10px;
-  border:1px solid #00ff9f;
-  cursor:pointer;
-  transition:0.3s;
-}
-.option:hover{ background:#003322; }
 
 #questionCard{
   position:fixed;
@@ -70,39 +69,92 @@ body{
   text-align:center;
   display:none;
   z-index:20;
+  perspective:1000px;
 }
 
-#boss{
+.option{
+  margin-top:10px;
+  padding:10px;
+  border:1px solid #00ff9f;
+  cursor:pointer;
+  transition:transform 0.4s;
+}
+
+.option:hover{
+  transform:scale(1.05);
+}
+
+.heart{
   position:fixed;
-  bottom:0;
+  font-size:20px;
+  animation:floatUp 1s linear forwards;
+}
+
+@keyframes floatUp{
+  from{transform:translateY(0);opacity:1;}
+  to{transform:translateY(-100px);opacity:0;}
+}
+
+/* ===== CARDS (HEARTHSTONE STYLE) ===== */
+#hand{
+  position:fixed;
+  bottom:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:80px;
-  text-align:center;
-  z-index:15;
-  display:none;
-  filter:drop-shadow(0 0 20px red);
-}
-#bossHp{ font-size:20px; color:red; }
-
-#terminal{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  z-index:30;
   display:flex;
-  background:#000;
-  border-top:1px solid #00ff9f;
+  gap:10px;
+  z-index:25;
 }
-#cmd{
-  flex:1;
-  background:black;
+
+.card{
+  width:90px;
+  height:120px;
+  background:#1a1a1a;
+  border:2px solid #00ff9f;
+  border-radius:10px;
   color:#00ff9f;
-  border:none;
-  outline:none;
-  padding:10px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  cursor:pointer;
+  transform:translateY(200px);
+  animation:draw 0.6s forwards;
 }
+
+@keyframes draw{
+  to{transform:translateY(0);}
+}
+
+.legendary{
+  border-color:gold;
+  color:gold;
+  box-shadow:0 0 10px gold;
+}
+
+.epic{
+  border-color:violet;
+  color:violet;
+}
+
+.common{
+  border-color:#00ff9f;
+}
+
+#winScreen{
+  position:fixed;
+  inset:0;
+  background:black;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  z-index:100;
+  text-align:center;
+}
+
+h1{color:#00ff9f;}
+
 </style>
 </head>
 
@@ -112,11 +164,7 @@ body{
 
 <div id="intro">
 <h1>💥 PROD CRASH</h1>
-<p>
-О нет… прод сломался.<br><br>
-🧠 Только SUPER ARTEEM может его починить.
-</p>
-<p>👉 Введите: <b>start</b></p>
+<p>Введи: start</p>
 </div>
 
 <div id="hud">
@@ -127,27 +175,23 @@ body{
 
 <div id="timerBox">⏱ 0</div>
 
-<div id="boss">
- 🐀 ОЛЬГА БОСС
- <div id="bossHp">❤️❤️❤️❤️❤️</div>
-</div>
-
 <div id="questionCard"></div>
 
-<div id="terminal">
-  <input id="cmd" placeholder="type command..." />
+<div id="hand"></div>
+
+<div id="winScreen">
+  <h1>🎉 ПОЗДРАВЛЯЕМ!</h1>
+  <p>SUPER ARTEEM ПОЧИНИЛ PROD</p>
+  <p>Ты прошёл все уровни и победил босса ❤️</p>
 </div>
 
 <script>
 
-/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
-
 const drops=Array(70).fill(1);
-
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
@@ -158,74 +202,46 @@ setInterval(()=>{
   });
 },50);
 
-let f=0,b=0;
 let run=false;
-let levelIndex=0;
-
-const levels=["junior","middle","senior"];
-const levelSpeed=[700,500,300];
-
+let level=0;
 let t=7;
-let bossHp=5;
-let qIndex=0;
+const levels=["junior","middle","senior"];
+const speed=[700,500,300];
 
-/* 🧠 PROGRAMMER HUMOR ANSWERS (UPDATED) */
-const questions=[
-  "А ты меня любишь?",
-  "А если я потолстею?",
-  "Я красивая?"
-];
+window.start=start;
 
-const options=[
-  [
-    "console.log('да') // true",
-    "if (love) return true",
-    "sudo love --force ❤️"
-  ],
-  [
-    "git commit -m 'люблю тебя даже с багами'",
-    "docker run love:latest",
-    "try { love++ } catch(e){ still love }"
-  ],
-  [
-    "SELECT * FROM girls WHERE beauty = 'infinite'",
-    "return you === bestGirl;",
-    "love.exe успешно запущен"
-  ]
-];
-
-window.start = startGame;
-
-function startGame(){
+function start(){
   document.getElementById("intro").style.display="none";
   document.getElementById("hud").style.display="flex";
   run=true;
-  spawn();
+  spawnCards();
   timer();
 }
 
-function spawn(){
+function spawnCards(){
+  const hand=document.getElementById("hand");
+
   setInterval(()=>{
     if(!run) return;
 
-    let e=document.createElement("div");
-    let type=Math.random()<0.5?"feature":"rat";
+    let card=document.createElement("div");
+    card.className="card";
 
-    e.className="entity "+type;
-    e.innerText=type==="feature"?"🐻":"🐀";
-    e.style.left=Math.random()*innerWidth+"px";
-    e.style.top=Math.random()*innerHeight+"px";
+    let r=Math.random();
+    if(r<0.1){card.classList.add("legendary");card.innerText="LEGENDARY\n🔥";}
+    else if(r<0.3){card.classList.add("epic");card.innerText="EPIC\n⚡";}
+    else{card.classList.add("common");card.innerText="COMMON\n🧩";}
 
-    e.onclick=()=>{
-      if(type==="feature") f++; else b++;
-      update();
-      e.remove();
+    card.onclick=()=>{
+      card.style.transform="scale(1.2) rotateY(180deg)";
+      setTimeout(()=>card.remove(),300);
     };
 
-    document.body.appendChild(e);
-    setTimeout(()=>e.remove(),2000);
+    hand.appendChild(card);
 
-  }, levelSpeed[levelIndex]);
+    if(hand.children.length>5){hand.removeChild(hand.firstChild);}
+
+  },1200);
 }
 
 function timer(){
@@ -233,93 +249,24 @@ function timer(){
     if(!run) return;
     t--;
     timerBox.innerText="⏱ "+t;
-    if(t<=0) startBoss();
+
+    if(t<=0){
+      level++;
+      if(level>=levels.length){
+        win();
+        return;
+      }
+      document.getElementById("level").innerText=levels[level];
+      t=7;
+    }
+
   },1000);
 }
 
-function update(){
-  left.innerText="🐻 "+f;
-  right.innerText="🐀 "+b;
-}
-
-function startBoss(){
+function win(){
   run=false;
-  document.getElementById("boss").style.display="block";
-  showQuestion();
+  document.getElementById("winScreen").style.display="flex";
 }
-
-function hitBoss(){
-  bossHp--;
-  document.getElementById("bossHp").innerText="❤️".repeat(Math.max(0,bossHp));
-  if(bossHp<=0) bossWin();
-}
-
-function showQuestion(){
-  const card=document.getElementById("questionCard");
-  card.style.display="block";
-  card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
-
-  options[qIndex].forEach(opt=>{
-    let div=document.createElement("div");
-    div.className="option";
-    div.innerText=opt;
-
-    div.onclick=()=>{
-      hitBoss();
-      qIndex++;
-
-      if(qIndex>=questions.length){
-        bossWin();
-        return;
-      }
-
-      card.innerHTML="";
-      showQuestion();
-    };
-
-    card.appendChild(div);
-  });
-}
-
-function bossWin(){
-  document.getElementById("questionCard").style.display="none";
-  document.getElementById("boss").style.display="none";
-
-  document.body.innerHTML+=`
-  <div id="end">
-    <div id="heart">❤️</div>
-    <div>LOVE ∞</div>
-    <div style="font-size:28px;margin-top:20px;">
-      🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉
-    </div>
-  </div>`;
-
-  const style=document.createElement("style");
-  style.innerHTML=`
-    #end{
-      position:fixed;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      background:black;
-      color:#00ff9f;
-      z-index:999;
-      font-family:monospace;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-/* TERMINAL */
-const cmd=document.getElementById("cmd");
-cmd.addEventListener("keydown",(e)=>{
-  if(e.key==="Enter"){
-    if(cmd.value.trim()==="start") startGame();
-    cmd.value="";
-  }
-});
 
 </script>
 
