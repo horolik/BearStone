@@ -136,19 +136,22 @@ h1 {
 <div id="intro">
   <h2>📘 DEBUG TRAINING</h2>
 
+  <p>Выбери сложность:</p>
+  <select id="difficulty">
+    <option value="junior">🟢 Junior</option>
+    <option value="middle" selected>🟡 Middle</option>
+    <option value="senior">🔴 Senior</option>
+  </select>
+
   <pre>
 🐻 Bear Debug System
 
-ЭТАПЫ:
-1. Лови:
-   🐻 — фичи (в прод)
-   🐀 — баги (фикс)
-   ☠️🐀 — опасные (2 клика)
+Лови:
+🐻 — фичи
+🐀 — баги
+☠️🐀 — опасные (2 клика)
 
-2. Сделай 5 фич
-3. Зарелизь систему 🚀
-
-Удачи, дев.
+Сделай релиз и не урони прод 😈
   </pre>
 
   <button id="startBtn">START DEBUG MODE</button>
@@ -158,9 +161,9 @@ h1 {
 <div id="app">
   <h1>🐻 Bear Debug System</h1>
 
-  <p id="stats">
-    🐻 Features: 0 | 🐀 Bugs fixed: 0
-  </p>
+  <p id="stats">🐻 Features: 0 | 🐀 Bugs fixed: 0</p>
+  <p id="timer">⏳ Time: 30</p>
+  <p id="lead"></p>
 
   <button id="releaseBtn" style="display:none;">
     🚀 RELEASE TO PROD
@@ -172,9 +175,31 @@ h1 {
 <script>
 
 /* STATE */
-let started = false;
 let features = 0;
 let bugs = 0;
+let missedRats = 0;
+
+let interval;
+let timerInterval;
+
+let timeLeft = 30;
+let maxMissed = 3;
+
+let settings = {};
+
+const difficultyConfig = {
+  junior: { spawnRate: 900, dangerChance: 0.1, featureGoal: 3 },
+  middle: { spawnRate: 700, dangerChance: 0.2, featureGoal: 5 },
+  senior: { spawnRate: 400, dangerChance: 0.35, featureGoal: 8 }
+};
+
+const leadPhrases = [
+  "Где фичи?",
+  "Почему столько багов?",
+  "Мы горим 🔥",
+  "Это точно протестировано?",
+  "Клиент уже пишет..."
+];
 
 /* MATRIX */
 const canvas = document.getElementById("matrix");
@@ -254,25 +279,52 @@ input.addEventListener("keydown", e=>{
   }
 });
 
-/* INTRO */
+/* START */
 document.getElementById("startBtn").onclick = ()=>{
+  const level = document.getElementById("difficulty").value;
+  settings = difficultyConfig[level];
+
   document.getElementById("intro").style.display = "none";
+
   startBugMode();
+  startTimer();
+  startLead();
 };
+
+/* TIMER */
+function startTimer(){
+  timeLeft = 30;
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    document.getElementById("timer").innerText = `⏳ Time: ${timeLeft}`;
+
+    if(timeLeft <= 0){
+      gameOver("⏳ Время вышло");
+    }
+  }, 1000);
+}
+
+/* LEAD */
+function startLead(){
+  setInterval(()=>{
+    const msg = leadPhrases[Math.floor(Math.random()*leadPhrases.length)];
+    document.getElementById("lead").innerText = "🧑‍💼 " + msg;
+  }, 4000);
+}
 
 /* STATS */
 function updateStats(){
   document.getElementById("stats").innerText =
-    `🐻 Features: ${features} | 🐀 Bugs fixed: ${bugs}`;
+    `🐻 Features: ${features}/${settings.featureGoal} | 🐀 Bugs fixed: ${bugs}`;
 
-  if(features >= 5){
+  if(features >= settings.featureGoal){
     document.getElementById("releaseBtn").style.display = "block";
   }
 }
 
 /* SPAWN */
 function startBugMode(){
-  interval = setInterval(spawnEntity, 700);
+  interval = setInterval(spawnEntity, settings.spawnRate);
 }
 
 function spawnEntity(){
@@ -283,7 +335,7 @@ function spawnEntity(){
 
   if(rand > 0.6){
     type = "feature";
-  } else if(rand > 0.2){
+  } else if(rand > settings.dangerChance){
     type = "rat";
   } else {
     type = "danger";
@@ -323,7 +375,17 @@ function spawnEntity(){
 
   document.body.appendChild(entity);
 
-  setTimeout(()=>entity.remove(), 2500);
+  setTimeout(()=>{
+    if(document.body.contains(entity)){
+      if(type === "rat" || type === "danger"){
+        missedRats++;
+        if(missedRats >= maxMissed){
+          gameOver("💣 Прод упал из-за багов");
+        }
+      }
+      entity.remove();
+    }
+  }, 2500);
 }
 
 /* RELEASE */
@@ -331,19 +393,40 @@ document.getElementById("releaseBtn").onclick = ()=>{
   startGame();
 };
 
-/* FINAL */
-function startGame(){
-  started = true;
+/* GAME OVER */
+function gameOver(reason){
+  clearInterval(interval);
+  clearInterval(timerInterval);
 
   document.getElementById("app").style.display = "block";
 
   document.getElementById("log").innerText =
-`🚀 РЕЛИЗ УСПЕШЕН
+`${reason}
 
 🐻 Фичи: ${features}
-🐀 Баги пофиксены: ${bugs}
+🐀 Баги: ${bugs}
 
-Прод стабилен.`;
+💀 Релиз провален.`;
+}
+
+/* FINAL */
+function startGame(){
+  clearInterval(interval);
+  clearInterval(timerInterval);
+
+  document.getElementById("app").style.display = "block";
+
+  let result = bugs >= features
+    ? "📉 ПЛОХОЙ РЕЛИЗ"
+    : "🚀 УСПЕШНЫЙ РЕЛИЗ";
+
+  document.getElementById("log").innerText =
+`${result}
+
+🐻 Фичи: ${features}
+🐀 Баги: ${bugs}
+
+${bugs >= features ? "Клиент недоволен." : "Прод стабилен."}`;
 }
 
 </script>
