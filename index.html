@@ -13,12 +13,6 @@ body {
   overflow: hidden;
 }
 
-#matrix {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
-
 #hud {
   position: fixed;
   top: 10px;
@@ -27,334 +21,144 @@ body {
   display: flex;
   justify-content: space-between;
   font-size: 20px;
-  z-index: 10;
 }
 
-#lead {
-  position: fixed;
-  bottom: 10px;
-  left: 20px;
-  z-index: 10;
-  max-width: 60%;
-}
-
-#terminal {
-  position: fixed;
-  inset: 0;
-  background: black;
-  color: #00ff9f;
-  padding: 20px;
-  z-index: 3;
-}
-
-#intro {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: black;
-  padding: 20px;
-  z-index: 4;
-}
-
-#app {
-  display: none;
-  padding: 20px;
-  z-index: 2;
-}
+#app { padding: 20px; }
 
 .bug {
   position: absolute;
-  font-size: 48px;
+  font-size: 42px;
   cursor: pointer;
-  z-index: 5;
-  user-select: none;
 }
 
 .feature { color: #00ff9f; }
 .rat { color: #ff4d4d; }
 .danger { filter: drop-shadow(0 0 10px red); }
 
-@keyframes shake {
-  0% { transform: translate(0,0); }
-  25% { transform: translate(5px,-5px); }
-  50% { transform: translate(-5px,5px); }
-  75% { transform: translate(5px,5px); }
-  100% { transform: translate(0,0); }
-}
-.shake { animation: shake 0.2s infinite; }
-
 </style>
 </head>
 
 <body>
 
-<canvas id="matrix"></canvas>
-
 <div id="hud">
-  <div id="features">🐻 0</div>
-  <div id="bugs">🐀 0</div>
-  <div id="timer">⏳ 0</div>
-</div>
-
-<div id="terminal">
-Boot...<br>
-Loading system...<br>
-OK<br><br>
-Press START
-</div>
-
-<div id="intro">
-<h2>DEBUG SYSTEM</h2>
-
-<select id="diff">
-  <option value="junior">Junior</option>
-  <option value="middle" selected>Middle</option>
-  <option value="senior">Senior</option>
-</select>
-
-<button id="start">START</button>
+<div id="features">🐻 0</div>
+<div id="bugs">🐀 0</div>
+<div id="timer">⏳ 30</div>
 </div>
 
 <div id="app">
-  <div id="lead"></div>
-  <button id="release" style="display:none;">🚀 RELEASE</button>
-  <div id="log"></div>
+<button id="start">START</button>
+<div id="log"></div>
 </div>
 
 <script>
 
 /* ===== STATE ===== */
-let features=0, bugs=0, missed=0;
-let time=0;
-let settings={};
-let gameRunning=false;
+let features = 0;
+let bugs = 0;
 
-let lastTime=0;
-let spawnAcc=0;
+let gameRunning = false;
+let startTime = 0;
 
-/* 🔥 ЖЁСТКИЙ КАП — главное исправление */
-const MAX_ENTITIES = 18;
+const GAME_DURATION = 30000; // 30 сек
+const MAX_ENTITIES = 20;
+
 const entities = [];
 
-/* интервалы */
-let timerInterval=null;
-let leadInterval=null;
-
-/* CONFIG */
-const cfg={
- junior:{spawn:900,danger:0.08,goal:4,time:40,miss:5},
- middle:{spawn:600,danger:0.18,goal:6,time:30,miss:4},
- senior:{spawn:380,danger:0.3,goal:9,time:22,miss:3}
-};
-
-/* MATRIX */
-const c=document.getElementById("matrix");
-const x=c.getContext("2d");
-c.width=innerWidth;
-c.height=innerHeight;
-
-const drops=Array(80).fill(1);
-
-setInterval(()=>{
-  x.fillStyle="rgba(0,0,0,0.06)";
-  x.fillRect(0,0,c.width,c.height);
-  x.fillStyle="#00ff9f";
-
-  drops.forEach((y,i)=>{
-    x.fillText(Math.random()>0.5?0:1,i*16,y*16);
-    drops[i]=y*16>c.height?0:y+1;
-  });
-},50);
-
-/* ===== BOOT ===== */
-window.onload=()=>{
-  setTimeout(()=>{
-    document.getElementById("terminal").style.display="none";
-    document.getElementById("intro").style.display="block";
-  },800);
-};
-
 /* ===== START ===== */
-document.getElementById("start").onclick=()=>{
+start.onclick = () => {
+  reset();
 
-  stopAll();
+  gameRunning = true;
+  startTime = performance.now();
 
-  settings=cfg[diff.value];
-  time=settings.time;
-
-  features=0;
-  bugs=0;
-  missed=0;
-
-  document.getElementById("log").innerText="";
-  document.body.classList.remove("shake");
-
-  document.getElementById("intro").style.display="none";
-  document.getElementById("app").style.display="block";
-
-  gameRunning=true;
-
-  startTimer();
-  startLead();
-
-  lastTime=performance.now();
   requestAnimationFrame(loop);
 };
 
 /* ===== LOOP ===== */
-function loop(t){
-  if(!gameRunning) return;
+function loop(now) {
+  if (!gameRunning) return;
 
-  const dt=t-lastTime;
-  lastTime=t;
+  const elapsed = now - startTime;
+  const timeLeft = Math.max(0, Math.ceil((GAME_DURATION - elapsed) / 1000));
 
-  spawnAcc += dt;
+  timer.innerText = "⏳ " + timeLeft;
 
-  /* ❗ УБРАН РАЗГОН СПАВНА (главный фикс) */
-  const spawnDelay = settings.spawn;
-
-  if(spawnAcc > spawnDelay){
-    spawnAcc = 0;
-    spawnEntity();
+  // спавн
+  if (entities.length < MAX_ENTITIES && Math.random() < 0.05) {
+    spawn();
   }
 
-  const now = Date.now();
-
-  for(let i=entities.length-1;i>=0;i--){
+  // удаление старых
+  for (let i = entities.length - 1; i >= 0; i--) {
     const e = entities[i];
-
-    if(!document.body.contains(e.el)){
-      entities.splice(i,1);
-      continue;
-    }
-
-    if(now - e.born > 2200){
-      if(e.type !== "feature"){
-        missed++;
-        shake();
-        if(missed >= settings.miss) gameOver("💣 PROD DOWN");
-      }
+    if (now - e.born > 2500) {
       e.el.remove();
-      entities.splice(i,1);
+      entities.splice(i, 1);
     }
+  }
+
+  // конец строго через 30 сек
+  if (elapsed >= GAME_DURATION) {
+    finish();
+    return;
   }
 
   requestAnimationFrame(loop);
 }
 
 /* ===== SPAWN ===== */
-function spawnEntity(){
+function spawn() {
+  const el = document.createElement("div");
 
-  /* ❗ ЖЁСТКИЙ БЛОК ПЕРЕГРУЗА */
-  if(entities.length >= MAX_ENTITIES) return;
+  const r = Math.random();
+  let type = r > 0.6 ? "feature" : (r > 0.2 ? "rat" : "danger");
 
-  const e=document.createElement("div");
+  el.className = "bug " + type;
+  el.innerText = type === "feature" ? "🐻" : "🐀";
 
-  const r=Math.random();
-  let type = r>0.6 ? "feature" : (r>settings.danger ? "rat" : "danger");
+  el.style.left = Math.random() * innerWidth + "px";
+  el.style.top = Math.random() * innerHeight + "px";
 
-  e.className="bug "+type;
-  e.innerText = type==="feature" ? "🐻" : "🐀";
-
-  e.style.left = (Math.random()*innerWidth)+"px";
-  e.style.top = (Math.random()*innerHeight)+"px";
-
-  let clicks=0;
-
-  e.onclick=()=>{
-    clicks++;
-
-    if(type==="danger" && clicks<2){
-      e.style.transform="scale(1.3)";
-      return;
-    }
-
-    if(type==="feature") features++;
+  el.onclick = () => {
+    if (type === "feature") features++;
     else bugs++;
 
     update();
-    e.remove();
+    el.remove();
   };
 
-  document.body.appendChild(e);
-  entities.push({el:e,type,born:Date.now()});
-}
-
-/* ===== TIMER ===== */
-function startTimer(){
-  clearInterval(timerInterval);
-
-  timerInterval=setInterval(()=>{
-    if(!gameRunning) return;
-
-    time--;
-    timer.innerText="⏳ "+time;
-
-    if(time<=0) finish();
-
-  },1000);
-}
-
-/* ===== LEAD ===== */
-function startLead(){
-  clearInterval(leadInterval);
-
-  leadInterval=setInterval(()=>{
-    if(!gameRunning) return;
-
-    lead.innerText = bugs>features
-      ? "❌ BUGS > FEATURES"
-      : "🧑‍💼 SYSTEM OK";
-
-  },2000);
+  document.body.appendChild(el);
+  entities.push({ el, born: performance.now() });
 }
 
 /* ===== UPDATE ===== */
-function update(){
-  featuresEl.innerText="🐻 "+features;
-  bugsEl.innerText="🐀 "+bugs;
-
-  if(features>=settings.goal){
-    release.style.display="block";
-  }
+function update() {
+  featuresEl.innerText = "🐻 " + features;
+  bugsEl.innerText = "🐀 " + bugs;
 }
 
-/* ===== EFFECT ===== */
-function shake(){
-  document.body.classList.add("shake");
-  setTimeout(()=>document.body.classList.remove("shake"),250);
-}
+/* ===== RESET ===== */
+function reset() {
+  features = 0;
+  bugs = 0;
 
-/* ===== STOP ===== */
-function stopAll(){
-  gameRunning=false;
+  update();
+  log.innerText = "";
 
-  clearInterval(timerInterval);
-  clearInterval(leadInterval);
-
-  entities.length=0;
-  document.querySelectorAll(".bug").forEach(e=>e.remove());
-}
-
-/* ===== GAME OVER ===== */
-function gameOver(msg){
-  stopAll();
-  document.body.classList.add("shake");
-
-  log.innerText = msg+"\n🐻 "+features+"\n🐀 "+bugs;
+  entities.forEach(e => e.el.remove());
+  entities.length = 0;
 }
 
 /* ===== FINISH ===== */
-function finish(){
-  stopAll();
+function finish() {
+  gameRunning = false;
 
   log.innerText =
-    (bugs>features?"📉 FAIL":"🚀 SUCCESS")+
-    "\n🐻 "+features+
-    "\n🐀 "+bugs;
+    (bugs > features ? "📉 FAIL" : "🚀 SUCCESS") +
+    "\n🐻 " + features +
+    "\n🐀 " + bugs;
 }
-
-release.onclick=finish;
 
 </script>
 
