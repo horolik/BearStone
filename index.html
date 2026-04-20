@@ -76,6 +76,7 @@ body {
   font-size: 48px;
   cursor: pointer;
   z-index: 5;
+  user-select: none;
 }
 
 .feature { color: #00ff9f; }
@@ -83,8 +84,8 @@ body {
 .danger { filter: drop-shadow(0 0 10px red); }
 
 /* ANIM */
-.fly-right { animation: right 0.5s forwards; }
-.fly-left { animation: left 0.5s forwards; }
+.fly-right { animation: right 0.4s forwards; }
+.fly-left { animation: left 0.4s forwards; }
 
 @keyframes right {
   to { transform: translateX(300px) scale(0.5); opacity: 0; }
@@ -117,7 +118,7 @@ body {
 </div>
 
 <div id="terminal">
-  <div id="terminalText"></div>
+  <div id="terminalText">Boot...\nType START</div>
 </div>
 
 <div id="intro">
@@ -140,22 +141,25 @@ body {
 
 <script>
 
-/* ===== STATE ===== */
+/* ================= STATE ================= */
 let features=0, bugs=0, missed=0;
 let time=0;
 let settings={};
-
 let gameRunning=false;
 
-let spawnLoopId=null;
+/* LOOP CONTROL */
+let lastTime=0;
+let spawnAcc=0;
+
+/* IDS */
 let timerId=null;
 let leadId=null;
 
-/* ===== CONFIG ===== */
+/* CONFIG */
 const cfg={
- junior:{spawn:850,danger:0.08,goal:4,time:40,miss:5},
+ junior:{spawn:900,danger:0.08,goal:4,time:40,miss:5},
  middle:{spawn:600,danger:0.18,goal:6,time:30,miss:4},
- senior:{spawn:380,danger:0.30,goal:9,time:22,miss:3}
+ senior:{spawn:380,danger:0.3,goal:9,time:22,miss:3}
 };
 
 const phrases=[
@@ -170,40 +174,26 @@ const code=[
 "try{release()}catch(e){}"
 ];
 
-/* ===== MATRIX ===== */
+/* ================= MATRIX ================= */
 const c=document.getElementById("matrix");
 const x=c.getContext("2d");
-c.width=innerWidth;c.height=innerHeight;
+c.width=innerWidth;
+c.height=innerHeight;
 
-const d=Array(120).fill(1);
+const drops=Array(100).fill(1);
 
 setInterval(()=>{
-x.fillStyle="rgba(0,0,0,0.05)";
-x.fillRect(0,0,c.width,c.height);
-x.fillStyle="#00ff9f";
+  x.fillStyle="rgba(0,0,0,0.05)";
+  x.fillRect(0,0,c.width,c.height);
+  x.fillStyle="#00ff9f";
 
-d.forEach((y,i)=>{
-x.fillText(Math.random()>0.5?0:1,i*14,y*14);
-d[i]=y*14>c.height?0:y+1;
-});
+  drops.forEach((y,i)=>{
+    x.fillText(Math.random()>0.5?0:1,i*14,y*14);
+    drops[i]=y*14>c.height?0:y+1;
+  });
 },40);
 
-/* ===== TERMINAL ===== */
-document.getElementById("terminalText").innerText =
-"Boot...\nType START";
-
-/* ===== CLEANUP ===== */
-function stopAll(){
-  gameRunning=false;
-
-  clearTimeout(spawnLoopId);
-  clearInterval(timerId);
-  clearInterval(leadId);
-
-  document.querySelectorAll(".bug").forEach(e=>e.remove());
-}
-
-/* ===== START ===== */
+/* ================= START ================= */
 document.getElementById("start").onclick=()=>{
   stopAll();
 
@@ -219,67 +209,72 @@ document.getElementById("start").onclick=()=>{
 
   gameRunning=true;
 
-  spawn();
-  timer();
-  lead();
+  startTimer();
+  startLead();
+
+  lastTime=performance.now();
+  requestAnimationFrame(loop);
 };
 
-/* ===== SPAWN (SAFE LOOP) ===== */
-function spawn(){
+/* ================= MAIN LOOP ================= */
+function loop(t){
   if(!gameRunning) return;
 
-  spawnEntity();
+  const dt=t-lastTime;
+  lastTime=t;
+
+  spawnAcc+=dt;
 
   const speed=1+(1-time/settings.time);
   const delay=settings.spawn/speed;
 
-  spawnLoopId=setTimeout(spawn,delay);
+  if(spawnAcc>delay){
+    spawnAcc=0;
+    spawnEntity();
+  }
+
+  requestAnimationFrame(loop);
 }
 
-/* ===== ENTITY ===== */
+/* ================= SPAWN ================= */
 function spawnEntity(){
   const e=document.createElement("div");
 
   const r=Math.random();
   let type;
 
-  if(r>0.6)type="feature";
-  else if(r>settings.danger)type="rat";
+  if(r>0.6) type="feature";
+  else if(r>settings.danger) type="rat";
   else type="danger";
 
   e.className="bug "+type;
-  e.innerText=type=="feature"?"🐻":"🐀";
+  e.innerText=type==="feature"?"🐻":"🐀";
 
   e.style.left=Math.random()*innerWidth+"px";
   e.style.top=Math.random()*innerHeight+"px";
 
-  let c=0;
+  let clicks=0;
 
   e.onclick=()=>{
-    c++;
+    clicks++;
 
-    if(type=="danger" && c<2){
+    if(type==="danger" && clicks<2){
       e.style.transform="scale(1.4)";
       return;
     }
 
-    if(type=="feature"){
-      features++;
-      e.classList.add("fly-right");
-    } else {
-      bugs++;
-      e.classList.add("fly-left");
-    }
+    if(type==="feature") features++;
+    else bugs++;
 
     update();
-    setTimeout(()=>e.remove(),500);
+    e.remove();
   };
 
   document.body.appendChild(e);
 
   setTimeout(()=>{
     if(document.body.contains(e)){
-      if(type!="feature"){
+      if(type!=="feature"){
         missed++;
         shake();
 
@@ -292,37 +287,37 @@ function spawnEntity(){
   },2000);
 }
 
-/* ===== TIMER ===== */
-function timer(){
+/* ================= TIMER ================= */
+function startTimer(){
   timerId=setInterval(()=>{
     if(!gameRunning) return;
 
     time--;
     document.getElementById("timer").innerText="⏳ "+time;
 
-    if(time<=0){
-      finish();
-    }
+    if(time<=0) finish();
+
   },1000);
 }
 
-/* ===== LEAD ===== */
-function lead(){
+/* ================= LEAD ================= */
+function startLead(){
   leadId=setInterval(()=>{
     if(!gameRunning) return;
 
     let m;
 
-    if(bugs>features)m="❌ BUGS>FEATURES";
-    else if(time<10)m="⏳ DEADLINE";
-    else if(Math.random()<0.3)m=code[Math.random()*code.length|0];
+    if(bugs>features) m="❌ BUGS > FEATURES";
+    else if(time<10) m="⏳ DEADLINE";
+    else if(Math.random()<0.3) m=code[Math.random()*code.length|0];
     else m=phrases[Math.random()*phrases.length|0];
 
     document.getElementById("lead").innerText="🧑‍💼 "+m;
+
   },2500);
 }
 
-/* ===== HUD ===== */
+/* ================= HUD ================= */
 function update(){
   document.getElementById("features").innerText="🐻 "+features;
   document.getElementById("bugs").innerText="🐀 "+bugs;
@@ -332,31 +327,43 @@ function update(){
   }
 }
 
-/* ===== SHAKE ===== */
+/* ================= EFFECT ================= */
 function shake(){
   document.body.classList.add("shake");
   setTimeout(()=>document.body.classList.remove("shake"),300);
 }
 
-/* ===== GAME OVER ===== */
-function gameOver(r){
-  stopAll();
-  document.body.classList.add("shake");
+/* ================= STOP ================= */
+function stopAll(){
+  gameRunning=false;
 
-  document.getElementById("log").innerText=r+"\n💀 FAIL";
+  clearInterval(timerId);
+  clearInterval(leadId);
+
+  document.querySelectorAll(".bug").forEach(e=>e.remove());
 }
 
-/* ===== FINISH ===== */
+/* ================= GAME OVER ================= */
+function gameOver(msg){
+  stopAll();
+
+  document.body.classList.add("shake");
+
+  document.getElementById("log").innerText=
+msg+"\n💀 FAIL\n🐻 "+features+"\n🐀 "+bugs;
+}
+
+/* ================= FINISH ================= */
 function finish(){
   stopAll();
 
-  let r=bugs>features?"📉 FAIL":"🚀 OK";
+  let res=bugs>features?"📉 FAIL":"🚀 SUCCESS";
 
   document.getElementById("log").innerText=
-r+"\n🐻 "+features+"\n🐀 "+bugs;
+res+"\n🐻 "+features+"\n🐀 "+bugs;
 }
 
-/* ===== RELEASE ===== */
+/* RELEASE */
 document.getElementById("release").onclick=finish;
 
 </script>
