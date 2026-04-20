@@ -108,6 +108,36 @@ body{
 }
 
 h1{color:#00ff9f;}
+
+/* TERMINAL */
+#terminal{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:30;
+  display:flex;
+  background:#000;
+  border-top:1px solid #00ff9f;
+}
+
+#cmd{
+  flex:1;
+  background:black;
+  color:#00ff9f;
+  border:none;
+  outline:none;
+  padding:10px;
+  font-family:monospace;
+}
+
+#log{
+  position:fixed;
+  bottom:40px;
+  left:10px;
+  font-size:12px;
+  opacity:0.7;
+}
 </style>
 </head>
 
@@ -132,7 +162,7 @@ h1{color:#00ff9f;}
 4. Победи босса Ольгу ❤️
 </p>
 
-<p>👉 Открой консоль и введи: <b>start()</b></p>
+<p>👉 Введите в терминал: <b>start</b></p>
 </div>
 
 <div id="hud">
@@ -145,9 +175,14 @@ h1{color:#00ff9f;}
 
 <div id="questionCard"></div>
 
+<div id="log"></div>
+
+<div id="terminal">
+  <input id="cmd" placeholder="type command..." />
+</div>
+
 <script>
 
-/* ===== MATRIX ===== */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
@@ -163,24 +198,19 @@ setInterval(()=>{
   });
 },50);
 
-/* ===== SOUND (PLACEHOLDERS) ===== */
 const sDraw = new Audio("draw.mp3");
 const sLegendary = new Audio("legendary.mp3");
+function playDraw(){try{sDraw.play()}catch(e){}}
+function playLegendary(){try{sLegendary.play()}catch(e){}}
 
-function playDraw(){ try{ sDraw.play(); }catch(e){} }
-function playLegendary(){ try{ sLegendary.play(); }catch(e){} }
-
-/* ===== STATE ===== */
 let f=0,b=0;
 let run=false;
 let love=50;
-
 let levelIndex=0;
 const levels=["junior","middle","senior"];
 const levelSpeed=[700,500,300];
 let t=7;
 
-/* ===== START FROM CONSOLE ===== */
 window.start = startGame;
 
 function startGame(){
@@ -189,59 +219,41 @@ function startGame(){
   run=true;
   spawn();
   timer();
-  boss();
 }
 
-/* ===== LEVEL PROGRESSION ===== */
 function nextLevel(){
   levelIndex++;
-  if(levelIndex>=levels.length){
-    startBoss();
-    return;
-  }
+  if(levelIndex>=levels.length){startBoss();return;}
   document.getElementById("level").innerText=levels[levelIndex];
   t=7;
 }
 
-/* ===== SPAWN ===== */
 function spawn(){
   setInterval(()=>{
     if(!run) return;
-
     let e=document.createElement("div");
-    let r=Math.random();
-    let type=r<0.5?"feature":"rat";
-
+    let type=Math.random()<0.5?"feature":"rat";
     e.className="entity "+type;
     e.innerText=type==="feature"?"🐻":"🐀";
-
     e.style.left=Math.random()*innerWidth+"px";
     e.style.top=Math.random()*innerHeight+"px";
-
     e.onclick=()=>{
       playDraw();
       if(type==="feature") f++; else b++;
       update();
       e.remove();
     };
-
     document.body.appendChild(e);
     setTimeout(()=>e.remove(),2000);
-
   }, levelSpeed[levelIndex]);
 }
 
-/* ===== TIMER ===== */
 function timer(){
   setInterval(()=>{
     if(!run) return;
-
     t--;
-    document.getElementById("timerBox").innerText="⏱ "+t;
-
-    if(t<=0){
-      nextLevel();
-    }
+    timerBox.innerText="⏱ "+t;
+    if(t<=0) nextLevel();
   },1000);
 }
 
@@ -250,18 +262,9 @@ function update(){
   right.innerText="🐀 "+b;
 }
 
-/* ===== BOSS ===== */
-function startBoss(){
-  run=false;
-  showQuestion();
-}
+function startBoss(){run=false;showQuestion();}
 
-const questions=[
-"А ты меня любишь?",
-"А если я потолстею?",
-"Я красивая?"
-];
-
+const questions=["А ты меня любишь?","А если я потолстею?","Я красивая?"];
 const options=[
 ["❤️ да","💨 кальян","🍕 пицца"],
 ["❤️ конечно","😎 ты фича","💨 кальян"],
@@ -274,12 +277,10 @@ function showQuestion(){
   const card=document.getElementById("questionCard");
   card.style.display="block";
   card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
-
   options[qIndex].forEach(opt=>{
     let div=document.createElement("div");
     div.className="option flip";
     div.innerText=opt;
-
     div.onclick=()=>onAnswer();
     card.appendChild(div);
   });
@@ -287,35 +288,27 @@ function showQuestion(){
 
 function onAnswer(){
   playLegendary();
-  love+=10;
-  showHearts();
   qIndex++;
-
-  if(qIndex>=questions.length){
-    win();
-    return;
-  }
-
+  if(qIndex>=questions.length){win();return;}
   document.getElementById("questionCard").innerHTML="";
   showQuestion();
 }
 
-function showHearts(){
-  for(let i=0;i<6;i++){
-    let h=document.createElement("div");
-    h.className="heart";
-    h.innerText="❤️";
-    h.style.left=Math.random()*innerWidth+"px";
-    h.style.top=(innerHeight/2)+"px";
-    document.body.appendChild(h);
-    setTimeout(()=>h.remove(),1000);
-  }
+function win(){
+  document.getElementById("questionCard").innerHTML="🏆 ARTEEM WIN<br>LOVE MAX ❤️";
 }
 
-function win(){
-  document.getElementById("questionCard").innerHTML=
-  "🏆 ARTEEM WIN<br>LOVE MAX ❤️";
-}
+/* TERMINAL */
+const cmd=document.getElementById("cmd");
+const log=document.getElementById("log");
+cmd.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"){
+    let v=cmd.value.trim();
+    log.innerText="> "+v;
+    if(v==="start") startGame();
+    cmd.value="";
+  }
+});
 
 </script>
 
