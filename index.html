@@ -3,7 +3,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Artem vs Olga — Debug Hearthstone</title>
+<title>Artem Debug → Olga Boss Fight</title>
 
 <style>
 body{
@@ -37,7 +37,7 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
-  font-size:20px;
+  font-size:22px;
   z-index:5;
 }
 
@@ -47,7 +47,7 @@ body{
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:22px;
+  font-size:24px;
   z-index:5;
 }
 
@@ -55,7 +55,6 @@ body{
   position:fixed;
   bottom:10px;
   left:20px;
-  max-width:60%;
   z-index:5;
 }
 
@@ -64,14 +63,14 @@ body{
   position:absolute;
   font-size:64px;
   cursor:pointer;
-  transition:.4s;
+  transition:.3s;
 }
 
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
 .super{filter:drop-shadow(0 0 10px red);}
 
-/* ===== BOSS AREA ===== */
+/* BOSS */
 #boss{
   position:fixed;
   bottom:0;
@@ -79,39 +78,34 @@ body{
   right:0;
   height:220px;
   background:#111;
-  border-top:2px solid #ff4d4d;
+  border-top:2px solid red;
   display:none;
   align-items:center;
   padding:10px;
-  z-index:6;
+  z-index:10;
 }
 
 #boss img{
-  width:140px;
-  height:140px;
+  width:120px;
+  height:120px;
   border-radius:50%;
   margin-right:20px;
-}
-
-#bossText{
-  font-size:18px;
 }
 
 /* CARDS */
 .card{
   position:absolute;
   width:160px;
-  height:110px;
+  height:120px;
   background:#222;
   border:2px solid gold;
   border-radius:10px;
-  color:white;
-  padding:10px;
-  cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
   text-align:center;
+  color:white;
+  cursor:pointer;
 }
 
 /* LEGEND */
@@ -142,14 +136,15 @@ body{
 <canvas id="matrix"></canvas>
 
 <div id="console">
-> SYSTEM ERROR 🐀<br>
-> Прод атакован багами<br><br>
+> SYSTEM CRASH 🐀<br>
+> прод заражён багами<br><br>
 
-> 🐻 = фичи → вправо<br>
-> 🐀 = баги → влево<br>
-> 🔥 = супер-крыса (−2)<br><br>
+> 🐻 фичи → вправо<br>
+> 🐀 баги → влево<br>
+> 🔥 супер-крыса = -2<br><br>
 
-> Введи: start / старт<br>
+> Введите: start / старт<br>
+
 <input id="cmd" autofocus>
 <div id="out"></div>
 </div>
@@ -163,25 +158,24 @@ body{
 <div id="level"></div>
 <div id="info"></div>
 
-<div id="legend">💨 LEGENDARY КАЛЬЯН</div>
-
-<!-- BOSS PANEL -->
 <div id="boss">
-  <img src="https://i.imgur.com/8QfQ2dZ.png" alt="Olga Rat Boss">
-  <div id="bossText">👩 Ольга: Я задаю вопросы... ты справишься?</div>
+  <img src="https://i.imgur.com/8QfQ2dZ.png">
+  <div id="bossText">👩 Ольга: Ответь на мои вопросы...</div>
 </div>
 
+<div id="legend">💨 LEGENDARY КАЛЬЯН</div>
 <div id="victory"></div>
 
 <script>
 
 /* MATRIX */
-const c=matrix;
-const ctx=c.getContext("2d");
-c.width=innerWidth;
-c.height=innerHeight;
+const c = document.getElementById("matrix");
+const ctx = c.getContext("2d");
 
-const drops=Array(80).fill(1);
+c.width = innerWidth;
+c.height = innerHeight;
+
+const drops = Array(80).fill(1);
 
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -195,71 +189,75 @@ setInterval(()=>{
 },50);
 
 /* STATE */
-let features=0, bugs=0;
-let time=0;
-let levelIndex=0;
-let running=false;
+let f=0,b=0,t=0;
+let lvl=0;
+let run=false;
 
+/* LEVELS */
 const levels=[
   {name:"JUNIOR",time:15,goal:4},
   {name:"MIDDLE",time:20,goal:6},
   {name:"SENIOR",time:25,goal:8}
 ];
 
-/* START */
-cmd.onkeydown=(e)=>{
-  if(e.key==="Enter"){
-    const val=cmd.value.trim().toLowerCase();
+/* INPUT (ГЛАВНЫЙ ФИКС) */
+document.getElementById("cmd").addEventListener("keydown",(e)=>{
+  if(e.key!=="Enter") return;
 
-    if(val==="start"||val==="старт"){
-      console.style.display="none";
-      hud.style.display="flex";
-      startLevel();
-    }else{
-      out.innerHTML+="<br>start / старт";
-    }
+  const v=e.target.value.trim().toLowerCase();
+  document.getElementById("out").innerHTML += "<br>> "+v;
 
-    cmd.value="";
+  if(v==="start"||v==="старт"){
+    start();
+  }else{
+    document.getElementById("out").innerHTML += "<br>нужно: start";
   }
-};
 
-/* LEVELS */
-function startLevel(){
-  if(levelIndex>=levels.length){
-    showLead();
+  e.target.value="";
+});
+
+/* START */
+function start(){
+  document.getElementById("console").style.display="none";
+  document.getElementById("hud").style.display="flex";
+  nextLevel();
+}
+
+/* LEVEL */
+function nextLevel(){
+
+  if(lvl>=levels.length){
+    startBoss();
     return;
   }
 
-  const l=levels[levelIndex];
+  let L=levels[lvl];
 
-  features=0;
-  bugs=0;
-  time=l.time;
-  running=true;
+  f=0;b=0;t=L.time;
+  run=true;
 
-  level.innerText="LEVEL: "+l.name;
-  info.innerText="Чини систему";
+  document.getElementById("level").innerText=L.name;
+  document.getElementById("info").innerText="фикс багов";
 
   spawn();
-  timer(l);
+  timer(L);
 }
 
 /* SPAWN */
 function spawn(){
-  const int=setInterval(()=>{
-    if(!running) return clearInterval(int);
+  setInterval(()=>{
+    if(!run) return;
 
-    const el=document.createElement("div");
+    let el=document.createElement("div");
+    let r=Math.random();
 
-    let type=Math.random();
-
-    if(type<0.1) type="super";
-    else if(type<0.5) type="rat";
-    else type="feature";
+    let type =
+      r<0.1?"super":
+      r<0.5?"rat":"feature";
 
     el.className="entity "+type;
 
-    el.innerText=
+    el.innerText =
       type==="feature"?"🐻":
       type==="rat"?"🐀":"🐀🔥";
 
@@ -267,45 +265,48 @@ function spawn(){
     el.style.top=Math.random()*innerHeight+"px";
 
     el.onclick=()=>{
+
       if(type==="feature"){
-        features++;
-        el.style.transform="translateX(250px)";
-      }else if(type==="rat"){
-        bugs++;
-        el.style.transform="translateX(-250px)";
-      }else{
-        bugs+=2;
+        f++;
+        el.style.transform="translateX(200px)";
+      }
+      else if(type==="rat"){
+        b++;
+        el.style.transform="translateX(-200px)";
+      }
+      else{
+        b+=2;
       }
 
-      el.style.opacity="0";
+      el.style.opacity=0;
       setTimeout(()=>el.remove(),300);
 
       update();
     };
 
     document.body.appendChild(el);
-
     setTimeout(()=>el.remove(),2000);
 
   },600);
 }
 
 /* TIMER */
-function timer(l){
-  const t=setInterval(()=>{
-    if(!running) return clearInterval(t);
+function timer(L){
+  let i=setInterval(()=>{
 
-    time--;
-    timer.innerText="⏳ "+time;
+    if(!run) return clearInterval(i);
 
-    if(features>=l.goal){
-      running=false;
-      levelIndex++;
-      setTimeout(startLevel,1000);
+    t--;
+    document.getElementById("timer").innerText="⏳ "+t;
+
+    if(f>=L.goal){
+      run=false;
+      lvl++;
+      setTimeout(nextLevel,1000);
     }
 
-    if(time<=0){
-      running=false;
+    if(t<=0){
+      run=false;
       startBoss();
     }
 
@@ -314,49 +315,25 @@ function timer(l){
 
 /* UPDATE */
 function update(){
-  left.innerText="🐻 "+features;
-  right.innerText="🐀 "+bugs;
+  document.getElementById("left").innerText="🐻 "+f;
+  document.getElementById("right").innerText="🐀 "+b;
 }
 
-/* ===== TEAM LEAD ===== */
-function showLead(){
-  level.innerText="🏆 Артем — Team Lead";
-  info.innerText="Теперь начинается бой с боссом...";
-
-  setTimeout(startBoss,3000);
-}
-
-/* ===== BOSS FIGHT ===== */
+/* ===== BOSS ===== */
 let hpA=10;
 let hpO=12;
 
-const questions=[
-  "Почему прод не работает?",
-  "Что такое null pointer?",
-  "Почему всё сломалось после фикса?",
-  "Где тесты?",
-  "Кто это задеплоил?"
-];
-
-const answers=[
-  "Кальян всё исправит 💨",
-  "Это не баг, это фича 😎",
-  "Я проверил у себя — работает",
-  "Добавим тесты потом",
-  "Это legacy код"
-];
-
 function startBoss(){
 
-  boss.style.display="flex";
+  document.getElementById("boss").style.display="flex";
 
-  const spawn=setInterval(()=>{
-    if(hpO<=0||hpA<=0) return clearInterval(spawn);
+  setInterval(()=>{
 
-    const q=document.createElement("div");
+    if(hpO<=0||hpA<=0) return;
+
+    let q=document.createElement("div");
     q.className="card";
-
-    q.innerText="❓ "+questions[Math.floor(Math.random()*questions.length)];
+    q.innerText="❓ вопрос Ольги";
 
     q.style.left=Math.random()*innerWidth+"px";
     q.style.top=Math.random()*innerHeight+"px";
@@ -364,61 +341,46 @@ function startBoss(){
     q.onclick=()=>{
       hpO--;
 
-      spawnAnswer();
+      answer();
       updateBoss();
 
       q.remove();
     };
 
     document.body.appendChild(q);
+    setTimeout(()=>q.remove(),2500);
 
-    setTimeout(()=>q.remove(),3000);
-
-  },1200);
-
-  setInterval(()=>{
-    hpA--;
-    updateBoss();
-  },3000);
-
-  setInterval(()=>{
-    legend.style.display="flex";
-
-    setTimeout(()=>{
-      legend.style.display="none";
-      hpO-=4;
-      updateBoss();
-    },1000);
-
-  },7000);
+  },1000);
 }
 
-/* ANSWERS */
-function spawnAnswer(){
-  const a=document.createElement("div");
+/* ANSWER */
+function answer(){
+  let a=document.createElement("div");
   a.className="card";
-  a.innerText="💬 "+answers[Math.floor(Math.random()*answers.length)];
+  a.innerText="💬 ответ Артема";
 
   a.style.left=Math.random()*innerWidth+"px";
   a.style.top=Math.random()*innerHeight+"px";
 
   document.body.appendChild(a);
+
   setTimeout(()=>a.remove(),2000);
 }
 
 /* UPDATE BOSS */
 function updateBoss(){
-  left.innerText="🧑 "+hpA;
-  right.innerText="👩 "+hpO;
+
+  document.getElementById("left").innerText="🧑 "+hpA;
+  document.getElementById("right").innerText="👩 "+hpO;
 
   if(hpO<=0){
-    victory.style.display="flex";
-    victory.innerText="🏆 АРТЕМ ПОБЕДИЛ (Team Lead)";
+    document.getElementById("victory").style.display="flex";
+    document.getElementById("victory").innerText="🏆 АРТЕМ WIN (Team Lead)";
   }
 
   if(hpA<=0){
-    victory.style.display="flex";
-    victory.innerText="💀 ОЛЬГА ПОБЕДИЛА";
+    document.getElementById("victory").style.display="flex";
+    document.getElementById("victory").innerText="💀 ОЛЬГА WIN";
   }
 }
 
