@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM DEBUG MODE</title>
+<title>SUPER ARTEEM REBUILD</title>
 
 <style>
 body{
@@ -13,62 +13,53 @@ body{
   overflow:hidden;
 }
 
-#matrix{
-  position:fixed;
-  inset:0;
-  z-index:0;
-}
+/* MATRIX */
+canvas{position:fixed;inset:0;z-index:0}
 
+/* UI */
 #intro{
-  position:fixed;
-  inset:0;
-  padding:30px;
-  z-index:10;
+  position:fixed;inset:0;
   background:black;
+  padding:40px;
+  z-index:10;
 }
 
 #hud{
   position:fixed;
-  top:10px;
-  left:20px;
-  right:20px;
+  top:10px;left:20px;right:20px;
   display:none;
   justify-content:space-between;
-  font-size:20px;
   z-index:5;
 }
 
-#timerBox{
+#timer{
   position:fixed;
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:24px;
-  z-index:6;
+  font-size:22px;
 }
 
+/* ENTITIES */
 .entity{
   position:absolute;
-  font-size:60px;
+  font-size:50px;
   cursor:pointer;
+  animation:pop .2s ease;
 }
 
-.feature{color:#00ff9f;}
-.rat{color:#ff4d4d;}
-
-.option{
-  margin-top:10px;
-  padding:10px;
-  border:1px solid #00ff9f;
-  cursor:pointer;
-  transition:0.3s;
+@keyframes pop{
+  from{transform:scale(0.3);opacity:0}
+  to{transform:scale(1);opacity:1}
 }
 
-.option:hover{
-  background:#003322;
-}
+/* RARITY */
+.common{filter:none}
+.rare{filter:drop-shadow(0 0 10px cyan)}
+.legendary{filter:drop-shadow(0 0 15px gold)}
 
-#questionCard{
+/* CARD */
+.card{
   position:fixed;
   top:50%;
   left:50%;
@@ -76,271 +67,276 @@ body{
   width:420px;
   background:#111;
   border:2px solid gold;
-  border-radius:12px;
   padding:20px;
   text-align:center;
   display:none;
   z-index:20;
 }
 
-/* БОСС */
-#boss{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:80px;
-  text-align:center;
-  z-index:15;
-  display:none;
-  filter:drop-shadow(0 0 20px red);
+.flip{
+  animation:flip .6s ease;
 }
 
-#bossHp{
-  font-size:20px;
-  color:red;
+@keyframes flip{
+  0%{transform:translate(-50%,-50%) rotateY(0)}
+  50%{transform:translate(-50%,-50%) rotateY(90deg)}
+  100%{transform:translate(-50%,-50%) rotateY(0)}
 }
 
-#heart{
-  font-size:120px;
-  animation:beat 1s infinite;
+/* CARD DROP */
+.drop{
+  position:absolute;
+  font-size:40px;
+  animation:fly .8s ease forwards;
 }
 
-@keyframes beat{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.4);}
-  100%{transform:scale(1);}
+@keyframes fly{
+  0%{transform:translateY(200px);opacity:0}
+  50%{opacity:1}
+  100%{transform:translateY(-100px);opacity:0}
 }
 
 /* TERMINAL */
-#terminal{
+#cmd{
   position:fixed;
   bottom:0;
-  left:0;
-  right:0;
-  z-index:30;
-  display:flex;
-  background:#000;
-  border-top:1px solid #00ff9f;
-}
-
-#cmd{
-  flex:1;
+  width:100%;
   background:black;
   color:#00ff9f;
   border:none;
-  outline:none;
   padding:10px;
 }
 
-#log{
+/* END */
+#end{
   position:fixed;
-  bottom:40px;
-  left:10px;
-  font-size:12px;
-  opacity:0.7;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:black;
+  z-index:999;
+}
+
+#inf{
+  font-size:120px;
+  animation:spin 3s linear infinite;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
 }
 </style>
 </head>
 
 <body>
 
-<canvas id="matrix"></canvas>
+<canvas id="c"></canvas>
 
 <div id="intro">
 <h1>💥 PROD CRASH</h1>
-
-<p>
-О нет… прод сломался.<br><br>
-🧠 Только SUPER ARTEEM может его починить.
-</p>
-
-<p>
-👉 Введите в терминал: <b>start</b>
-</p>
+<p>Введите: <b>start</b></p>
 </div>
 
 <div id="hud">
-  <div id="left">🐻 0</div>
-  <div id="right">🐀 0</div>
-  <div id="level">junior</div>
+  <div id="good">🐻 0</div>
+  <div id="bad">🐀 0</div>
+  <div id="lvl">junior</div>
 </div>
 
-<div id="timerBox">⏱ 0</div>
+<div id="timer">⏱ 7</div>
 
-<!-- БОСС -->
-<div id="boss">
-  🐀 ОЛЬГА БОСС
-  <div id="bossHp">❤️❤️❤️❤️❤️</div>
-</div>
+<div id="card" class="card"></div>
 
-<div id="questionCard"></div>
+<input id="cmd" placeholder="command..." />
 
-<div id="log"></div>
-
-<div id="terminal">
-  <input id="cmd" placeholder="type command..." />
-</div>
+<!-- SOUNDS -->
+<audio id="sndDraw" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="sndLegendary" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
 <script>
 
-const c=document.getElementById("matrix");
+/* MATRIX */
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
-const drops=Array(70).fill(1);
+let d=Array(60).fill(1);
 
 setInterval(()=>{
-  ctx.fillStyle="rgba(0,0,0,0.05)";
-  ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#00ff9f";
-  drops.forEach((y,i)=>{
-    ctx.fillText(Math.random()>0.5?0:1,i*18,y*18);
-    drops[i]=y*18>c.height?0:y+1;
-  });
+ctx.fillStyle="rgba(0,0,0,0.05)";
+ctx.fillRect(0,0,c.width,c.height);
+ctx.fillStyle="#00ff9f";
+d.forEach((y,i)=>{
+ctx.fillText(Math.random()>0.5?0:1,i*20,y*20);
+d[i]=y*20>c.height?0:y+1;
+});
 },50);
 
-let f=0,b=0;
-let run=false;
-let levelIndex=0;
+/* STATE */
+let g=0,b=0,run=false;
+let level=0;
+let time=7;
+
+/* DATA */
 const levels=["junior","middle","senior"];
-const levelSpeed=[700,500,300];
-let t=7;
+const speed=[900,500,250];
 
-let bossHp = 5;
-let qIndex = 0;
-
-const questions=["А ты меня любишь?","А если я потолстею?","Я красивая?"];
-const options=[
-["❤️ да","💨 кальян","🍕 пицца"],
-["❤️ конечно","😎 ты фича","💨 кальян"],
-["❤️ ты лучшая","🍕 пицца","😎 люблю"]
+const q=[
+"А ты меня любишь?",
+"А если я баг?",
+"Я красивая?"
 ];
 
-window.start = startGame;
+const ans=[
+["да ❤️","нет 💀","пицца 🍕"],
+["конечно","ты фича","краш"],
+["лучше всех","ошибка","люблю"]
+];
 
-function startGame(){
-  document.getElementById("intro").style.display="none";
-  document.getElementById("hud").style.display="flex";
-  run=true;
-  spawn();
-  timer();
+/* START */
+cmd.onkeydown=e=>{
+if(e.key==="Enter"&&cmd.value==="start") start();
+cmd.value="";
+};
+
+function start(){
+intro.style.display="none";
+hud.style.display="flex";
+run=true;
+spawn();
+lvlLoop();
+timer();
 }
 
+/* LEVELS */
+function lvlLoop(){
+setInterval(()=>{
+if(!run) return;
+level++;
+if(level>2) return;
+
+lvl.innerText=levels[level];
+sndLegendary.play();
+
+time=7;
+},7000);
+}
+
+/* SPAWN */
 function spawn(){
-  setInterval(()=>{
-    if(!run) return;
-    let e=document.createElement("div");
-    let type=Math.random()<0.5?"feature":"rat";
-    e.className="entity "+type;
-    e.innerText=type==="feature"?"🐻":"🐀";
-    e.style.left=Math.random()*innerWidth+"px";
-    e.style.top=Math.random()*innerHeight+"px";
+setInterval(()=>{
+if(!run) return;
 
-    e.onclick=()=>{
-      if(type==="feature") f++; else b++;
-      update();
-      e.remove();
-    };
+let e=document.createElement("div");
+let type=Math.random()>0.5?"🐻":"🐀";
 
-    document.body.appendChild(e);
-    setTimeout(()=>e.remove(),2000);
-  }, levelSpeed[levelIndex]);
+e.className="entity "+rarity();
+e.innerText=type;
+
+e.style.left=Math.random()*innerWidth+"px";
+e.style.top=Math.random()*innerHeight+"px";
+
+e.onclick=()=>{
+sndDraw.play();
+dropCard();
+if(type==="🐻") g++; else b++;
+update();
+e.remove();
+};
+
+document.body.appendChild(e);
+setTimeout(()=>e.remove(),2000);
+
+},speed[level]);
 }
 
+/* RARITY */
+function rarity(){
+let r=Math.random();
+if(r<0.6) return "common";
+if(r<0.9) return "rare";
+return "legendary";
+}
+
+/* DROP CARD */
+function dropCard(){
+let d=document.createElement("div");
+d.className="drop";
+d.innerText=["COMMON","RARE","LEGENDARY"][Math.floor(Math.random()*3)];
+d.style.left=Math.random()*innerWidth+"px";
+d.style.bottom="0px";
+document.body.appendChild(d);
+setTimeout(()=>d.remove(),800);
+}
+
+/* TIMER */
 function timer(){
-  setInterval(()=>{
-    if(!run) return;
-    t--;
-    timerBox.innerText="⏱ "+t;
-    if(t<=0) startBoss();
-  },1000);
+setInterval(()=>{
+if(!run) return;
+time--;
+timer.innerText="⏱ "+time;
+if(time<=0) boss();
+},1000);
 }
 
+/* UI */
 function update(){
-  left.innerText="🐻 "+f;
-  right.innerText="🐀 "+b;
+good.innerText="🐻 "+g;
+bad.innerText="🐀 "+b;
 }
 
-function startBoss(){
-  run=false;
-  document.getElementById("boss").style.display="block";
-  showQuestion();
+/* BOSS */
+let i=0;
+function boss(){
+run=false;
+card.style.display="block";
+showQ();
 }
 
-function hitBoss(){
-  bossHp--;
-  document.getElementById("bossHp").innerText="❤️".repeat(Math.max(0,bossHp));
-  if(bossHp<=0) bossWin();
-}
+/* CARD */
+function showQ(){
+card.classList.add("flip");
 
-function showQuestion(){
-  const card=document.getElementById("questionCard");
-  card.style.display="block";
-  card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
+setTimeout(()=>{
+card.classList.remove("flip");
 
-  options[qIndex].forEach(opt=>{
-    let div=document.createElement("div");
-    div.className="option";
-    div.innerText=opt;
+card.innerHTML=
+"👩 Ольга<br><br>"+
+q[i]+
+"<br><br>😂 "+randomFunny();
 
-    div.onclick=()=>{
-      hitBoss();
-      qIndex++;
-
-      if(qIndex>=questions.length){
-        bossWin();
-        return;
-      }
-
-      card.innerHTML="";
-      showQuestion();
-    };
-
-    card.appendChild(div);
-  });
-}
-
-function bossWin(){
-  document.getElementById("questionCard").style.display="none";
-  document.getElementById("boss").style.display="none";
-
-  document.body.innerHTML+=`
-    <div id="end">
-      <div id="heart">❤️</div>
-      <div>LOVE ∞</div>
-      <div style="font-size:28px;margin-top:20px;">
-        🎉 С ДНЕМ РОЖДЕНИЯ АРТЕМ 🎉
-      </div>
-    </div>
-  `;
-
-  const style=document.createElement("style");
-  style.innerHTML=`
-    #end{
-      position:fixed;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      background:black;
-      color:#00ff9f;
-      z-index:999;
-      font-family:monospace;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-/* TERMINAL */
-const cmd=document.getElementById("cmd");
-cmd.addEventListener("keydown",(e)=>{
-  if(e.key==="Enter"){
-    if(cmd.value.trim()==="start") startGame();
-    cmd.value="";
-  }
+ans[i].forEach(a=>{
+let b=document.createElement("div");
+b.innerText=a;
+b.onclick=()=>{
+sndDraw.play();
+i++;
+if(i>=q.length) win();
+else showQ();
+};
+card.appendChild(b);
 });
+
+},300);
+}
+
+function randomFunny(){
+return [
+"я багнулся от любви",
+"сервер сказал: ОНА ТОП",
+"404: нормальный ответ"
+][Math.floor(Math.random()*3)];
+}
+
+/* WIN */
+function win(){
+document.body.innerHTML+=`
+<div id="end">
+<div id="inf">∞</div>
+<div>LOVE INFINITY</div>
+</div>`;
+}
 
 </script>
 
