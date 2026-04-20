@@ -13,16 +13,35 @@ body {
   overflow: hidden;
 }
 
-/* ================= SCREEN ================= */
+/* ================= SCREENS ================= */
 .screen {
+  display: none;
   position: absolute;
   width: 100%;
   height: 100%;
-  display: none;
 }
 .active { display: block; }
 
-/* ================= BOARD ================= */
+/* ================= TUTORIAL ================= */
+#tutorial {
+  padding: 30px;
+}
+
+/* ================= BUG HUNT ================= */
+.bug {
+  position: absolute;
+  font-size: 28px;
+  cursor: pointer;
+  animation: float 1s infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+/* ================= GAME ================= */
 #board {
   display: flex;
   justify-content: space-between;
@@ -34,16 +53,9 @@ body {
   border: 2px solid #00ff9f;
   padding: 10px;
   border-radius: 10px;
-  transition: 0.2s;
 }
 
-/* 💥 HIT EFFECT */
-.hit {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px red;
-}
-
-/* ================= HAND (HS STYLE) ================= */
+/* ================= HAND (HEARTHSTONE STYLE) ================= */
 #hand {
   position: fixed;
   bottom: -20px;
@@ -56,11 +68,11 @@ body {
   width: 120px;
   height: 160px;
   border: 1px solid #00ff9f;
-  background: rgba(0,255,159,0.05);
   margin: 5px;
   padding: 10px;
   cursor: pointer;
   transition: 0.2s;
+  background: rgba(0,255,159,0.05);
 }
 
 .card:hover {
@@ -68,46 +80,49 @@ body {
   border-color: white;
 }
 
-/* ✨ CARD PLAY ANIMATION */
-.card.playing {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(1.5);
-  z-index: 999;
-  transition: 0.3s;
-}
-
-/* 💥 SHAKE */
-@keyframes shake {
-  0% { transform: translate(0,0); }
-  25% { transform: translate(-5px,5px); }
-  50% { transform: translate(5px,-5px); }
-  75% { transform: translate(-5px,-5px); }
-  100% { transform: translate(0,0); }
-}
-
-.shake {
-  animation: shake 0.3s;
+/* ================= BOSS HIT ================= */
+.hit {
+  box-shadow: 0 0 20px red;
+  transform: scale(1.05);
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= GAME ================= -->
-<div id="game" class="screen active">
+<!-- ================= 1. TUTORIAL ================= -->
+<div id="tutorial" class="screen active">
+  <h1>🐻 BearStone</h1>
+
+  <h3>Инструкция:</h3>
+
+  <ul>
+    <li>🐻 Сначала ловишь баги (кликаешь)</li>
+    <li>🎯 Нужно 5 очков debug points</li>
+    <li>🃏 Потом открываются карты</li>
+    <li>💀 Босс — Toxic PM</li>
+    <li>🔥 Комбо: DEV + DEV + DEV</li>
+  </ul>
+
+  <button onclick="startBugHunt()">START DEBUG MODE</button>
+</div>
+
+<!-- ================= 2. BUG HUNT ================= -->
+<div id="bugScreen" class="screen"></div>
+
+<!-- ================= 3. GAME ================= -->
+<div id="game" class="screen">
 
   <div id="board">
-    <div class="hero" id="player">
+    <div class="hero">
       <h3>Artem</h3>
-      HP: <span id="php">20</span><br>
+      HP: <span id="hp">20</span><br>
       Mana: <span id="mana">1</span>
     </div>
 
     <div class="hero" id="boss">
       <h3>Toxic PM</h3>
-      HP: <span id="bhp">40</span><br>
+      HP: <span id="bhp">40</span>
     </div>
   </div>
 
@@ -121,17 +136,88 @@ body {
 const Game = {
   hp: 20,
   mana: 1,
-  bossHp: 40
+  bossHp: 40,
+  bugs: 0
 };
 
-/* ================= CARDS ================= */
+/* ================= SCREENS ================= */
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+/* ================= 1. BUG HUNT ================= */
+function startBugHunt(){
+  show("bugScreen");
+
+  const screen = document.getElementById("bugScreen");
+
+  let interval = setInterval(()=>{
+
+    const bug = document.createElement("div");
+    bug.className = "bug";
+    bug.innerText = "🐻";
+    bug.style.left = Math.random()*window.innerWidth + "px";
+    bug.style.top = Math.random()*window.innerHeight + "px";
+
+    bug.onclick = ()=>{
+      Game.bugs++;
+      bug.remove();
+
+      if(Game.bugs >= 5){
+        clearInterval(interval);
+        startGame();
+      }
+    };
+
+    screen.appendChild(bug);
+
+    setTimeout(()=>bug.remove(), 1500);
+
+  }, 500);
+}
+
+/* ================= 2. CARDS ================= */
 const Cards = [
-  { name:"Bug Fix", cost:1, dmg:2 },
-  { name:"Hotfix", cost:2, dmg:4 },
-  { name:"Shield", cost:2, heal:3 }
+  {
+    name:"Bug Fix",
+    cost:1,
+    type:"DEV",
+    play(){ Game.bossHp -= 2; }
+  },
+  {
+    name:"Hotfix",
+    cost:2,
+    type:"DEV",
+    play(){ Game.bossHp -= 4; }
+  },
+  {
+    name:"Shield",
+    cost:2,
+    type:"INFRA",
+    play(){ Game.hp += 3; }
+  }
 ];
 
-/* ================= UI ================= */
+/* ================= COMBO ================= */
+let history = [];
+
+function combo(type){
+  history.push(type);
+  if(history.length > 3) history.shift();
+
+  if(history.join("+") === "DEV+DEV+DEV"){
+    Game.bossHp -= 5;
+  }
+}
+
+/* ================= 3. GAME ================= */
+function startGame(){
+  show("game");
+  render();
+  update();
+}
+
 const hand = document.getElementById("hand");
 
 function render(){
@@ -142,65 +228,23 @@ function render(){
     el.className = "card";
     el.innerHTML = `<b>${c.name}</b><br>cost:${c.cost}`;
 
-    el.onclick = ()=>playCard(el,c);
+    el.onclick = ()=>{
+      if(Game.mana < c.cost) return;
+
+      Game.mana -= c.cost;
+      c.play();
+      combo(c.type);
+      update();
+    };
 
     hand.appendChild(el);
   });
-
-  update();
-}
-
-/* ================= CARD PLAY ANIMATION ================= */
-function playCard(el, card){
-
-  if(Game.mana < card.cost) return;
-
-  Game.mana -= card.cost;
-
-  // 💥 clone animation
-  const clone = el.cloneNode(true);
-  clone.classList.add("playing");
-  document.body.appendChild(clone);
-
-  setTimeout(()=>{
-    clone.remove();
-
-    // apply effect AFTER animation
-    if(card.dmg){
-      Game.bossHp -= card.dmg;
-      bossHit();
-    }
-
-    if(card.heal){
-      Game.hp += card.heal;
-    }
-
-    update();
-
-  }, 300);
-}
-
-/* ================= BOSS HIT EFFECT ================= */
-function bossHit(){
-
-  const boss = document.getElementById("boss");
-
-  boss.classList.add("hit");
-  boss.classList.add("shake");
-
-  setTimeout(()=>{
-    boss.classList.remove("hit");
-    boss.classList.remove("shake");
-  }, 300);
 }
 
 /* ================= TURN ================= */
 function endTurn(){
-
   Game.mana++;
   Game.bossHp -= 2;
-
-  bossHit();
 
   update();
 
@@ -209,15 +253,12 @@ function endTurn(){
   }
 }
 
-/* ================= UPDATE ================= */
+/* ================= UI ================= */
 function update(){
-  document.getElementById("php").innerText = Game.hp;
+  document.getElementById("hp").innerText = Game.hp;
   document.getElementById("mana").innerText = Game.mana;
   document.getElementById("bhp").innerText = Game.bossHp;
 }
-
-render();
-update();
 </script>
 
 </body>
