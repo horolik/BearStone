@@ -1,231 +1,236 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<title>🐻 Artem vs Production Server</title>
-
-<style>
-body {
-  margin: 0;
-  background: black;
-  color: #00ff9f;
-  font-family: monospace;
-}
-
-/* ================= TERMINAL ================= */
-#terminal {
-  position: fixed;
-  inset: 0;
-  background: black;
-  padding: 20px;
-}
-
-#log {
-  white-space: pre-line;
-}
-
-#inputLine {
-  margin-top: 10px;
-}
-
-input {
-  background: black;
-  border: none;
-  color: #00ff9f;
-  outline: none;
-  font-family: monospace;
-  width: 300px;
-}
-
-/* ================= GAME ================= */
-#game {
-  display: none;
-}
-
-#board {
-  display: flex;
-  justify-content: space-between;
-  padding: 20px;
-}
-
-.hero {
-  width: 220px;
-  border: 2px solid #00ff9f;
-  padding: 10px;
-  border-radius: 10px;
-}
-
-/* ================= HAND ================= */
-#hand {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-}
-
-.card {
-  width: 120px;
-  height: 150px;
-  border: 1px solid #00ff9f;
-  margin: 5px;
-  padding: 10px;
-  cursor: pointer;
-  background: rgba(0,255,159,0.05);
-  transition: 0.2s;
-}
-
-.card:hover {
-  transform: translateY(-20px) scale(1.05);
-}
-</style>
-</head>
-
-<body>
-
-<!-- ================= TERMINAL ================= -->
-<div id="terminal">
-  <div id="log"></div>
-
-  <div id="inputLine">
-    > <input id="cmd" autofocus />
-  </div>
-</div>
-
-<!-- ================= GAME ================= -->
-<div id="game">
-
-  <div id="board">
-
-    <div class="hero">
-      <h3>Artem</h3>
-      HP: <span id="hp">20</span><br>
-      Mana: <span id="mana">1</span>
-    </div>
-
-    <div class="hero">
-      <h3 id="bossName">Toxic PM</h3>
-      HP: <span id="bossHp">40</span>
-    </div>
-
-  </div>
-
-  <div id="hand"></div>
-
-  <button onclick="endTurn()">End Turn</button>
-
-</div>
-
 <script>
 
-/* ================= TERMINAL ================= */
-const log = document.getElementById("log");
-const input = document.getElementById("cmd");
+/* STATE */
+let started = false;
+let debugPoints = 0;
+
+/* GAME STATE (cards) */
+const Game = {
+  hp: 20,
+  mana: 1,
+  bossHp: 30
+};
+
+/* MATRIX — оставляем как есть */
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const letters = "01";
+const fontSize = 14;
+const columns = canvas.width / fontSize;
+const drops = Array.from({ length: columns }).fill(1);
+
+function matrix() {
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "#00ff9f";
+  ctx.font = fontSize + "px monospace";
+
+  drops.forEach((y,i)=>{
+    const text = letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text, i*fontSize, y*fontSize);
+
+    if(y*fontSize > canvas.height && Math.random()>0.975){
+      drops[i]=0;
+    }
+    drops[i]++;
+  });
+}
+setInterval(matrix, 40);
+
+/* TERMINAL — без изменений */
+const terminal = document.getElementById("terminal");
+const terminalText = document.getElementById("terminalText");
+const input = document.getElementById("commandInput");
+const inputLine = document.getElementById("inputLine");
 
 const lines = [
-  "Booting Production Interface...",
-  "Loading Dev Profile: Artem",
-  "Connecting to Production Server...",
-  "⚠ Critical bugs detected",
+  "Booting Bear System...",
+  "Loading modules...",
+  "User detected: Артём",
+  "Scanning environment...",
+  "⚠️ Bugs detected",
   "",
-  "Type: start"
+  "Type 'start'"
 ];
 
 let i = 0;
 
-function boot(){
+function typeLine(){
   if(i < lines.length){
-    log.innerText += lines[i] + "\n";
+    terminalText.innerText += lines[i] + "\n";
     i++;
-    setTimeout(boot, 500);
+    setTimeout(typeLine, 500);
+  } else {
+    inputLine.style.display = "block";
+    input.focus();
   }
 }
-
-boot();
+typeLine();
 
 input.addEventListener("keydown", e=>{
   if(e.key === "Enter"){
-
     const cmd = input.value.trim().toLowerCase();
-
-    log.innerText += "> " + cmd + "\n";
+    terminalText.innerText += "> " + cmd + "\n";
 
     if(cmd === "start"){
-      document.getElementById("terminal").style.display = "none";
-      document.getElementById("game").style.display = "block";
-      initGame();
+      terminal.style.display = "none";
+      document.getElementById("intro").style.display = "block";
+    } else {
+      terminalText.innerText += "command not found\n";
     }
 
     input.value = "";
   }
 });
 
-/* ================= GAME ================= */
-const Game = {
-  hp: 20,
-  mana: 1,
-  bossHp: 40
+/* INTRO */
+document.getElementById("startBtn").onclick = ()=>{
+  document.getElementById("intro").style.display = "none";
+  startBugMode();
 };
 
-const Deck = [
-  { name:"Bug Fix", cost:1, dmg:2 },
-  { name:"Hotfix Friday", cost:2, dmg:4 },
-  { name:"Rollback Prayer", cost:2, heal:3 },
-  { name:"It worked on my machine", cost:1, dmg:1 }
-];
+/* ================= BUG GAME ================= */
+function startBugMode(){
 
-const hand = document.getElementById("hand");
+  let interval = setInterval(spawn, 500);
 
-function initGame(){
-  render();
-  update();
-}
+  function spawn(){
 
-function render(){
-  hand.innerHTML = "";
-
-  Deck.forEach(card=>{
+    const isFeature = Math.random() > 0.5;
 
     const el = document.createElement("div");
-    el.className = "card";
-    el.innerHTML = `<b>${card.name}</b><br>cost ${card.cost}`;
+    el.className = "bug";
 
-    el.onclick = ()=>play(card);
+    if(isFeature){
+      el.innerText = "🐻";
+      el.style.fontSize = "40px";
+    } else {
+      el.innerText = "🐀";
+      el.style.fontSize = "34px";
+    }
+
+    const x = Math.random()*window.innerWidth;
+    el.style.left = x + "px";
+    el.style.top = Math.random()*window.innerHeight + "px";
+
+    el.onclick = (e)=>{
+      const clickedRightSide = e.clientX > window.innerWidth / 2;
+
+      if(isFeature && clickedRightSide){
+        debugPoints++;
+      }
+
+      if(!isFeature){
+        debugPoints++;
+      }
+
+      el.remove();
+
+      if(debugPoints >= 5){
+        clearInterval(interval);
+        startCardGame();
+      }
+    };
+
+    document.body.appendChild(el);
+
+    setTimeout(()=>el.remove(), 1500);
+  }
+}
+
+/* ================= CARD GAME ================= */
+
+const Cards = [
+  { name:"🐛 Bug Fix", cost:1, dmg:2 },
+  { name:"🔥 Hotfix", cost:2, dmg:4 },
+  { name:"🛡 Shield", cost:2, heal:3 }
+];
+
+function startCardGame(){
+  started = true;
+
+  const app = document.getElementById("app");
+  app.style.display = "block";
+
+  app.innerHTML = `
+    <h1>🐻 BearStone</h1>
+
+    <div>
+      Artem HP: <span id="hp">20</span> |
+      Mana: <span id="mana">1</span>
+    </div>
+
+    <div>
+      Boss HP: <span id="bossHp">30</span>
+    </div>
+
+    <hr>
+
+    <div id="hand"></div>
+
+    <button onclick="endTurn()">End Turn</button>
+  `;
+
+  renderCards();
+  updateUI();
+}
+
+function renderCards(){
+  const hand = document.getElementById("hand");
+  hand.innerHTML = "";
+
+  Cards.forEach(card=>{
+    const el = document.createElement("div");
+    el.className = "bug"; // reuse style
+    el.style.position = "static";
+    el.style.display = "inline-block";
+    el.style.margin = "5px";
+    el.style.fontSize = "14px";
+    el.innerText = `${card.name} (${card.cost})`;
+
+    el.onclick = ()=>playCard(card);
 
     hand.appendChild(el);
   });
 }
 
-function play(card){
+function playCard(card){
 
   if(Game.mana < card.cost) return;
 
   Game.mana -= card.cost;
 
-  Game.bossHp -= card.dmg || 0;
-  Game.hp += card.heal || 0;
-
-  update();
-
-  if(Game.bossHp <= 0){
-    document.body.innerHTML = "<h1>🐻 PRODUCTION DOWN</h1>";
+  if(card.dmg){
+    Game.bossHp -= card.dmg;
   }
+
+  if(card.heal){
+    Game.hp += card.heal;
+  }
+
+  updateUI();
 }
 
 function endTurn(){
   Game.mana++;
   Game.bossHp -= 2;
 
-  update();
+  updateUI();
+
+  if(Game.bossHp <= 0){
+    document.body.innerHTML = "<h1>🐻 VICTORY</h1>";
+  }
 }
 
-function update(){
+function updateUI(){
   document.getElementById("hp").innerText = Game.hp;
   document.getElementById("mana").innerText = Game.mana;
   document.getElementById("bossHp").innerText = Game.bossHp;
 }
 
 </script>
-
-</body>
-</html>
