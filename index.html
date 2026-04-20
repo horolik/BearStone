@@ -2,42 +2,46 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>🐻 BearStone</title>
+<title>🐻 Artem vs Production Server</title>
 
 <style>
 body {
   margin: 0;
-  background: #05070a;
+  background: black;
   color: #00ff9f;
   font-family: monospace;
-  overflow: hidden;
 }
 
-/* ================= SCREENS ================= */
-.screen {
+/* ================= TERMINAL ================= */
+#terminal {
+  position: fixed;
+  inset: 0;
+  background: black;
+  padding: 20px;
+}
+
+#log {
+  white-space: pre-line;
+}
+
+#inputLine {
+  margin-top: 10px;
+}
+
+input {
+  background: black;
+  border: none;
+  color: #00ff9f;
+  outline: none;
+  font-family: monospace;
+  width: 300px;
+}
+
+/* ================= GAME ================= */
+#game {
   display: none;
-  width: 100vw;
-  height: 100vh;
 }
 
-.active {
-  display: block;
-}
-
-/* ================= TUTORIAL ================= */
-#tutorial {
-  padding: 30px;
-}
-
-/* ================= BUGS ================= */
-.bug {
-  position: absolute;
-  font-size: 30px;
-  cursor: pointer;
-  user-select: none;
-}
-
-/* ================= GAME BOARD ================= */
 #board {
   display: flex;
   justify-content: space-between;
@@ -45,9 +49,10 @@ body {
 }
 
 .hero {
-  width: 200px;
+  width: 220px;
   border: 2px solid #00ff9f;
   padding: 10px;
+  border-radius: 10px;
 }
 
 /* ================= HAND ================= */
@@ -57,13 +62,13 @@ body {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 10px;
 }
 
 .card {
   width: 120px;
   height: 150px;
   border: 1px solid #00ff9f;
+  margin: 5px;
   padding: 10px;
   cursor: pointer;
   background: rgba(0,255,159,0.05);
@@ -72,35 +77,26 @@ body {
 
 .card:hover {
   transform: translateY(-20px) scale(1.05);
-  border-color: white;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= 1. TUTORIAL ================= -->
-<div id="tutorial" class="screen active">
-  <h1>🐻 BearStone</h1>
+<!-- ================= TERMINAL ================= -->
+<div id="terminal">
+  <div id="log"></div>
 
-  <p>Инструкция:</p>
-  <ul>
-    <li>🐻 Лови баги (5 кликов)</li>
-    <li>🃏 Потом откроются карты</li>
-    <li>💀 Босс — Toxic PM</li>
-    <li>🔥 Комбо: DEV + DEV + DEV</li>
-  </ul>
-
-  <button onclick="startBugGame()">START</button>
+  <div id="inputLine">
+    > <input id="cmd" autofocus />
+  </div>
 </div>
 
-<!-- ================= 2. BUG GAME ================= -->
-<div id="bugGame" class="screen"></div>
-
-<!-- ================= 3. CARD GAME ================= -->
-<div id="game" class="screen">
+<!-- ================= GAME ================= -->
+<div id="game">
 
   <div id="board">
+
     <div class="hero">
       <h3>Artem</h3>
       HP: <span id="hp">20</span><br>
@@ -108,133 +104,127 @@ body {
     </div>
 
     <div class="hero">
-      <h3>Toxic PM</h3>
-      HP: <span id="bossHp">30</span>
+      <h3 id="bossName">Toxic PM</h3>
+      HP: <span id="bossHp">40</span>
     </div>
+
   </div>
 
   <div id="hand"></div>
 
   <button onclick="endTurn()">End Turn</button>
+
 </div>
 
 <script>
-/* ================= STATE ================= */
-let bugs = 0;
 
+/* ================= TERMINAL ================= */
+const log = document.getElementById("log");
+const input = document.getElementById("cmd");
+
+const lines = [
+  "Booting Production Interface...",
+  "Loading Dev Profile: Artem",
+  "Connecting to Production Server...",
+  "⚠ Critical bugs detected",
+  "",
+  "Type: start"
+];
+
+let i = 0;
+
+function boot(){
+  if(i < lines.length){
+    log.innerText += lines[i] + "\n";
+    i++;
+    setTimeout(boot, 500);
+  }
+}
+
+boot();
+
+input.addEventListener("keydown", e=>{
+  if(e.key === "Enter"){
+
+    const cmd = input.value.trim().toLowerCase();
+
+    log.innerText += "> " + cmd + "\n";
+
+    if(cmd === "start"){
+      document.getElementById("terminal").style.display = "none";
+      document.getElementById("game").style.display = "block";
+      initGame();
+    }
+
+    input.value = "";
+  }
+});
+
+/* ================= GAME ================= */
 const Game = {
   hp: 20,
   mana: 1,
-  bossHp: 30
+  bossHp: 40
 };
 
-/* ================= SCREEN SWITCH ================= */
-function show(id){
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-/* ================= 1. BUG GAME ================= */
-function startBugGame(){
-  show("bugGame");
-
-  const screen = document.getElementById("bugGame");
-
-  const interval = setInterval(() => {
-
-    const bug = document.createElement("div");
-    bug.className = "bug";
-    bug.innerText = "🐻";
-
-    bug.style.left = Math.random() * window.innerWidth + "px";
-    bug.style.top = Math.random() * window.innerHeight + "px";
-
-    bug.onclick = () => {
-      bugs++;
-      bug.remove();
-
-      if (bugs >= 5) {
-        clearInterval(interval);
-        startGame();
-      }
-    };
-
-    screen.appendChild(bug);
-
-    setTimeout(() => bug.remove(), 1500);
-
-  }, 400);
-}
-
-/* ================= 2. CARDS ================= */
-const Cards = [
+const Deck = [
   { name:"Bug Fix", cost:1, dmg:2 },
-  { name:"Hotfix", cost:2, dmg:4 },
-  { name:"Shield", cost:2, heal:3 }
+  { name:"Hotfix Friday", cost:2, dmg:4 },
+  { name:"Rollback Prayer", cost:2, heal:3 },
+  { name:"It worked on my machine", cost:1, dmg:1 }
 ];
 
-/* ================= RENDER ================= */
 const hand = document.getElementById("hand");
+
+function initGame(){
+  render();
+  update();
+}
 
 function render(){
   hand.innerHTML = "";
 
-  Cards.forEach((c,i) => {
+  Deck.forEach(card=>{
+
     const el = document.createElement("div");
     el.className = "card";
-    el.innerHTML = `<b>${c.name}</b><br>cost: ${c.cost}`;
+    el.innerHTML = `<b>${card.name}</b><br>cost ${card.cost}`;
 
-    el.onclick = () => playCard(c);
+    el.onclick = ()=>play(card);
 
     hand.appendChild(el);
   });
-
-  update();
 }
 
-/* ================= PLAY CARD ================= */
-function playCard(card){
+function play(card){
 
   if(Game.mana < card.cost) return;
 
   Game.mana -= card.cost;
 
-  if(card.dmg){
-    Game.bossHp -= card.dmg;
-  }
-
-  if(card.heal){
-    Game.hp += card.heal;
-  }
-
-  update();
-}
-
-/* ================= TURN ================= */
-function endTurn(){
-  Game.mana++;
-
-  Game.bossHp -= 2;
+  Game.bossHp -= card.dmg || 0;
+  Game.hp += card.heal || 0;
 
   update();
 
   if(Game.bossHp <= 0){
-    document.body.innerHTML = "<h1>🐻 YOU WIN</h1>";
+    document.body.innerHTML = "<h1>🐻 PRODUCTION DOWN</h1>";
   }
 }
 
-/* ================= GAME START ================= */
-function startGame(){
-  show("game");
-  render();
+function endTurn(){
+  Game.mana++;
+  Game.bossHp -= 2;
+
+  update();
 }
 
-/* ================= UI ================= */
 function update(){
   document.getElementById("hp").innerText = Game.hp;
   document.getElementById("mana").innerText = Game.mana;
   document.getElementById("bossHp").innerText = Game.bossHp;
 }
+
 </script>
 
 </body>
