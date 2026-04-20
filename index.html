@@ -1,9 +1,9 @@
-```html id="6kz9op"
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Артем vs Ольга 🔥 FINAL</title>
+<title>Bear Debug → Boss Fight 🔥</title>
 
 <style>
 body{
@@ -14,10 +14,15 @@ body{
   overflow:hidden;
 }
 
-/* MATRIX */
 #matrix{position:fixed;inset:0;z-index:0;}
 
-/* HUD */
+#console{
+  position:fixed;
+  inset:0;
+  padding:20px;
+  z-index:2;
+}
+
 #hud{
   position:fixed;
   top:10px;
@@ -25,29 +30,25 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
-  font-size:20px;
-  z-index:5;
+  font-size:22px;
+  z-index:3;
 }
 
-/* AVATARS */
-.player{
-  display:flex;
-  align-items:center;
-  gap:10px;
+#level{
+  position:fixed;
+  top:60px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:26px;
 }
 
-.avatar{
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  background:#111;
-  border:2px solid #00ff9f;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+#info{
+  position:fixed;
+  bottom:10px;
+  left:20px;
+  max-width:60%;
 }
 
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:64px;
@@ -55,7 +56,11 @@ body{
   transition:.4s;
 }
 
-/* CARDS */
+.feature{color:#00ff9f;}
+.rat{color:#ff4d4d;}
+.super{filter:drop-shadow(0 0 10px red);}
+
+/* BOSS */
 .card{
   position:absolute;
   width:120px;
@@ -68,10 +73,8 @@ body{
   font-size:30px;
   background:#111;
   color:white;
-  cursor:pointer;
 }
 
-/* LEGEND */
 #legend{
   position:fixed;
   inset:0;
@@ -82,7 +85,6 @@ body{
   color:orange;
 }
 
-/* VICTORY */
 #victory{
   position:fixed;
   inset:0;
@@ -98,39 +100,46 @@ body{
 
 <canvas id="matrix"></canvas>
 
-<div id="hud">
-  <div class="player">
-    <div class="avatar">🧑</div>
-    <div id="hpA">Артем ❤️ 10</div>
-  </div>
+<div id="console">
+> SYSTEM FAILURE 🐀<br>
+> Прод под угрозой<br><br>
 
-  <div id="timer">⏳ 0</div>
+> 🐻 = фичи (хорошо → вправо)<br>
+> 🐀 = баги (плохо → влево)<br>
+> 🔥 = супер-баг (−2)<br><br>
 
-  <div class="player">
-    <div class="avatar">👩</div>
-    <div id="hpO">Ольга ❤️ 12</div>
-  </div>
+> Введи: start / старт<br>
+<input id="cmd" autofocus>
+<div id="out"></div>
 </div>
+
+<div id="hud">
+  <div id="left">🐻 0</div>
+  <div id="timer">⏳ 0</div>
+  <div id="right">🐀 0</div>
+</div>
+
+<div id="level"></div>
+<div id="info"></div>
 
 <div id="legend">💨 LEGENDARY КАЛЬЯН</div>
 <div id="victory"></div>
 
 <script>
 
-/* SOUND */
-const legendary = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-
 /* MATRIX */
 const c=matrix;
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
+
 const drops=Array(80).fill(1);
 
 setInterval(()=>{
-  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillStyle="rgba(0,0,0,0.06)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
+
   drops.forEach((y,i)=>{
     ctx.fillText(Math.random()>0.5?0:1,i*16,y*16);
     drops[i]=y*16>c.height?0:y+1;
@@ -138,111 +147,212 @@ setInterval(()=>{
 },50);
 
 /* STATE */
-let hpA=10;
-let hpO=12;
-let running=true;
-let time=30;
+let features=0, bugs=0, time=0;
+let levelIndex=0;
+let running=false;
 
-/* START BATTLE */
-hud.style.display="flex";
-startBattle();
+const levels=[
+  {name:"JUNIOR", time:15, goal:4},
+  {name:"MIDDLE", time:20, goal:6},
+  {name:"SENIOR", time:25, goal:8}
+];
 
-/* SPAWN CARDS */
-function startBattle(){
+/* START */
+cmd.onkeydown=(e)=>{
+  if(e.key==="Enter"){
+    const val=cmd.value.trim().toLowerCase();
 
-  const spawn=setInterval(()=>{
-    if(!running) return clearInterval(spawn);
+    if(["start","старт"].includes(val)){
+      console.style.display="none";
+      hud.style.display="flex";
+      startLevel();
+    }else{
+      out.innerHTML+="<br>пиши start";
+    }
+
+    cmd.value="";
+  }
+};
+
+/* LEVEL */
+function startLevel(){
+  if(levelIndex>=levels.length){
+    showLeadWin();
+    return;
+  }
+
+  const l=levels[levelIndex];
+
+  features=0;
+  bugs=0;
+  time=l.time;
+  running=true;
+
+  level.innerText="LEVEL: "+l.name;
+
+  info.innerText="Чини прод. Быстро.";
+
+  spawn();
+  timer(l);
+}
+
+/* SPAWN */
+function spawn(){
+  const int=setInterval(()=>{
+    if(!running) return clearInterval(int);
+
+    if(document.querySelectorAll(".entity").length>12) return;
 
     const el=document.createElement("div");
-    const type=Math.random();
 
-    if(type<0.6){
-      el.className="card";
-      el.innerText="❓";
+    let type;
+    const r=Math.random();
 
-      el.onclick=()=>{
-        hpO--;
-        update();
-        el.remove();
-      };
-    }else{
-      el.className="card";
-      el.innerText="💬";
+    if(r<0.1) type="super";
+    else if(r<0.55) type="rat";
+    else type="feature";
 
-      el.onclick=()=>{
-        hpO-=2;
-        update();
-        el.remove();
-      };
-    }
+    el.className="entity "+type;
+
+    el.innerText =
+      type==="feature"?"🐻":
+      type==="rat"?"🐀":"🐀🔥";
 
     el.style.left=Math.random()*innerWidth+"px";
     el.style.top=Math.random()*innerHeight+"px";
 
+    el.onclick=()=>{
+
+      if(type==="feature"){
+        features++;
+        el.style.transform="translateX(250px)";
+      }
+      else if(type==="rat"){
+        bugs++;
+        el.style.transform="translateX(-250px)";
+      }
+      else{
+        bugs+=2;
+        el.style.transform="scale(1.5)";
+      }
+
+      el.style.opacity="0";
+      setTimeout(()=>el.remove(),400);
+
+      update();
+    };
+
     document.body.appendChild(el);
-    setTimeout(()=>el.remove(),3000);
 
-  },800);
+    setTimeout(()=>el.remove(),2000);
 
-  /* TIMER */
+  },600);
+}
+
+/* TIMER */
+function timer(l){
   const t=setInterval(()=>{
     if(!running) return clearInterval(t);
 
     time--;
     timer.innerText="⏳ "+time;
 
-    if(time<=0) finish();
-
-  },1000);
-
-  /* BOSS DAMAGE */
-  setInterval(()=>{
-    if(!running) return;
-
-    hpA--;
-    update();
-  },2500);
-
-  /* ULT */
-  setInterval(()=>{
-    if(!running) return;
-
-    if(Math.random()<0.2){
-      legendary.play();
-
-      legend.style.display="flex";
-
-      setTimeout(()=>{
-        legend.style.display="none";
-        hpO-=5;
-        update();
-      },1500);
+    if(features>=l.goal){
+      running=false;
+      levelIndex++;
+      setTimeout(startLevel,1000);
     }
 
-  },5000);
+    if(time<=0){
+      running=false;
+      gameOver();
+    }
+
+  },1000);
 }
 
 /* UPDATE */
 function update(){
-  hpAEl.innerText="Артем ❤️ "+hpA;
-  hpOEl.innerText="Ольга ❤️ "+hpO;
+  left.innerText="🐻 "+features;
+  right.innerText="🐀 "+bugs;
+}
 
-  if(hpA<=0 || hpO<=0){
+/* TEAM LEAD */
+function showLeadWin(){
+  level.innerText="🏆 ВСЕ БАГИ ПОФИКШЕНЫ";
+  info.innerText="Артем стал Team Lead 😎";
+
+  setTimeout(startBoss,3000);
+}
+
+/* ===== BOSS ===== */
+let hpA=10, hpO=12;
+
+function startBoss(){
+  features=0; bugs=0;
+  left.innerText="🧑 "+hpA;
+  right.innerText="👩 "+hpO;
+  time=30;
+
+  const spawn=setInterval(()=>{
+    if(hpA<=0||hpO<=0) return clearInterval(spawn);
+
+    const el=document.createElement("div");
+    const good=Math.random()>0.5;
+
+    el.className="card";
+    el.innerText=good?"❓":"💬";
+
+    el.style.left=Math.random()*innerWidth+"px";
+    el.style.top=Math.random()*innerHeight+"px";
+
+    el.onclick=()=>{
+      hpO -= good?1:2;
+      updateBoss();
+      el.remove();
+    };
+
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
+
+  },800);
+
+  setInterval(()=>{
+    hpA--;
+    updateBoss();
+  },2500);
+
+  setInterval(()=>{
+    legend.style.display="flex";
+    setTimeout(()=>{
+      legend.style.display="none";
+      hpO-=4;
+      updateBoss();
+    },1000);
+  },6000);
+}
+
+/* UPDATE BOSS */
+function updateBoss(){
+  left.innerText="🧑 "+hpA;
+  right.innerText="👩 "+hpO;
+
+  if(hpA<=0||hpO<=0){
     finish();
   }
 }
 
 /* FINISH */
 function finish(){
-  running=false;
-
   victory.style.display="flex";
+  victory.innerText =
+    hpO<=0?"🏆 АРТЕМ WIN":"💀 ОЛЬГА WIN";
+}
 
-  if(hpO<=0){
-    victory.innerText="🏆 АРТЕМ ПОБЕДИЛ\n💨 Кальян имба";
-  }else{
-    victory.innerText="💀 ОЛЬГА ПОБЕДИЛА";
-  }
+/* GAME OVER */
+function gameOver(){
+  victory.style.display="flex";
+  victory.innerText="💀 ПРОД УПАЛ";
 }
 
 </script>
