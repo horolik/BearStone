@@ -10,16 +10,48 @@ body {
   background: radial-gradient(circle, #0b0f14, #000);
   color: #00ff9f;
   font-family: monospace;
+  overflow: hidden;
 }
 
-/* BOARD */
+/* ================= SCREENS ================= */
+.screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
+
+.active {
+  display: block;
+}
+
+/* ================= TUTORIAL ================= */
+#tutorial {
+  padding: 40px;
+  font-size: 16px;
+}
+
+/* ================= BUG HUNT ================= */
+.bug {
+  position: absolute;
+  font-size: 28px;
+  cursor: pointer;
+  animation: float 1.5s infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+/* ================= BOARD ================= */
 #board {
   display: flex;
   justify-content: space-between;
   padding: 20px;
 }
 
-/* HERO */
 .hero {
   width: 200px;
   border: 2px solid #00ff9f;
@@ -27,26 +59,29 @@ body {
   border-radius: 10px;
 }
 
-/* HAND */
+/* ================= HAND (HEARTHSTONE STYLE) ================= */
 #hand {
   position: fixed;
-  bottom: 20px;
+  bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
+  gap: -30px;
 }
 
-/* CARD */
 .card {
+  width: 120px;
+  height: 160px;
   border: 1px solid #00ff9f;
-  padding: 10px;
+  background: rgba(0,255,159,0.05);
   margin: 5px;
+  padding: 10px;
   cursor: pointer;
   transition: 0.2s;
 }
 
 .card:hover {
-  transform: translateY(-10px);
+  transform: translateY(-30px) scale(1.1);
   border-color: white;
 }
 </style>
@@ -54,124 +89,121 @@ body {
 
 <body>
 
-<div id="board">
-  <div class="hero">
-    <h3>Artem</h3>
-    HP: <span id="php">20</span><br>
-    Mana: <span id="mana">1</span>
-  </div>
+<!-- ================= TUTORIAL ================= -->
+<div id="tutorial" class="screen active">
+  <h1>🐻 BearStone</h1>
 
-  <div class="hero">
-    <h3 id="bossName">Toxic PM</h3>
-    HP: <span id="bhp">40</span><br>
-    Phase: <span id="phase">1</span>
-  </div>
+  <p><b>Инструкция:</b></p>
+
+  <ul>
+    <li>🐛 В начале ты ловишь баги (кликай на медведей)</li>
+    <li>🎯 Каждые 5 багов — переход в бой</li>
+    <li>🃏 Потом начинается карточная битва</li>
+    <li>💀 Босс — это продакшн-ад (PM / legacy / AWS)</li>
+    <li>🔥 Используй комбо: DEV + DEV + DEV</li>
+  </ul>
+
+  <button onclick="startBugHunt()">START DEBUG MODE</button>
 </div>
 
-<div id="hand"></div>
+<!-- ================= BUG HUNT ================= -->
+<div id="bugScreen" class="screen"></div>
 
-<button onclick="endTurn()">End Turn</button>
+<!-- ================= GAME ================= -->
+<div id="game" class="screen">
+
+  <div id="board">
+    <div class="hero">
+      <h3>Artem</h3>
+      HP: <span id="php">20</span><br>
+      Mana: <span id="mana">1</span>
+    </div>
+
+    <div class="hero">
+      <h3>Toxic PM</h3>
+      HP: <span id="bhp">40</span><br>
+      Phase: <span id="phase">1</span>
+    </div>
+  </div>
+
+  <div id="hand"></div>
+
+  <button onclick="endTurn()">End Turn</button>
+</div>
 
 <script>
-/* ================= GAME STATE ================= */
+/* ================= STATE ================= */
 const Game = {
-  turn: 1,
+  hp: 20,
   mana: 1,
-  playerHp: 20,
-  boss: {
-    hp: 40,
-    phase: 1,
-    memory: { DEV:0, INFRA:0, QA:0 }
-  }
+  bossHp: 40,
+  phase: 1,
+  bugs: 0
 };
+
+/* ================= SCREENS ================= */
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+/* ================= BUG HUNT ================= */
+function startBugHunt(){
+  show("bugScreen");
+
+  const screen = document.getElementById("bugScreen");
+
+  let interval = setInterval(()=>{
+
+    const bug = document.createElement("div");
+    bug.className = "bug";
+    bug.innerText = "🐻";
+    bug.style.left = Math.random()*window.innerWidth + "px";
+    bug.style.top = Math.random()*window.innerHeight + "px";
+
+    bug.onclick = ()=>{
+      Game.bugs++;
+      bug.remove();
+
+      if(Game.bugs >= 5){
+        clearInterval(interval);
+        startGame();
+      }
+    };
+
+    screen.appendChild(bug);
+
+    setTimeout(()=>bug.remove(), 1500);
+
+  }, 500);
+}
 
 /* ================= CARDS ================= */
 const Cards = [
-  {
-    name: "Bug Fix",
-    cost: 1,
-    type: "DEV",
-    play(){
-      Game.boss.hp -= 2;
-      Game.boss.memory.DEV++;
-    }
-  },
-
-  {
-    name: "Hotfix",
-    cost: 2,
-    type: "DEV",
-    play(){
-      Game.boss.hp -= 4;
-      Game.boss.memory.DEV++;
-    }
-  },
-
-  {
-    name: "Rollback Shield",
-    cost: 2,
-    type: "INFRA",
-    play(){
-      Game.playerHp += 3;
-    }
-  },
-
-  {
-    name: "Edge Case",
-    cost: 1,
-    type: "QA",
-    play(){
-      if(Math.random() > 0.5){
-        Game.boss.hp -= 3;
-      } else {
-        Game.playerHp -= 2;
-      }
-      Game.boss.memory.QA++;
-    }
-  }
+  { name:"Bug Fix", cost:1, play(){ Game.bossHp -= 2; } },
+  { name:"Hotfix", cost:2, play(){ Game.bossHp -= 4; } },
+  { name:"Shield", cost:2, play(){ Game.hp += 3; } }
 ];
 
-/* ================= COMBO SYSTEM ================= */
+/* ================= COMBO ================= */
 let history = [];
 
-function addCombo(type){
+function combo(type){
   history.push(type);
   if(history.length > 3) history.shift();
 
-  const seq = history.join("+");
-
-  if(seq === "DEV+DEV+DEV"){
-    Game.boss.hp -= 5;
-  }
-
-  if(seq === "DEV+INFRA+DEV"){
-    Game.playerHp += 5;
+  if(history.join("+") === "DEV+DEV+DEV"){
+    Game.bossHp -= 5;
   }
 }
 
-/* ================= AI BOSS ================= */
-function bossTurn(){
-
-  const mem = Game.boss.memory;
-
-  const dominant = Object.entries(mem)
-    .sort((a,b)=>b[1]-a[1])[0][0];
-
-  if(dominant === "DEV"){
-    Game.playerHp -= 3;
-  }
-
-  if(dominant === "QA"){
-    Game.playerHp -= 2;
-    Game.mana = Math.max(0, Game.mana - 1);
-  }
-
-  if(Game.boss.hp < 20){
-    Game.boss.phase = 2;
-  }
+/* ================= GAME ================= */
+function startGame(){
+  show("game");
+  render();
+  update();
 }
 
-/* ================= UI ================= */
 const hand = document.getElementById("hand");
 
 function render(){
@@ -180,56 +212,43 @@ function render(){
   Cards.forEach((c,i)=>{
     const el = document.createElement("div");
     el.className = "card";
-    el.innerHTML = `${c.name}<br>cost: ${c.cost}`;
+    el.innerHTML = `<b>${c.name}</b><br>cost: ${c.cost}`;
 
-    el.onclick = ()=>play(i);
+    el.onclick = ()=>{
+      if(Game.mana < c.cost) return;
+
+      Game.mana -= c.cost;
+      c.play();
+      combo("DEV");
+      update();
+    };
 
     hand.appendChild(el);
   });
-
-  updateUI();
 }
 
-function play(i){
-  const card = Cards[i];
-
-  if(Game.mana < card.cost) return;
-
-  Game.mana -= card.cost;
-
-  card.play();
-
-  addCombo(card.type);
-
-  updateUI();
-}
-
+/* ================= TURN ================= */
 function endTurn(){
-  Game.turn++;
   Game.mana++;
 
-  bossTurn();
+  Game.bossHp -= 2; // boss pressure
 
-  updateUI();
+  if(Game.bossHp < 20) Game.phase = 2;
+
+  update();
+
+  if(Game.bossHp <= 0){
+    document.body.innerHTML = "<h1>🐻 YOU WIN</h1>";
+  }
 }
 
-/* ================= UPDATE ================= */
-function updateUI(){
-  document.getElementById("php").innerText = Game.playerHp;
-  document.getElementById("bhp").innerText = Game.boss.hp;
+/* ================= UI ================= */
+function update(){
+  document.getElementById("php").innerText = Game.hp;
   document.getElementById("mana").innerText = Game.mana;
-  document.getElementById("phase").innerText = Game.boss.phase;
-
-  if(Game.boss.hp <= 0){
-    document.body.innerHTML = "<h1>🐻 YOU WIN BEARSTONE</h1>";
-  }
-
-  if(Game.playerHp <= 0){
-    document.body.innerHTML = "<h1>💀 SYSTEM CRASH</h1>";
-  }
+  document.getElementById("bhp").innerText = Game.bossHp;
+  document.getElementById("phase").innerText = Game.phase;
 }
-
-render();
 </script>
 
 </body>
