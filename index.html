@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>🐻 BearStone</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="board">
+  <div class="hero" id="player">
+    <h3>Artem</h3>
+    HP: <span id="php">20</span><br>
+    Mana: <span id="mana">1</span>
+  </div>
+
+  <div class="hero" id="boss">
+    <h3 id="bossName">Boss</h3>
+    HP: <span id="bhp">40</span><br>
+    Phase: <span id="phase">1</span>
+  </div>
+</div>
+
+<div id="hand"></div>
+
+<button id="endTurn">End Turn</button>
+
+<script type="module" src="./js/game.js"></script>
+
+</body>
+</html>
