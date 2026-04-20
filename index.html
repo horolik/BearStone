@@ -1,9 +1,9 @@
-```html
+```html id="6kz9op"
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Bear Debug x Cards 🔥</title>
+<title>Артем vs Ольга 🔥 FINAL</title>
 
 <style>
 body{
@@ -15,28 +15,7 @@ body{
 }
 
 /* MATRIX */
-#matrix{
-  position:fixed;
-  inset:0;
-  z-index:0;
-}
-
-/* CONSOLE */
-#console{
-  position:fixed;
-  inset:0;
-  padding:20px;
-  z-index:2;
-}
-
-input{
-  background:black;
-  border:none;
-  color:#00ff9f;
-  font-family:monospace;
-  font-size:18px;
-  outline:none;
-}
+#matrix{position:fixed;inset:0;z-index:0;}
 
 /* HUD */
 #hud{
@@ -46,33 +25,61 @@ input{
   right:20px;
   display:none;
   justify-content:space-between;
-  z-index:3;
+  font-size:20px;
+  z-index:5;
+}
+
+/* AVATARS */
+.player{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.avatar{
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:#111;
+  border:2px solid #00ff9f;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 /* ENTITIES */
 .entity{
   position:absolute;
-  font-size:48px;
+  font-size:64px;
   cursor:pointer;
-  z-index:3;
-  transition: transform 0.4s linear, opacity 0.4s;
+  transition:.4s;
 }
 
-.feature{ color:#00ff9f; }
-.rat{ color:#ff4d4d; }
+/* CARDS */
+.card{
+  position:absolute;
+  width:120px;
+  height:160px;
+  border:2px solid gold;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  background:#111;
+  color:white;
+  cursor:pointer;
+}
 
-/* CARDS PHASE */
-#cards{
+/* LEGEND */
+#legend{
   position:fixed;
   inset:0;
   display:none;
-  z-index:4;
-}
-
-.card{
-  position:absolute;
-  font-size:42px;
-  cursor:pointer;
+  align-items:center;
+  justify-content:center;
+  font-size:40px;
+  color:orange;
 }
 
 /* VICTORY */
@@ -83,7 +90,6 @@ input{
   align-items:center;
   justify-content:center;
   font-size:40px;
-  z-index:5;
 }
 </style>
 </head>
@@ -92,39 +98,39 @@ input{
 
 <canvas id="matrix"></canvas>
 
-<div id="console">
-> SYSTEM ERROR...<br>
-> CRITICAL BUG DETECTED 🐀<br>
-> Требуется разработчик<br><br>
-> Введите команду (start / старт):<br>
-<input id="cmd" autofocus>
-<div id="out"></div>
-</div>
-
 <div id="hud">
-  <div id="left">🐻 0</div>
-  <div id="timer">⏳ 30</div>
-  <div id="right">🐀 0</div>
+  <div class="player">
+    <div class="avatar">🧑</div>
+    <div id="hpA">Артем ❤️ 10</div>
+  </div>
+
+  <div id="timer">⏳ 0</div>
+
+  <div class="player">
+    <div class="avatar">👩</div>
+    <div id="hpO">Ольга ❤️ 12</div>
+  </div>
 </div>
 
-<div id="cards"></div>
+<div id="legend">💨 LEGENDARY КАЛЬЯН</div>
 <div id="victory"></div>
 
 <script>
 
+/* SOUND */
+const legendary = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+
 /* MATRIX */
-const c=document.getElementById("matrix");
+const c=matrix;
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
-
 const drops=Array(80).fill(1);
 
 setInterval(()=>{
-  ctx.fillStyle="rgba(0,0,0,0.06)";
+  ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
-
   drops.forEach((y,i)=>{
     ctx.fillText(Math.random()>0.5?0:1,i*16,y*16);
     drops[i]=y*16>c.height?0:y+1;
@@ -132,157 +138,108 @@ setInterval(()=>{
 },50);
 
 /* STATE */
-let features=0, bugs=0;
+let hpA=10;
+let hpO=12;
+let running=true;
 let time=30;
-let running=false;
 
-/* CONSOLE */
-cmd.onkeydown=(e)=>{
-  if(e.key==="Enter"){
-    const val=cmd.value.trim().toLowerCase();
+/* START BATTLE */
+hud.style.display="flex";
+startBattle();
 
-    out.innerHTML+="<br>> "+val;
+/* SPAWN CARDS */
+function startBattle(){
 
-    if(["start","старт"].includes(val)){
-      startDebug();
-      console.style.display="none";
-      hud.style.display="flex";
-    }else{
-      out.innerHTML+="<br>доступно: start / старт";
-    }
-
-    cmd.value="";
-  }
-};
-
-/* DEBUG PHASE */
-function startDebug(){
-  features=0;
-  bugs=0;
-  time=30;
-  running=true;
-
-  spawnLoop();
-  timerLoop();
-}
-
-/* SPAWN */
-function spawnLoop(){
-  const int=setInterval(()=>{
-    if(!running) return clearInterval(int);
-
-    if(document.querySelectorAll(".entity").length>15) return;
+  const spawn=setInterval(()=>{
+    if(!running) return clearInterval(spawn);
 
     const el=document.createElement("div");
-    const good=Math.random()>0.5;
+    const type=Math.random();
 
-    el.className="entity "+(good?"feature":"rat");
-    el.innerText=good?"🐻":"🐀";
+    if(type<0.6){
+      el.className="card";
+      el.innerText="❓";
+
+      el.onclick=()=>{
+        hpO--;
+        update();
+        el.remove();
+      };
+    }else{
+      el.className="card";
+      el.innerText="💬";
+
+      el.onclick=()=>{
+        hpO-=2;
+        update();
+        el.remove();
+      };
+    }
 
     el.style.left=Math.random()*innerWidth+"px";
     el.style.top=Math.random()*innerHeight+"px";
 
-    el.onclick=()=>{
-      if(good){
-        features++;
-        el.style.transform="translateX(-200px)";
-      }else{
-        bugs++;
-        el.style.transform="translateX(200px)";
-      }
-
-      el.style.opacity="0";
-
-      setTimeout(()=>el.remove(),400);
-
-      update();
-    };
-
     document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
 
-    setTimeout(()=>{
-      el.remove();
-    },2200);
+  },800);
 
-  },600);
-}
-
-/* TIMER */
-function timerLoop(){
+  /* TIMER */
   const t=setInterval(()=>{
     if(!running) return clearInterval(t);
 
     time--;
     timer.innerText="⏳ "+time;
 
-    if(time<=0){
-      running=false;
-      startCards();
-    }
+    if(time<=0) finish();
 
   },1000);
+
+  /* BOSS DAMAGE */
+  setInterval(()=>{
+    if(!running) return;
+
+    hpA--;
+    update();
+  },2500);
+
+  /* ULT */
+  setInterval(()=>{
+    if(!running) return;
+
+    if(Math.random()<0.2){
+      legendary.play();
+
+      legend.style.display="flex";
+
+      setTimeout(()=>{
+        legend.style.display="none";
+        hpO-=5;
+        update();
+      },1500);
+    }
+
+  },5000);
 }
 
 /* UPDATE */
 function update(){
-  left.innerText="🐻 "+features;
-  right.innerText="🐀 "+bugs;
-}
+  hpAEl.innerText="Артем ❤️ "+hpA;
+  hpOEl.innerText="Ольга ❤️ "+hpO;
 
-/* CARDS PHASE */
-function startCards(){
-  document.querySelectorAll(".entity").forEach(e=>e.remove());
-
-  cards.style.display="block";
-
-  let a=0,o=0;
-  let t=30;
-
-  const spawn=setInterval(()=>{
-    if(t<=0) return clearInterval(spawn);
-
-    const el=document.createElement("div");
-    const good=Math.random()>0.5;
-
-    el.className="card";
-    el.innerText=good?"❓":"🥖";
-
-    el.style.left=Math.random()*innerWidth+"px";
-    el.style.top=Math.random()*innerHeight+"px";
-
-    el.onclick=()=>{
-      if(good) a++;
-      else o++;
-
-      left.innerText="🧑 "+a;
-      right.innerText="👩 "+o;
-
-      el.remove();
-    };
-
-    cards.appendChild(el);
-
-    setTimeout(()=>el.remove(),2000);
-
-  },500);
-
-  const timer2=setInterval(()=>{
-    t--;
-    timer.innerText="⏳ "+t;
-
-    if(t<=0){
-      clearInterval(timer2);
-      finish(a,o);
-    }
-  },1000);
+  if(hpA<=0 || hpO<=0){
+    finish();
+  }
 }
 
 /* FINISH */
-function finish(a,o){
+function finish(){
+  running=false;
+
   victory.style.display="flex";
 
-  if(a>o){
-    victory.innerText="🏆 АРТЕМ ПОБЕДИЛ";
+  if(hpO<=0){
+    victory.innerText="🏆 АРТЕМ ПОБЕДИЛ\n💨 Кальян имба";
   }else{
     victory.innerText="💀 ОЛЬГА ПОБЕДИЛА";
   }
