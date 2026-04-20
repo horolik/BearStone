@@ -6,158 +6,287 @@
 
 <style>
 body {
-  margin: 0;
+  margin:0;
   font-family: monospace;
-  background: black;
-  color: #00ff9f;
-  overflow: hidden;
+  background:black;
+  color:#00ff9f;
+  overflow:hidden;
 }
+
+#matrix { position:fixed; inset:0; z-index:0; }
 
 #hud {
-  position: fixed;
-  top: 10px;
-  left: 20px;
-  right: 20px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 20px;
+  position:fixed;
+  top:10px;
+  left:20px;
+  right:20px;
+  display:flex;
+  justify-content:space-between;
+  z-index:10;
 }
 
-#app { padding: 20px; }
+#terminal {
+  position:fixed;
+  inset:0;
+  padding:20px;
+  z-index:5;
+}
+
+#input {
+  background:black;
+  border:none;
+  color:#00ff9f;
+  font-family:monospace;
+  font-size:18px;
+  outline:none;
+  width:100%;
+}
+
+#app { display:none; }
 
 .bug {
-  position: absolute;
-  font-size: 42px;
-  cursor: pointer;
+  position:absolute;
+  font-size:42px;
+  cursor:pointer;
+  user-select:none;
 }
 
-.feature { color: #00ff9f; }
-.rat { color: #ff4d4d; }
-.danger { filter: drop-shadow(0 0 10px red); }
+.feature { color:#00ff9f; }
+.rat { color:#ff4d4d; }
+.danger { filter:drop-shadow(0 0 8px red); }
 
+.shake { animation:shake .2s infinite; }
+
+@keyframes shake {
+  0%{transform:translate(0,0)}
+  25%{transform:translate(5px,-5px)}
+  50%{transform:translate(-5px,5px)}
+  75%{transform:translate(5px,5px)}
+  100%{transform:translate(0,0)}
+}
 </style>
 </head>
 
 <body>
 
+<canvas id="matrix"></canvas>
+
 <div id="hud">
 <div id="features">🐻 0</div>
 <div id="bugs">🐀 0</div>
-<div id="timer">⏳ 30</div>
+<div id="timer">⏳ 0</div>
 </div>
 
-<div id="app">
-<button id="start">START</button>
-<div id="log"></div>
+<div id="terminal">
+<div>Boot...</div>
+<div>Loading system...</div>
+<div>OK</div>
+<br>
+<div>Type: START</div>
+<input id="input" autofocus />
+<br><br>
+<select id="diff">
+<option value="junior">Junior</option>
+<option value="middle" selected>Middle</option>
+<option value="senior">Senior</option>
+</select>
 </div>
+
+<div id="app"></div>
 
 <script>
 
-/* ===== STATE ===== */
-let features = 0;
-let bugs = 0;
+/* ========= CONFIG ========= */
 
-let gameRunning = false;
-let startTime = 0;
-
-const GAME_DURATION = 30000; // 30 сек
-const MAX_ENTITIES = 20;
-
-const entities = [];
-
-/* ===== START ===== */
-start.onclick = () => {
-  reset();
-
-  gameRunning = true;
-  startTime = performance.now();
-
-  requestAnimationFrame(loop);
+const cfg={
+  junior:{spawn:900,danger:0.08,goal:4,time:40,miss:5},
+  middle:{spawn:600,danger:0.18,goal:6,time:30,miss:4},
+  senior:{spawn:380,danger:0.3,goal:9,time:22,miss:3}
 };
 
-/* ===== LOOP ===== */
-function loop(now) {
-  if (!gameRunning) return;
+/* ========= STATE ========= */
 
-  const elapsed = now - startTime;
-  const timeLeft = Math.max(0, Math.ceil((GAME_DURATION - elapsed) / 1000));
+let features=0, bugs=0, missed=0;
+let time=0;
+let settings;
 
-  timer.innerText = "⏳ " + timeLeft;
+let running=false;
+let entities=[];
 
-  // спавн
-  if (entities.length < MAX_ENTITIES && Math.random() < 0.05) {
+const MAX=15;
+
+/* ========= MATRIX ========= */
+
+const c=matrix;
+const ctx=c.getContext("2d");
+
+c.width=innerWidth;
+c.height=innerHeight;
+
+const drops=Array(80).fill(1);
+
+setInterval(()=>{
+  ctx.fillStyle="rgba(0,0,0,0.06)";
+  ctx.fillRect(0,0,c.width,c.height);
+
+  ctx.fillStyle="#00ff9f";
+
+  drops.forEach((y,i)=>{
+    ctx.fillText(Math.random()>0.5?0:1,i*16,y*16);
+    drops[i]=y*16>c.height?0:y+1;
+  });
+},50);
+
+/* ========= START VIA TERMINAL ========= */
+
+input.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    if(input.value.trim().toLowerCase()==="start"){
+      startGame();
+    }
+    input.value="";
+  }
+});
+
+/* ========= GAME START ========= */
+
+function startGame(){
+
+  settings = cfg[diff.value];
+
+  features=0;
+  bugs=0;
+  missed=0;
+  time=settings.time;
+
+  entities.forEach(e=>e.el.remove());
+  entities=[];
+
+  terminal.style.display="none";
+  app.style.display="block";
+
+  running=true;
+
+  updateHUD();
+
+  spawnLoop();
+  timerLoop();
+}
+
+/* ========= SPAWN LOOP ========= */
+
+function spawnLoop(){
+  if(!running) return;
+
+  if(entities.length < MAX){
     spawn();
   }
 
-  // удаление старых
-  for (let i = entities.length - 1; i >= 0; i--) {
-    const e = entities[i];
-    if (now - e.born > 2500) {
-      e.el.remove();
-      entities.splice(i, 1);
-    }
-  }
+  setTimeout(spawnLoop, settings.spawn);
+}
 
-  // конец строго через 30 сек
-  if (elapsed >= GAME_DURATION) {
+/* ========= TIMER ========= */
+
+function timerLoop(){
+  if(!running) return;
+
+  time--;
+  updateHUD();
+
+  if(time<=0){
     finish();
     return;
   }
 
-  requestAnimationFrame(loop);
+  setTimeout(timerLoop,1000);
 }
 
-/* ===== SPAWN ===== */
-function spawn() {
-  const el = document.createElement("div");
+/* ========= SPAWN ========= */
 
-  const r = Math.random();
-  let type = r > 0.6 ? "feature" : (r > 0.2 ? "rat" : "danger");
+function spawn(){
 
-  el.className = "bug " + type;
-  el.innerText = type === "feature" ? "🐻" : "🐀";
+  const el=document.createElement("div");
 
-  el.style.left = Math.random() * innerWidth + "px";
-  el.style.top = Math.random() * innerHeight + "px";
+  const r=Math.random();
+  let type = r>0.6 ? "feature" : (r>settings.danger ? "rat" : "danger");
 
-  el.onclick = () => {
-    if (type === "feature") features++;
+  el.className="bug "+type;
+  el.innerText = type==="feature"?"🐻":"🐀";
+
+  el.style.left=Math.random()*innerWidth+"px";
+  el.style.top=Math.random()*innerHeight+"px";
+
+  let clicks=0;
+
+  el.onclick=()=>{
+    clicks++;
+
+    if(type==="danger" && clicks<2){
+      el.style.transform="scale(1.3)";
+      return;
+    }
+
+    if(type==="feature") features++;
     else bugs++;
 
-    update();
-    el.remove();
+    removeEntity(el);
+    updateHUD();
   };
 
   document.body.appendChild(el);
-  entities.push({ el, born: performance.now() });
+
+  const obj={el,type,life:2000,start:Date.now()};
+  entities.push(obj);
+
+  setTimeout(()=>{
+    if(!running) return;
+
+    if(document.body.contains(el)){
+      if(type!=="feature"){
+        missed++;
+        shake();
+        if(missed>=settings.miss) gameOver();
+      }
+      removeEntity(el);
+    }
+  },2000);
 }
 
-/* ===== UPDATE ===== */
-function update() {
-  featuresEl.innerText = "🐻 " + features;
-  bugsEl.innerText = "🐀 " + bugs;
+/* ========= REMOVE ========= */
+
+function removeEntity(el){
+  el.remove();
+  entities = entities.filter(e=>e.el!==el);
 }
 
-/* ===== RESET ===== */
-function reset() {
-  features = 0;
-  bugs = 0;
+/* ========= HUD ========= */
 
-  update();
-  log.innerText = "";
-
-  entities.forEach(e => e.el.remove());
-  entities.length = 0;
+function updateHUD(){
+  featuresEl.innerText="🐻 "+features;
+  bugsEl.innerText="🐀 "+bugs;
+  timer.innerText="⏳ "+time;
 }
 
-/* ===== FINISH ===== */
-function finish() {
-  gameRunning = false;
+/* ========= END ========= */
 
-  log.innerText =
-    (bugs > features ? "📉 FAIL" : "🚀 SUCCESS") +
-    "\n🐻 " + features +
-    "\n🐀 " + bugs;
+function finish(){
+  running=false;
+  alert((bugs>features?"FAIL":"SUCCESS")+"\n🐻 "+features+"\n🐀 "+bugs);
+  location.reload();
+}
+
+function gameOver(){
+  running=false;
+  document.body.classList.add("shake");
+  alert("💣 PROD DOWN");
+  location.reload();
+}
+
+/* ========= EFFECT ========= */
+
+function shake(){
+  document.body.classList.add("shake");
+  setTimeout(()=>document.body.classList.remove("shake"),200);
 }
 
 </script>
