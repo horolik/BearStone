@@ -1,9 +1,9 @@
-```html id="clean_rewrite_game"
+```html id="final_polished_game"
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Debug → Hearthstone Boss</title>
+<title>SUPER ARTEEM DEBUG MODE</title>
 
 <style>
 body{
@@ -21,12 +21,13 @@ body{
   z-index:0;
 }
 
-/* CONSOLE */
-#console{
+/* INTRO */
+#intro{
   position:fixed;
   inset:0;
-  padding:20px;
-  z-index:2;
+  padding:30px;
+  z-index:10;
+  background:black;
 }
 
 /* HUD */
@@ -41,105 +42,69 @@ body{
   z-index:5;
 }
 
-/* LEVEL */
-#level{
+/* TIMER */
+#timerBox{
   position:fixed;
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:22px;
+  font-size:24px;
+  z-index:6;
 }
 
 /* ENTITIES */
 .entity{
   position:absolute;
-  font-size:64px;
+  font-size:60px;
   cursor:pointer;
-  transition:.3s;
 }
 
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
 .super{filter:drop-shadow(0 0 10px red);}
 
-/* BOSS */
-#boss{
+/* BOSS CARD CENTER */
+#questionCard{
   position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  height:240px;
-  background:#111;
-  border-top:2px solid #ff4d4d;
-  display:none;
-  align-items:center;
-  padding:10px;
-  z-index:10;
-}
-
-#boss img{
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  margin-right:20px;
-}
-
-/* CARD */
-.card{
-  position:absolute;
-  width:180px;
-  padding:10px;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  width:420px;
   background:#111;
   border:2px solid gold;
-  border-radius:10px;
-  color:white;
+  border-radius:12px;
+  padding:20px;
   text-align:center;
-  animation:fly .3s ease-out;
-}
-
-@keyframes fly{
-  from{transform:translateY(150px);opacity:0;}
-  to{transform:translateY(0);opacity:1;}
-}
-
-/* LOVE */
-#loveWrap{
-  position:fixed;
-  top:110px;
-  left:50%;
-  transform:translateX(-50%);
-  width:300px;
-  height:16px;
-  border:2px solid #ff4d4d;
-}
-
-#loveBar{
-  width:50%;
-  height:100%;
-  background:#ff4d4d;
-  transition:.3s;
-}
-
-/* LEGEND */
-#legend{
-  position:fixed;
-  inset:0;
   display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:40px;
-  color:orange;
+  z-index:20;
 }
 
-/* WIN */
-#win{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:40px;
+/* OPTIONS */
+.option{
+  margin-top:10px;
+  padding:10px;
+  border:1px solid #00ff9f;
+  cursor:pointer;
 }
+
+.option:hover{
+  background:#003322;
+}
+
+/* HEARTS */
+.heart{
+  position:fixed;
+  font-size:20px;
+  animation:floatUp 1s linear forwards;
+}
+
+@keyframes floatUp{
+  from{transform:translateY(0);opacity:1;}
+  to{transform:translateY(-100px);opacity:0;}
+}
+
+/* INTRO TEXT */
+h1{color:#00ff9f;}
 </style>
 </head>
 
@@ -147,53 +112,49 @@ body{
 
 <canvas id="matrix"></canvas>
 
-<!-- CONSOLE -->
-<div id="console">
-> SYSTEM ERROR 🐀<br>
-> баг в проде<br><br>
+<!-- INTRO -->
+<div id="intro">
+<h1>💥 PROD CRASH</h1>
 
-> 🐻 = фичи → вправо<br>
-> 🐀 = баги → влево<br>
-> 🔥 = супер-крыса<br><br>
+<p>
+О нет… прод сломался.<br><br>
 
-> start / старт<br>
-<input id="cmd" autofocus>
-<div id="out"></div>
+🧠 Система говорит:<br>
+Только <b>SUPER ARTEEM</b> может его починить.
+</p>
+
+<p>
+📘 Задача:
+<br>
+1. Лови баги 🐀 (влево)<br>
+2. Собирай фичи 🐻 (вправо)<br>
+3. Пройди 3 уровня<br>
+4. Победи босса Ольгу ❤️
+</p>
+
+<button onclick="startGame()">START</button>
 </div>
 
 <!-- HUD -->
 <div id="hud">
   <div id="left">🐻 0</div>
-  <div id="timer">⏳ 0</div>
   <div id="right">🐀 0</div>
 </div>
 
-<div id="level"></div>
+<div id="timerBox">⏱ 0</div>
 
-<!-- LOVE -->
-<div id="loveWrap">
-  <div id="loveBar"></div>
-</div>
-
-<!-- BOSS -->
-<div id="boss">
-  <img src="https://i.imgur.com/8QfQ2dZ.png">
-  <div>👩 Ольга: вопросик...</div>
-</div>
-
-<div id="legend">💨 LEGENDARY!</div>
-<div id="win"></div>
+<!-- QUESTION -->
+<div id="questionCard"></div>
 
 <script>
 
 /* ===== MATRIX ===== */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
-
 c.width=innerWidth;
 c.height=innerHeight;
 
-const drops=Array(60).fill(1);
+const drops=Array(70).fill(1);
 
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -207,59 +168,20 @@ setInterval(()=>{
 },50);
 
 /* ===== STATE ===== */
-let f=0,b=0,t=0;
-let lvl=0;
+let f=0,b=0,t=20;
 let run=false;
 let love=50;
 
-/* ===== LEVELS ===== */
-const levels=[
-  {name:"JUNIOR",time:15,goal:4},
-  {name:"MIDDLE",time:20,goal:6},
-  {name:"SENIOR",time:25,goal:8}
-];
-
-/* ===== SAFE START (ГЛАВНЫЙ ФИКС) ===== */
-document.getElementById("cmd").addEventListener("keydown",(e)=>{
-  if(e.key!=="Enter") return;
-
-  const v=e.target.value.trim().toLowerCase();
-
-  out.innerHTML+="<br>> "+v;
-
-  if(v==="start"||v==="старт"){
-    start();
-  }else{
-    out.innerHTML+="<br>нужно: start";
-  }
-
-  e.target.value="";
-});
-
 /* ===== START ===== */
-function start(){
-  document.getElementById("console").style.display="none";
+function startGame(){
+  document.getElementById("intro").style.display="none";
   document.getElementById("hud").style.display="flex";
-  next();
-}
 
-/* ===== LEVEL FLOW ===== */
-function next(){
-
-  if(lvl>=levels.length){
-    boss();
-    return;
-  }
-
-  let L=levels[lvl];
-
-  f=0;b=0;t=L.time;
   run=true;
 
-  level.innerText=L.name;
-
   spawn();
-  timer(L);
+  timer();
+  boss();
 }
 
 /* ===== SPAWN ===== */
@@ -267,56 +189,43 @@ function spawn(){
   setInterval(()=>{
     if(!run) return;
 
-    let el=document.createElement("div");
+    let e=document.createElement("div");
+
     let r=Math.random();
+    let type = r<0.5?"feature":"rat";
 
-    let type =
-      r<0.1?"super":
-      r<0.5?"rat":"feature";
+    e.className="entity "+type;
+    e.innerText = type==="feature"?"🐻":"🐀";
 
-    el.className="entity "+type;
+    e.style.left=Math.random()*innerWidth+"px";
+    e.style.top=Math.random()*innerHeight+"px";
 
-    el.innerText =
-      type==="feature"?"🐻":
-      type==="rat"?"🐀":"🐀🔥";
-
-    el.style.left=Math.random()*innerWidth+"px";
-    el.style.top=Math.random()*innerHeight+"px";
-
-    el.onclick=()=>{
+    e.onclick=()=>{
       if(type==="feature") f++;
-      else if(type==="rat") b++;
-      else b+=2;
+      else b++;
 
-      el.remove();
       update();
+      e.remove();
     };
 
-    document.body.appendChild(el);
+    document.body.appendChild(e);
 
-    setTimeout(()=>el.remove(),2000);
+    setTimeout(()=>e.remove(),2000);
 
-  },600);
+  },700);
 }
 
 /* ===== TIMER ===== */
-function timer(L){
-  let i=setInterval(()=>{
-
-    if(!run) return clearInterval(i);
+function timer(){
+  setInterval(()=>{
+    if(!run) return;
 
     t--;
-    timer.innerText="⏳ "+t;
-
-    if(f>=L.goal){
-      run=false;
-      lvl++;
-      setTimeout(next,1000);
-    }
+    document.getElementById("timerBox").innerText="⏱ "+t;
 
     if(t<=0){
       run=false;
-      boss();
+      startBoss();
     }
 
   },1000);
@@ -328,89 +237,87 @@ function update(){
   right.innerText="🐀 "+b;
 }
 
-/* ===== LOVE ===== */
-function updateLove(){
-  document.getElementById("loveBar").style.width=love+"%";
-
-  if(love<=0) win("💀 ОЛЬГА WIN");
-  if(love>=100) win("🏆 АРТЕМ WIN");
-}
-
-/* ===== BOSS ===== */
-const q=[
+/* ===== BOSS QUESTIONS ===== */
+const questions=[
   "А ты меня любишь?",
   "А если я потолстею?",
-  "Я красивая?",
-  "Я мешаю?"
+  "Я красивая?"
 ];
 
-const a=[
-  "🍕 пицца",
-  "💨 кальян",
-  "❤️ люблю",
-  "😎 ты фича"
+const options=[
+  ["❤️ да","💨 кальян","🍕 пицца"],
+  ["❤️ конечно","😎 ты фича","💨 кальян"],
+  ["❤️ ты лучшая","🍕 пицца","😎 люблю"]
 ];
 
-function boss(){
+let qIndex=0;
 
-  document.getElementById("boss").style.display="flex";
+/* ===== BOSS ===== */
+function startBoss(){
 
-  setInterval(()=>{
+  showQuestion();
+}
 
-    let c=document.createElement("div");
-    c.className="card";
+/* ===== SHOW QUESTION CENTER ===== */
+function showQuestion(){
 
-    c.innerText="👩 "+q[Math.floor(Math.random()*q.length)];
+  const card=document.getElementById("questionCard");
+  card.style.display="block";
 
-    c.style.left=Math.random()*innerWidth+"px";
-    c.style.top=Math.random()*innerHeight*0.5+"px";
+  card.innerHTML="👩 Ольга:<br><br>"+questions[qIndex];
 
-    c.onclick=()=>{
+  options[qIndex].forEach(opt=>{
+    let div=document.createElement("div");
+    div.className="option";
+    div.innerText=opt;
 
-      love+=10;
-      answer();
-      updateLove();
-      legend();
-
-      c.remove();
+    div.onclick=()=>{
+      onAnswer();
     };
 
-    document.body.appendChild(c);
-    setTimeout(()=>c.remove(),3000);
-
-  },1200);
+    card.appendChild(div);
+  });
 }
 
-/* ANSWER */
-function answer(){
+/* ===== ANSWER ===== */
+function onAnswer(){
 
-  let c=document.createElement("div");
-  c.className="card";
+  love+=10;
+  showHearts();
 
-  c.innerText="🧑 "+a[Math.floor(Math.random()*a.length)];
+  qIndex++;
 
-  c.style.left=Math.random()*innerWidth+"px";
-  c.style.bottom="260px";
+  if(qIndex>=questions.length){
+    win();
+    return;
+  }
 
-  document.body.appendChild(c);
-
-  setTimeout(()=>c.remove(),2000);
+  document.getElementById("questionCard").innerHTML="";
+  showQuestion();
 }
 
-/* LEGEND */
-function legend(){
-  let el=document.getElementById("legend");
-  el.style.display="flex";
-  setTimeout(()=>el.style.display="none",800);
+/* ===== HEARTS ===== */
+function showHearts(){
+
+  for(let i=0;i<6;i++){
+    let h=document.createElement("div");
+    h.className="heart";
+    h.innerText="❤️";
+
+    h.style.left=Math.random()*innerWidth+"px";
+    h.style.top=(innerHeight/2)+"px";
+
+    document.body.appendChild(h);
+
+    setTimeout(()=>h.remove(),1000);
+  }
 }
 
-/* WIN */
-function win(t){
-  winBox.style.display="flex";
-  winBox.innerText=t;
+/* ===== WIN ===== */
+function win(){
+  document.getElementById("questionCard").innerHTML=
+  "🏆 ARTEEM WIN<br>LOVE MAX ❤️";
 }
-
-const winBox=document.getElementById("win");
 
 </script>
 
