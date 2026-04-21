@@ -154,7 +154,6 @@ body{
   cursor:pointer;
   margin:5px;
 }
-
 </style>
 </head>
 
@@ -233,9 +232,9 @@ let repair=30;
 let missedRats=0;
 
 const levels=[
-  {name:"JUNIOR",goal:4},
-  {name:"MIDDLE",goal:6},
-  {name:"SENIOR",goal:8}
+  {name:"JUNIOR"},
+  {name:"MIDDLE"},
+  {name:"SENIOR"}
 ];
 
 /* CMD */
@@ -284,9 +283,10 @@ e.onclick=()=>{
 clicked=true;
 
 if(type==="rat") b++;
-if(type==="feature") f++;
-
-if(f%3===0) repair+=10;
+if(type==="feature"){
+  f++;
+  if(f%3===0) repair+=10;
+}
 
 if(type==="anime"||type==="kalyan"){
   happy+=5;
@@ -299,6 +299,7 @@ check();
 };
 
 setTimeout(()=>{
+
 if(!clicked && type==="rat"){
   missedRats++;
 }
@@ -319,6 +320,7 @@ document.body.appendChild(e);
 },600);
 }
 
+/* FIXED LEVEL LOGIC */
 function check(){
 
 if(repair<15){
@@ -326,13 +328,24 @@ if(repair<15){
   return;
 }
 
-if(happy>=100){
-  boss();
-  return;
+/* LEVEL SYSTEM (FIXED) */
+if(happy >= 70){
+  lvl = 2;
+}
+else if(happy >= 40){
+  lvl = 1;
+}
+else{
+  lvl = 0;
 }
 
-if(happy>=70) lvl=2;
-else if(happy>=40) lvl=1;
+document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
+
+/* BOSS */
+if(happy >= 100){
+  boss();
+}
+
 }
 
 /* UPDATE */
@@ -344,7 +357,7 @@ document.getElementById("happy").innerText=happy;
 document.getElementById("repair").innerText=repair;
 }
 
-/* BOSS FIXED */
+/* BOSS */
 function boss(){
 document.getElementById("bossModal").style.display="flex";
 nextRound();
