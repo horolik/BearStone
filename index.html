@@ -2,184 +2,291 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>PROD GAME</title>
+<title>SUPER ARTEEM // PROD DEBUG GAME</title>
 
 <style>
 body{
   margin:0;
   background:black;
-  color:#00ff9f;
   font-family:monospace;
   overflow:hidden;
+  color:#00ff9f;
 }
 
 /* INTRO */
 #intro{
   position:fixed;
   inset:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-  text-align:center;
   background:black;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  font-size:20px;
   z-index:9999;
+  text-align:center;
+  padding:20px;
 }
 
 /* MATRIX */
-canvas{
+#matrix{
   position:fixed;
   inset:0;
   z-index:0;
+}
+
+/* TERMINAL */
+#console{
+  position:fixed;
+  inset:0;
+  background:black;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  z-index:10;
+}
+
+#terminalHeader{opacity:0.8;margin-bottom:10px;}
+
+#terminalLog{
+  flex:1;
+  overflow:auto;
+  font-size:14px;
+}
+
+#terminalInputLine{
+  display:flex;
+  gap:10px;
+  border-top:1px solid #00ff9f;
+  padding-top:10px;
+}
+
+#cmd{
+  flex:1;
+  background:black;
+  border:none;
+  color:#00ff9f;
+  outline:none;
+  font-size:16px;
 }
 
 /* HUD */
 #hud{
   position:fixed;
   top:10px;
-  left:10px;
+  left:20px;
+  right:20px;
   display:none;
-  gap:20px;
-  z-index:10;
+  justify-content:space-between;
+  font-size:18px;
+  z-index:5;
 }
 
 /* LEVEL */
 #level{
   position:fixed;
-  top:50px;
+  top:60px;
   left:50%;
   transform:translateX(-50%);
-  z-index:10;
+  font-size:22px;
+  z-index:5;
 }
 
-/* RULES */
-#rules{
+/* HINT */
+#hint{
   position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:12px;
-  color:#888;
+  bottom:220px;
+  left:20px;
+  color:#ffffff;
+  font-size:13px;
+  z-index:6;
+  opacity:0.8;
+  max-width:300px;
 }
 
-/* ENTITY */
+/* ENTITIES */
 .entity{
   position:absolute;
-  font-size:50px;
+  font-size:60px;
   cursor:pointer;
 }
 
-/* TYPES */
-.rat{color:red;}
 .feature{color:#00ff9f;}
-.anime{color:#ff4dff;}
-.kalyan{color:#00ffaa;}
+.rat{color:#ff4d4d;}
+.anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
+.kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
+
+/* STATS */
+#stats{
+  position:fixed;
+  top:140px;
+  left:20px;
+  color:white;
+  font-size:14px;
+}
+
+/* HAND */
+#hand{
+  position:fixed;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:90%;
+  height:200px;
+  z-index:1000;
+}
+
+.card{
+  width:140px;
+  height:120px;
+  background:#111;
+  border:2px solid #00ff9f;
+  border-radius:10px;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  margin:5px;
+}
 
 /* BOSS */
-#boss{
+#bossModal{
   position:fixed;
   inset:0;
-  display:none;
   background:rgba(0,0,0,0.9);
-  justify-content:center;
+  display:none;
   align-items:center;
+  justify-content:center;
   z-index:999;
 }
 
-#box{
-  width:400px;
+#bossBox{
+  width:420px;
   background:#111;
-  padding:20px;
   border:2px solid red;
+  padding:20px;
+  text-align:center;
+  color:white;
 }
-.card{
-  border:1px solid #00ff9f;
-  margin:5px;
-  padding:10px;
-  cursor:pointer;
+
+#olgaEmotion{
+  font-size:20px;
+  margin-bottom:10px;
 }
+
 </style>
 </head>
 
 <body>
 
 <div id="intro">
-🚨 PROD SIM 🚨<br><br>
-Нажми любую клавишу
+🚨 PROD УПАЛ 🚨<br><br>
+🐀 БАГИ — кликай (плохо если много)<br>
+🐻 ФИЧИ — кликай (это хорошо)<br><br>
+🃏 КАРТЫ:<br>
+DEV / BUG / ANIME / KALYAN<br><br>
+🎯 JUNIOR → MIDDLE → SENIOR<br><br>
+👉 нажми любую клавишу
 </div>
 
-<canvas id="m"></canvas>
+<canvas id="matrix"></canvas>
+
+<div id="console">
+  <div id="terminalHeader">SYSTEM TERMINAL</div>
+  <div id="terminalLog">> start</div>
+  <div id="terminalInputLine">
+    ><input id="cmd">
+  </div>
+</div>
 
 <div id="hud">
-<div id="prod">PROD: 30%</div>
-<div id="happy">HAPPY: 0%</div>
+  <div id="left">🐻 0</div>
+  <div id="right">🐀 0</div>
 </div>
 
 <div id="level"></div>
 
-<div id="rules">
-🐻 x3 = +10% PROD<br>
-🐀 x3 miss = -5% PROD<br>
-🌸💨 +5% HAPPY / -1% PROD<br>
-40 MID | 70 SENIOR | 100 BOSS<br>
-PROD < 15 = GAME OVER
+<div id="stats">
+HP: <span id="hp">100</span> |
+HAPPY: <span id="happy">0</span> |
+REPAIR: <span id="repair">30</span>
 </div>
 
-<div id="boss">
-<div id="box">
-<div id="q"></div>
-<div id="a"></div>
+<div id="hint">
+Правила:<br>
+🐻 x3 = +10% repair<br>
+🐀 x3 пропуска = -5% repair<br>
+🌸 / 💨 = +5% happy, -1% repair<br>
+<15% repair = GAME OVER
 </div>
+
+<div id="hand"></div>
+
+<div id="bossModal">
+  <div id="bossBox">
+    <div id="olgaEmotion">😐 Ольга смотрит...</div>
+    <div id="olgaQ"></div>
+    <div id="answers"></div>
+  </div>
 </div>
 
 <script>
 
+document.addEventListener("keydown",()=>{
+  document.getElementById("intro").style.display="none";
+});
+
 /* MATRIX */
-const c=document.getElementById("m");
+const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
 
 setInterval(()=>{
-ctx.fillStyle="rgba(0,0,0,0.05)";
-ctx.fillRect(0,0,c.width,c.height);
-ctx.fillStyle="#00ff9f";
-ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
+  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff9f";
+  ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
 },50);
 
 /* STATE */
-let run=false;
-let prod=30;
+let f=0,b=0,lvl=0,run=false;
+let hp=100;
 let happy=0;
+let bossHP=100;
 
-let bears=0;
-let missed=0;
+let repair=30;
+let missedRats=0;
 
-/* START */
-document.addEventListener("keydown",()=>{
-document.getElementById("intro").style.display="none";
-run=true;
-start();
-});
+/* LEVELS */
+const levels=[
+  {name:"JUNIOR",goal:4},
+  {name:"MIDDLE",goal:6},
+  {name:"SENIOR",goal:8}
+];
 
-/* UPDATE */
-function update(){
+/* CMD */
+const cmd=document.getElementById("cmd");
+const log=document.getElementById("terminalLog");
 
-document.getElementById("prod").innerText="PROD: "+Math.round(prod)+"%";
-document.getElementById("happy").innerText="HAPPY: "+happy+"%";
+cmd.onkeydown=(e)=>{
+if(e.key!=="Enter") return;
 
-if(prod<=15){
-alert("💥 GAME OVER");
-location.reload();
+if(cmd.value==="start"){
+  run=true;
+  document.getElementById("console").style.display="none";
+  document.getElementById("hud").style.display="flex";
+  next();
 }
 
-if(happy>=40) document.getElementById("level").innerText="MID";
-if(happy>=70) document.getElementById("level").innerText="SENIOR";
-if(happy>=100) boss();
+cmd.value="";
+};
 
-}
+/* GAME */
+function next(){
 
-/* SPAWN */
-function start(){
+document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
 setInterval(()=>{
 
@@ -190,12 +297,12 @@ let r=Math.random();
 let type="feature";
 
 if(r<0.4) type="rat";
-else if(r<0.7) type="feature";
-else if(r<0.9) type="anime";
-else type="kalyan";
+if(r>0.75) type="anime";
+if(r>0.88) type="kalyan";
 
 e.className="entity "+type;
-e.innerText = type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"💨";
+
+e.innerText=type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"💨";
 
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
@@ -206,94 +313,76 @@ e.onclick=()=>{
 
 clicked=true;
 
+if(type==="rat") b++;
 if(type==="feature"){
-bears++;
-if(bears>=3){
-prod+=10;
-bears=0;
-}
-}
-
-if(type==="rat"){
-// ничего
+  f++;
+  if(f%3===0) repair+=10;
 }
 
 if(type==="anime"||type==="kalyan"){
-happy+=5;
-prod-=1;
+  happy+=5;
+  repair-=1;
 }
 
 update();
+
 e.remove();
+
+checkProgress();
 };
 
-/* MISS */
 setTimeout(()=>{
+if(!clicked && type==="rat") missedRats++;
 
-if(!clicked && type==="rat"){
-missed++;
-if(missed>=3){
-prod-=5;
-missed=0;
-}
+if(missedRats>=3){
+  repair-=5;
+  missedRats=0;
 }
 
 e.remove();
+update();
+checkProgress();
 
 },2000);
 
 document.body.appendChild(e);
 
 },600);
+}
 
+/* PROGRESS */
+function checkProgress(){
+
+if(repair<15){
+  document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>GAME OVER</h1>";
+  return;
+}
+
+if(happy>=100){
+  boss();
+  return;
+}
+
+if(happy>=70) lvl=2;
+else if(happy>=40) lvl=1;
+
+document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
+}
+
+/* UPDATE */
+function update(){
+document.getElementById("left").innerText="🐻 "+f;
+document.getElementById("right").innerText="🐀 "+b;
+document.getElementById("hp").innerText=hp;
+document.getElementById("happy").innerText=happy;
+document.getElementById("repair").innerText=repair;
 }
 
 /* BOSS */
 function boss(){
-
-document.getElementById("boss").style.display="flex";
-
-let answers=[
-{t:"Это фича",h:0,p:10},
-{t:"Я проверил локально",h:5,p:7},
-{t:"перезапусти прод",h:0,p:5},
-{t:"кальян и обсудим",h:20,p:0},
-{t:"аниме объясняет баг",h:25,p:5}
-];
-
-function round(){
-
-document.getElementById("q").innerText="Ольга: ты меня любишь?";
-let a=document.getElementById("a");
-a.innerHTML="";
-
-answers.forEach(x=>{
-
-let d=document.createElement("div");
-d.className="card";
-d.innerText=x.t;
-
-d.onclick=()=>{
-
-happy+=x.h;
-prod-=Math.random()*x.p;
-
-update();
-round();
-
-};
-
-a.appendChild(d);
-
-});
-
-}
-
-round();
-
+document.getElementById("bossModal").style.display="flex";
 }
 
 </script>
-
 </body>
 </html>
