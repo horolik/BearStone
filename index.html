@@ -13,7 +13,6 @@ body{
   color:#00ff9f;
 }
 
-/* INTRO */
 #intro{
   position:fixed;
   inset:0;
@@ -28,14 +27,12 @@ body{
   padding:20px;
 }
 
-/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -70,7 +67,6 @@ body{
   font-size:16px;
 }
 
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -82,7 +78,6 @@ body{
   z-index:5;
 }
 
-/* LEVEL */
 #level{
   position:fixed;
   top:60px;
@@ -92,36 +87,6 @@ body{
   z-index:5;
 }
 
-/* OBJECTIVE (NEW) */
-#objective{
-  position:fixed;
-  top:95px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:14px;
-  z-index:5;
-  color:white;
-}
-
-/* STATS */
-#stats{
-  position:fixed;
-  top:140px;
-  left:20px;
-  color:white;
-  font-size:14px;
-}
-
-/* INCIDENT (NEW) */
-#incident{
-  position:fixed;
-  bottom:20px;
-  left:20px;
-  color:#ff4444;
-  font-size:14px;
-}
-
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
@@ -133,7 +98,14 @@ body{
 .anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
 .kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
-/* HAND */
+#stats{
+  position:fixed;
+  top:140px;
+  left:20px;
+  color:white;
+  font-size:14px;
+}
+
 #hand{
   position:fixed;
   bottom:0;
@@ -158,7 +130,6 @@ body{
   margin:5px;
 }
 
-/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
@@ -190,12 +161,8 @@ body{
 
 <div id="intro">
 🚨 PROD УПАЛ 🚨<br><br>
-
-🐀 баги — плохо<br>
-🐻 фичи — хорошо<br><br>
-
-🃏 карты / уровни / босс<br><br>
-
+🐀 БАГИ — кликай<br>
+🐻 ФИЧИ — кликай<br><br>
 👉 нажми любую клавишу
 </div>
 
@@ -215,14 +182,13 @@ body{
 </div>
 
 <div id="level"></div>
-<div id="objective"></div>
 
 <div id="stats">
 HP: <span id="hp">100</span> |
 HAPPY: <span id="happy">0</span>
 </div>
 
-<div id="incident">INCIDENT: NONE</div>
+<div id="hand"></div>
 
 <div id="bossModal">
   <div id="bossBox">
@@ -234,26 +200,59 @@ HAPPY: <span id="happy">0</span>
 
 <script>
 
-/* =======================
-   ORIGINAL STATE
-======================= */
+/* ================= ORIGINAL STATE ================= */
 
-let f=0,b=0,lvl=0;
+let f=0,b=0,lvl=0,run=false;
 let hp=100;
 let happy=0;
+let bossHP=100;
 
-let run=false;
+/* ================= MATRIX ================= */
 
-/* LEVELS */
+const c=document.getElementById("matrix");
+const ctx=c.getContext("2d");
+c.width=innerWidth;
+c.height=innerHeight;
+
+setInterval(()=>{
+  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff9f";
+  ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
+},50);
+
+/* ================= LEVELS ================= */
+
 const levels=[
   {name:"JUNIOR",goal:4},
   {name:"MIDDLE",goal:6},
   {name:"SENIOR",goal:8}
 ];
 
-/* CMD */
+/* ================= OLGA SYSTEM (NEW) ================= */
+
+const olgaQuestions = [
+  "Ты тестировал это вообще?",
+  "Почему это опять упало?",
+  "Это баг или фича?",
+  "Кто это задеплоил?",
+  "Почему прод горит?"
+];
+
+function getOlgaQuestion(){
+  return olgaQuestions[Math.floor(Math.random()*olgaQuestions.length)];
+}
+
+function applyOlgaAnswer(a){
+  bossHP -= a.d;
+  hp -= Math.floor(Math.random()*8);
+  happy += (a.h||0);
+  update();
+}
+
+/* ================= CMD ================= */
+
 const cmd=document.getElementById("cmd");
-const log=document.getElementById("terminalLog");
 
 cmd.onkeydown=(e)=>{
 if(e.key!=="Enter") return;
@@ -268,21 +267,14 @@ if(cmd.value==="start"){
 cmd.value="";
 };
 
-/* MATRIX */
-const c=document.getElementById("matrix");
-const ctx=c.getContext("2d");
-c.width=innerWidth;
-c.height=innerHeight;
+/* ================= GAME ================= */
 
-setInterval(()=>{
-ctx.fillStyle="rgba(0,0,0,0.05)";
-ctx.fillRect(0,0,c.width,c.height);
-ctx.fillStyle="#00ff9f";
-ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
-},50);
-
-/* GAME LOOP */
 function next(){
+
+if(lvl>=levels.length){
+  boss();
+  return;
+}
 
 document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
@@ -319,10 +311,6 @@ e.remove();
 
 if(f>=levels[lvl].goal){
   lvl++;
-  if(lvl>=levels.length){
-    boss();
-    return;
-  }
   next();
 }
 
@@ -334,7 +322,6 @@ setTimeout(()=>e.remove(),2000);
 },600);
 }
 
-/* UPDATE */
 function update(){
 document.getElementById("left").innerText="🐻 "+f;
 document.getElementById("right").innerText="🐀 "+b;
@@ -342,17 +329,7 @@ document.getElementById("hp").innerText=hp;
 document.getElementById("happy").innerText=happy;
 }
 
-/* OBJECTIVE (NEW UI LOGIC) */
-setInterval(()=>{
-document.getElementById("objective").innerText=
-run && lvl<levels.length
-?"🎯 держи баланс и проходи уровни"
-:"";
-},500);
-
-/* =======================
-   BOSS (ORIGINAL PRESERVED)
-======================= */
+/* ================= CARDS ================= */
 
 const answers=[
 {t:"Это фича",d:10,h:0},
@@ -362,20 +339,22 @@ const answers=[
 {t:"аниме объясняет баг",d:5,h:25}
 ];
 
+/* ================= BOSS ================= */
+
 function boss(){
-
 document.getElementById("bossModal").style.display="flex";
-
 nextRound();
-
 }
 
 function nextRound(){
 
-if(hp<=0) return;
+if(hp<=0 || bossHP<=0){
+  end();
+  return;
+}
 
-document.getElementById("olgaQ").innerText=
-"🐀 Ольга: "+["Ты меня любишь?","Почему всё ломается?","Это баг или фича?"][Math.floor(Math.random()*3)];
+document.getElementById("olgaQ").innerText =
+"🐀 Ольга: " + getOlgaQuestion();
 
 let box=document.getElementById("answers");
 box.innerHTML="";
@@ -388,10 +367,7 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
-hp-=Math.random()*10;
-happy+=a.h||0;
-
-update();
+applyOlgaAnswer(a);
 nextRound();
 
 };
@@ -402,47 +378,24 @@ box.appendChild(c);
 
 }
 
-/* =======================
-   v2 ADD-ON (NEW SYSTEMS)
-======================= */
+/* ================= EMOTION ================= */
 
-let stability=100;
-let incidentMeter=0;
-let incidentActive=false;
+function setOlgaMood(){
 
-/* STABILITY SYSTEM */
-function updateStability(){
-stability = Math.max(0, 100 - b*6 + f*2);
+let e=document.getElementById("olgaEmotion");
 
-document.getElementById("hp").innerText=Math.floor(stability);
+if(bossHP<30) e.innerText="😱 Ольга паникует!";
+else if(hp<40) e.innerText="😡 Ольга злится!";
+else if(bossHP>80) e.innerText="😊 Ольга радуется!";
+else e.innerText="😐 Ольга смотрит...";
 
-if(stability<30) incidentMeter++;
-if(stability<10) incidentMeter+=2;
-
-if(incidentMeter>10 && !incidentActive){
-triggerIncident();
-}
 }
 
-/* INCIDENT SYSTEM */
-function triggerIncident(){
-incidentActive=true;
+/* ================= END ================= */
 
-document.getElementById("incident").innerText="INCIDENT: ACTIVE 🔥";
-
-setTimeout(()=>{
-incidentMeter=0;
-incidentActive=false;
-document.getElementById("incident").innerText="INCIDENT: NONE";
-},7000);
+function end(){
+document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
 }
-
-/* SAFE HOOKS (NO BREAK ORIGINAL) */
-const oldUpdate=update;
-update=function(){
-oldUpdate();
-updateStability();
-};
 
 </script>
 </body>
