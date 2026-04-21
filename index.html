@@ -154,7 +154,6 @@ body{
   cursor:pointer;
   margin:5px;
 }
-
 </style>
 </head>
 
@@ -233,7 +232,6 @@ let bossHP=100;
 let repair=30;
 let missedRats=0;
 
-/* LEVELS */
 const levels=[
   {name:"JUNIOR"},
   {name:"MIDDLE"},
@@ -323,7 +321,7 @@ document.body.appendChild(e);
 },600);
 }
 
-/* LEVEL + END CHECK */
+/* LEVEL CHECK */
 function check(){
 
 if(repair<15){
@@ -337,7 +335,6 @@ else lvl=0;
 
 document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
-/* START BOSS */
 if(happy>=100){
   boss();
 }
@@ -353,25 +350,30 @@ document.getElementById("happy").innerText=happy;
 document.getElementById("repair").innerText=repair;
 }
 
-/* BOSS */
+/* BOSS FIXED CORE */
 function boss(){
+
 document.getElementById("bossModal").style.display="flex";
+
 bossHP = 100;
 window.bossActive = true;
+window.bossLocked = false;
+
 nextRound();
 }
 
 /* QUESTIONS */
 function nextRound(){
 
-if(!window.bossActive) return;
+if(!window.bossActive || window.bossLocked) return;
 
 const box=document.getElementById("answers");
 if(!box) return;
 
-/* FINISH */
+/* FINAL STOP */
 if(bossHP <= 0){
   window.bossActive = false;
+  window.bossLocked = true;
   endGame();
   return;
 }
@@ -402,7 +404,7 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
-if(!window.bossActive) return;
+if(!window.bossActive || window.bossLocked) return;
 
 bossHP-=a.d;
 hp-=3;
@@ -412,6 +414,7 @@ update();
 
 if(bossHP <= 0){
   window.bossActive = false;
+  window.bossLocked = true;
   endGame();
   return;
 }
@@ -426,10 +429,11 @@ box.appendChild(c);
 
 }
 
-/* END */
+/* END GAME */
 function endGame(){
 
 window.bossActive = false;
+window.bossLocked = true;
 
 document.getElementById("bossBox").innerHTML=`
 <h1>🎉 ИГРА ПРОЙДЕНА 🎉</h1>
