@@ -13,7 +13,6 @@ body{
   color:#00ff9f;
 }
 
-/* INTRO */
 #intro{
   position:fixed;
   inset:0;
@@ -28,14 +27,12 @@ body{
   padding:20px;
 }
 
-/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -70,7 +67,6 @@ body{
   font-size:16px;
 }
 
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -82,7 +78,6 @@ body{
   z-index:5;
 }
 
-/* LEVEL */
 #level{
   position:fixed;
   top:60px;
@@ -92,7 +87,6 @@ body{
   z-index:5;
 }
 
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
@@ -104,7 +98,6 @@ body{
 .anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
 .kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
-/* STATS */
 #stats{
   position:fixed;
   top:140px;
@@ -113,7 +106,6 @@ body{
   font-size:14px;
 }
 
-/* TIP */
 #tip{
   position:fixed;
   bottom:210px;
@@ -123,32 +115,6 @@ body{
   opacity:0.9;
 }
 
-/* HAND */
-#hand{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:90%;
-  height:200px;
-  z-index:1000;
-}
-
-.card{
-  width:140px;
-  height:120px;
-  background:#111;
-  border:2px solid #00ff9f;
-  border-radius:10px;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  margin:5px;
-}
-
-/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
@@ -173,23 +139,31 @@ body{
   margin-bottom:10px;
 }
 
+.card{
+  width:140px;
+  height:120px;
+  background:#111;
+  border:2px solid #00ff9f;
+  border-radius:10px;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  margin:5px;
+}
+
 </style>
 </head>
 
 <body>
 
-<!-- INTRO -->
 <div id="intro">
 🚨 PROD УПАЛ 🚨<br><br>
-
-🐀 БАГИ — кликай (плохо если много)<br>
-🐻 ФИЧИ — кликай (это хорошо)<br><br>
-
-🃏 КАРТЫ:<br>
-DEV / BUG / ANIME / KALYAN<br><br>
-
+🐀 БАГИ — кликай<br>
+🐻 ФИЧИ — кликай<br><br>
+🃏 DEV / BUG / ANIME / KALYAN<br><br>
 🎯 JUNIOR → MIDDLE → SENIOR<br><br>
-
 👉 нажми любую клавишу
 </div>
 
@@ -216,8 +190,6 @@ HAPPY: <span id="happy">0</span>
 </div>
 
 <div id="tip"></div>
-
-<div id="hand"></div>
 
 <div id="bossModal">
   <div id="bossBox">
@@ -256,7 +228,6 @@ let bossHP=100;
 let fix=30;
 let bears=0;
 let ratsMissed=0;
-
 let qIndex=0;
 
 /* LEVELS */
@@ -266,7 +237,8 @@ const levels=[
   {name:"SENIOR",goal:8}
 ];
 
-const happyGate=[0,40,70];
+/* LOWERED PROGRESSION */
+const happyGate=[0,20,35];
 
 /* CMD */
 const cmd=document.getElementById("cmd");
@@ -280,7 +252,6 @@ if(cmd.value==="start"){
   document.getElementById("hud").style.display="flex";
   next();
 }
-
 cmd.value="";
 };
 
@@ -288,25 +259,28 @@ cmd.value="";
 function tip(t){
   let el=document.getElementById("tip");
   el.innerText=t;
-  setTimeout(()=>el.innerText="",2500);
+  setTimeout(()=>el.innerText="",2000);
 }
 
-/* GAME */
+/* GAME LOOP */
 function next(){
 
 if(fix<=15){
-  gameover("PROD УПАЛ (fix < 15%)");
+  gameover("PROD УПАЛ");
   return;
 }
 
 if(lvl>=levels.length){
-  if(happy>=100) boss();
-  else tip("Нужно 100% happiness для босса");
+  if(happy>=50){
+    boss();
+  }else{
+    tip("Нужно 50% happiness для босса");
+  }
   return;
 }
 
 document.getElementById("level").innerText=
-"LEVEL: "+levels[lvl].name+" | FIX: "+fix+"%";
+"LEVEL "+levels[lvl].name+" | FIX "+fix+"%";
 
 setInterval(()=>{
 
@@ -336,36 +310,23 @@ e.onclick=()=>{
 
 e.clicked=true;
 
-if(type==="rat"){
-  b++;
-  ratsMissed=Math.max(0,ratsMissed-1);
-  tip("Баг пойман");
-}
-
-if(type==="feature"){
-  f++;
-  bears++;
-  tip("Фича собрана");
-}
+if(type==="rat") b++;
+if(type==="feature"){ f++; bears++; }
 
 if(bears>=3){
   fix+=10;
   bears=0;
-  tip("+10% FIX за 3 мишки");
+  tip("+10% FIX");
 }
 
 if(type==="anime"||type==="kalyan"){
   happy+=5;
   fix-=1;
-  tip("+5% happiness, -1% fix");
 }
 
 update();
 
-if(
-  f>=levels[lvl].goal &&
-  happy>=happyGate[lvl]
-){
+if(f>=levels[lvl].goal && happy>=happyGate[lvl]){
   lvl++;
   next();
 }
@@ -378,12 +339,9 @@ setTimeout(()=>{
 
 if(!e.clicked && type==="rat"){
   ratsMissed++;
-  tip("Пропущен баг!");
-
   if(ratsMissed>=3){
     fix-=5;
     ratsMissed=0;
-    tip("-5% FIX за пропущенные баги");
   }
 }
 
@@ -410,10 +368,10 @@ const questions=[
 
 const answers=[
 {t:"Это фича",d:10,h:0},
-{t:"Я проверил локально",d:7,h:5},
-{t:"перезапусти прод",d:5,h:0},
-{t:"кальян и обсудим",d:0,h:20},
-{t:"аниме объясняет баг",d:5,h:25}
+{t:"Я проверил",d:7,h:5},
+{t:"перезапусти",d:5,h:0},
+{t:"кальян",d:0,h:20},
+{t:"аниме",d:5,h:25}
 ];
 
 function boss(){
@@ -429,10 +387,7 @@ if(hp<=0 || bossHP<=0 || qIndex>=questions.length){
   return;
 }
 
-setOlgaMood();
-
-document.getElementById("olgaQ").innerText=
-"🐀 Ольга: "+questions[qIndex];
+document.getElementById("olgaQ").innerText="Ольга: "+questions[qIndex];
 
 let box=document.getElementById("answers");
 box.innerHTML="";
@@ -447,7 +402,7 @@ c.onclick=()=>{
 
 bossHP-=a.d;
 hp-=Math.floor(Math.random()*8);
-happy+=(a.h||0);
+happy+=a.h;
 
 update();
 
@@ -462,14 +417,9 @@ box.appendChild(c);
 
 }
 
-function setOlgaMood(){
-
-let e=document.getElementById("olgaEmotion");
-
-if(bossHP<30) e.innerText="😱 Ольга паникует!";
-else if(hp<40) e.innerText="😡 Ольга злится!";
-else if(bossHP>80) e.innerText="😊 Ольга радуется!";
-else e.innerText="😐 Ольга смотрит...";
+/* END */
+function end(){
+document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
 }
 
 /* GAME OVER */
@@ -479,19 +429,7 @@ document.body.innerHTML=
 "<div style='color:red;font-size:40px;text-align:center;margin-top:20%'>"+t+"</div>";
 }
 
-/* END */
-function end(){
-document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
-for(let i=0;i<30;i++){
-let c=document.createElement("div");
-c.innerText="🍰";
-c.style.position="absolute";
-c.style.left=Math.random()*100+"%";
-c.style.top=Math.random()*100+"%";
-document.body.appendChild(c);
-}
-}
-
 </script>
+
 </body>
 </html>
