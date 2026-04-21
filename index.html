@@ -206,6 +206,7 @@ REPAIR: <span id="repair">30</span>
 
 <script>
 
+/* INTRO */
 document.addEventListener("keydown",()=>{
   document.getElementById("intro").style.display="none";
 });
@@ -320,7 +321,7 @@ document.body.appendChild(e);
 },600);
 }
 
-/* FIXED LEVEL LOGIC */
+/* CHECK LEVELS */
 function check(){
 
 if(repair<15){
@@ -328,21 +329,13 @@ if(repair<15){
   return;
 }
 
-/* LEVEL SYSTEM (FIXED) */
-if(happy >= 70){
-  lvl = 2;
-}
-else if(happy >= 40){
-  lvl = 1;
-}
-else{
-  lvl = 0;
-}
+if(happy>=70) lvl=2;
+else if(happy>=40) lvl=1;
+else lvl=0;
 
 document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
-/* BOSS */
-if(happy >= 100){
+if(happy>=100){
   boss();
 }
 
@@ -360,27 +353,37 @@ document.getElementById("repair").innerText=repair;
 /* BOSS */
 function boss(){
 document.getElementById("bossModal").style.display="flex";
+bossHP = 100;
 nextRound();
 }
 
+/* QUESTIONS */
 function nextRound(){
 
 const box=document.getElementById("answers");
 if(!box) return;
 
-if(hp<=0 || bossHP<=0){
+if(bossHP<=0){
+  endGame();
   return;
 }
 
-document.getElementById("olgaQ").innerText=
-"🐀 Ольга: "+["Ты меня любишь?","Почему всё ломается?","Это баг или фича?"][Math.floor(Math.random()*3)];
+const questions=[
+  "а ты меня любишь?",
+  "а ты любил бы меня, если бы я была червем?",
+  "будешь меня любить, если я буду толстая?",
+  "кто самая сладкая Мишка?"
+];
+
+document.getElementById("olgaQ").innerText =
+"🐀 Ольга: " + questions[Math.floor(Math.random()*questions.length)];
 
 box.innerHTML="";
 
 const answers=[
-{t:"Это фича",d:10,h:0},
-{t:"перезапусти прод",d:5,h:0},
-{t:"аниме объясняет баг",d:5,h:5}
+  {t:"кальян",d:5,h:10},
+  {t:"пицца",d:5,h:10},
+  {t:"шутки про программистов",d:10,h:15}
 ];
 
 answers.forEach(a=>{
@@ -392,10 +395,16 @@ c.innerText=a.t;
 c.onclick=()=>{
 
 bossHP-=a.d;
-hp-=5;
+hp-=3;
 happy+=a.h;
 
 update();
+
+if(bossHP<=0){
+  endGame();
+  return;
+}
+
 nextRound();
 
 };
@@ -403,6 +412,31 @@ nextRound();
 box.appendChild(c);
 
 });
+
+}
+
+/* END */
+function endGame(){
+
+document.getElementById("bossBox").innerHTML=`
+<h1>🎉 ИГРА ПРОЙДЕНА 🎉</h1>
+<br>
+<p>Артему приз:</p>
+<h2>🍰 30 кусочков тортика 🍰</h2>
+<br>
+<p>Ольга довольна 😌</p>
+`;
+
+for(let i=0;i<30;i++){
+let c=document.createElement("div");
+c.innerText="🍰";
+c.style.position="absolute";
+c.style.left=Math.random()*100+"%";
+c.style.top=Math.random()*100+"%";
+c.style.fontSize="22px";
+document.body.appendChild(c);
+}
+
 }
 
 </script>
