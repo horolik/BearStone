@@ -13,6 +13,13 @@ body{
   color:#00ff9f;
 }
 
+/* MATRIX CANVAS */
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
 /* START SCREEN */
 #start{
   position:fixed;
@@ -24,7 +31,23 @@ body{
   font-size:22px;
   background:black;
   z-index:1000;
-  cursor:pointer;
+}
+
+/* TERMINAL */
+#terminal{
+  background:black;
+  border:1px solid #00ff9f;
+  padding:20px;
+  width:300px;
+}
+
+#input{
+  background:black;
+  border:none;
+  color:#00ff9f;
+  outline:none;
+  width:100%;
+  font-family:monospace;
 }
 
 /* HUD */
@@ -35,6 +58,7 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
+  z-index:2;
 }
 
 #level{
@@ -42,6 +66,7 @@ body{
   top:40px;
   width:100%;
   text-align:center;
+  z-index:2;
 }
 
 #stats{
@@ -49,6 +74,7 @@ body{
   top:80px;
   left:20px;
   color:white;
+  z-index:2;
 }
 
 #guide{
@@ -59,6 +85,7 @@ body{
   border:1px solid #00ff9f;
   padding:10px;
   background:rgba(0,0,0,0.5);
+  z-index:2;
 }
 
 /* ENTITIES */
@@ -66,6 +93,7 @@ body{
   position:absolute;
   font-size:60px;
   cursor:pointer;
+  z-index:2;
 }
 
 .rat{color:red;}
@@ -82,15 +110,20 @@ body{
   flex-direction:column;
   color:white;
   font-size:20px;
+  z-index:3;
 }
 </style>
 </head>
 
 <body>
 
+<canvas id="matrix"></canvas>
+
 <div id="start">
-ALARMMMMMMMM 🚨 PROD УПАЛ 🚨 ТОЛЬКО SUPER ARTEM может починить<<br><br>
-КЛИКНИ ЧТОБЫ НАЧАТЬ
+<div id="terminal">
+> Введите команду для запуска:<br><br>
+> <input id="input" autofocus placeholder="start">
+</div>
 </div>
 
 <div id="hud">
@@ -111,6 +144,42 @@ HAPPY: <span id="happy">0</span>
 
 <script>
 
+/* MATRIX BACKGROUND */
+let c = document.getElementById("matrix");
+let ctx = c.getContext("2d");
+
+c.width = window.innerWidth;
+c.height = window.innerHeight;
+
+let letters = "01";
+letters = letters.split("");
+
+let fontSize = 14;
+let columns = c.width / fontSize;
+
+let drops = [];
+for(let i=0;i<columns;i++) drops[i]=1;
+
+function drawMatrix(){
+ctx.fillStyle = "rgba(0,0,0,0.05)";
+ctx.fillRect(0,0,c.width,c.height);
+
+ctx.fillStyle = "#00ff9f";
+ctx.font = fontSize + "px monospace";
+
+for(let i=0;i<drops.length;i++){
+let text = letters[Math.floor(Math.random()*letters.length)];
+ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+if(drops[i]*fontSize > c.height && Math.random()>0.975)
+drops[i]=0;
+
+drops[i]++;
+}
+}
+
+setInterval(drawMatrix,33);
+
 /* STATE */
 let run=false;
 let f=0, r=0;
@@ -123,13 +192,17 @@ let timer;
 /* LEVELS */
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
-/* START */
-document.getElementById("start").onclick=()=>{
+/* TERMINAL START */
+document.getElementById("input").addEventListener("keydown", (e)=>{
+if(e.key==="Enter"){
+if(e.target.value.toLowerCase()==="start"){
 document.getElementById("start").style.display="none";
 document.getElementById("hud").style.display="flex";
 run=true;
 loop();
-};
+}
+}
+});
 
 /* UPDATE UI */
 function update(){
