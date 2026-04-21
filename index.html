@@ -13,6 +13,20 @@ body{
   color:#00ff9f;
 }
 
+/* INTRO */
+#intro{
+  position:fixed;
+  inset:0;
+  background:black;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  font-size:28px;
+  z-index:9999;
+  text-align:center;
+}
+
 /* MATRIX */
 #matrix{
   position:fixed;
@@ -68,14 +82,7 @@ body{
   z-index:5;
 }
 
-/* TIMER + INSTRUCTION */
-#timer{
-  position:fixed;
-  top:40px;
-  left:50%;
-  transform:translateX(-50%);
-}
-
+/* INSTRUCTION */
 #instruction{
   position:fixed;
   bottom:10px;
@@ -83,6 +90,7 @@ body{
   transform:translateX(-50%);
   font-size:14px;
   opacity:0.7;
+  z-index:5;
 }
 
 /* LEVEL */
@@ -103,16 +111,6 @@ body{
 
 .feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
-
-/* FLOAT TEXT */
-.float{
-  position:absolute;
-  font-size:14px;
-  animation:up 1s forwards;
-}
-@keyframes up{
-  to{transform:translateY(-40px);opacity:0;}
-}
 
 /* LOVE */
 #loveWrap{
@@ -145,20 +143,64 @@ body{
   flex-direction:column;
 }
 
-/* CAKES */
-.cake{
-  position:absolute;
-  font-size:30px;
-  animation:fall linear forwards;
+#bossCard{
+  width:420px;
+  background:#111;
+  border:2px solid #ff4d4d;
+  border-radius:14px;
+  padding:20px;
+  text-align:center;
+  color:#fff;
 }
-@keyframes fall{
-  from{transform:translateY(-50px);}
-  to{transform:translateY(110vh);}
+
+#bossTitle{
+  font-size:20px;
+  margin-bottom:10px;
+  color:#ff4d4d;
+}
+
+#options{
+  margin-top:15px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.optionBtn{
+  padding:10px;
+  background:black;
+  border:1px solid #00ff9f;
+  color:#00ff9f;
+  cursor:pointer;
+}
+
+.optionBtn:hover{
+  background:#00ff9f;
+  color:black;
+}
+
+/* WIN */
+#win{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  font-size:40px;
 }
 </style>
 </head>
 
 <body>
+
+<!-- INTRO -->
+<div id="intro">
+  🚨 ОООО НЕТ<br>
+  ПРОД УПАЛ<br><br>
+  только <b>SUPER ARTEEM</b> может его спасти<br><br>
+  <span style="font-size:16px;opacity:0.6;">нажми любую клавишу</span>
+</div>
 
 <canvas id="matrix"></canvas>
 
@@ -183,19 +225,39 @@ body{
   <div id="right">🐀 0</div>
 </div>
 
-<div id="timer"></div>
-
 <div id="instruction">
-🐀 фиксить | 🐻 фичи | F freeze | D delete | P +5
+  🐀 — кликай чтобы фиксить баги | 🐻 — собирай фичи
 </div>
 
 <div id="level"></div>
 
 <div id="loveWrap"><div id="loveBar"></div></div>
 
-<div id="bossModal"></div>
+<div id="bossModal">
+  <div id="bossCard">
+    <div id="bossTitle">🐀 ОЛЬГА КРЫСА</div>
+    <div id="bossQuestion">...</div>
+    <div id="options"></div>
+  </div>
+</div>
+
+<div id="win"></div>
+
+<!-- 🃏 HEARTHSTONE ADDONS UI -->
+<div id="mana" style="position:fixed;top:90px;right:20px;font-size:18px;color:#00ffff;z-index:5;">
+⚡ MANA: 0
+</div>
+
+<div id="deck" style="position:fixed;bottom:10px;right:10px;font-size:14px;color:#00ffff;z-index:10;">
+🃏 DECK: 0
+</div>
 
 <script>
+
+/* INTRO */
+document.addEventListener("keydown",()=>{
+  document.getElementById("intro").style.display="none";
+});
 
 /* MATRIX */
 const c=document.getElementById("matrix");
@@ -225,16 +287,10 @@ function legendary(){
 }
 
 /* STATE */
-let f=0,b=0,lvl=0,run=false,love=50;
-let freeze=false;
-let timer=20;
-let timerInterval;
-
-const memes=[
-"у меня локально работает",
-"это не баг, это фича",
-"перезапусти прод"
-];
+let f=0,b=0;
+let lvl=0;
+let run=false;
+let love=50;
 
 /* LEVELS */
 const levels=[
@@ -243,71 +299,48 @@ const levels=[
   {name:"SENIOR",goal:8}
 ];
 
-/* TERMINAL */
+/* START */
+const cmd=document.getElementById("cmd");
+const log=document.getElementById("terminalLog");
+
 cmd.onkeydown=(e)=>{
   if(e.key!=="Enter") return;
 
-  if(cmd.value==="start"){
-    console.style.display="none";
-    hud.style.display="flex";
-    run=true;
-    start();
+  const v=cmd.value.trim();
+  log.innerHTML+="<br>> "+v;
+
+  if(v==="start"){
+    setTimeout(()=>{
+      document.getElementById("console").style.display="none";
+      document.getElementById("hud").style.display="flex";
+      start();
+    },500);
+  }
+
+  if(v==="hs mode"){
+    setInterval(()=>{mana+=5;updateMana();},1000);
+    log.innerHTML+="<br>🃏 HEARTHSTONE MODE";
   }
 
   cmd.value="";
 };
 
 function start(){
+  run=true;
   next();
-}
-
-/* TIMER */
-function startTimer(){
-  timer=20;
-  timerEl.innerText="⏱ "+timer;
-
-  clearInterval(timerInterval);
-
-  timerInterval=setInterval(()=>{
-    if(!run) return;
-
-    timer--;
-    timerEl.innerText="⏱ "+timer;
-
-    if(timer<=0){
-      lvl++;
-      next();
-    }
-  },1000);
-}
-
-/* FLOAT */
-function floatText(text,x,y,color="#fff"){
-  let d=document.createElement("div");
-  d.className="float";
-  d.innerText=text;
-  d.style.left=x+"px";
-  d.style.top=y+"px";
-  d.style.color=color;
-  document.body.appendChild(d);
-  setTimeout(()=>d.remove(),1000);
 }
 
 /* GAME */
 function next(){
-
   if(lvl>=levels.length){
     boss();
     return;
   }
 
-  startTimer();
-
-  level.innerText="LEVEL: "+levels[lvl].name;
+  document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
   setInterval(()=>{
-
-    if(!run || freeze) return;
+    if(!run) return;
 
     let e=document.createElement("div");
     let type=Math.random()>0.5?"feature":"rat";
@@ -318,25 +351,9 @@ function next(){
     e.style.left=Math.random()*innerWidth+"px";
     e.style.top=Math.random()*innerHeight+"px";
 
-    let clicked=false;
-
     e.onclick=()=>{
-      clicked=true;
-
       sound();
-
-      if(type==="feature"){
-        f++;
-        floatText("+1 FEATURE",e.offsetLeft,e.offsetTop,"#00ff9f");
-      }else{
-        b++;
-        floatText("FIXED!",e.offsetLeft,e.offsetTop,"#ff4d4d");
-      }
-
-      if(Math.random()>0.6){
-        floatText(memes[Math.floor(Math.random()*memes.length)],e.offsetLeft,e.offsetTop);
-      }
-
+      type==="feature"?f++:b++;
       update();
 
       if(f>=levels[lvl].goal){
@@ -347,16 +364,8 @@ function next(){
       e.remove();
     };
 
-    setTimeout(()=>{
-      if(!clicked && type==="rat"){
-        b++;
-        update();
-        floatText("BUG ESCAPED!",e.offsetLeft,e.offsetTop,"#ff0000");
-      }
-      e.remove();
-    },2000);
-
     document.body.appendChild(e);
+    setTimeout(()=>e.remove(),2000);
 
   },600);
 }
@@ -364,75 +373,156 @@ function next(){
 function update(){
   left.innerText="🐻 "+f;
   right.innerText="🐀 "+b;
+
+  checkCombo();
 }
 
-/* ABILITIES */
-document.addEventListener("keydown",(e)=>{
-  if(!run) return;
+/* LOVE */
+function updateLove(){
+  document.getElementById("loveBar").style.width=love+"%";
+}
 
-  if(e.key==="f"){
-    freeze=true;
-    floatText("FREEZE!",innerWidth/2,100);
-    setTimeout(()=>freeze=false,3000);
+/* ================= HEARTHSTONE SYSTEM ================= */
+
+let mana=0;
+let deck=[];
+
+const cardPool=[
+  {name:"🧙 Debug Vision",type:"DEV"},
+  {name:"🧹 Garbage Collector",type:"DEV"},
+  {name:"🐀 Bug Loop",type:"BUG"},
+  {name:"🌸 Sakura Boost",type:"ANIME"},
+  {name:"👑 ARTEM ASCENSION",type:"LEGENDARY"}
+];
+
+function updateMana(){
+  document.getElementById("mana").innerText="⚡ MANA: "+Math.floor(mana);
+}
+
+function updateDeck(){
+  document.getElementById("deck").innerText="🃏 DECK: "+deck.length;
+}
+
+function playCard(card){
+  legendary();
+
+  if(card.type==="DEV") b=Math.max(0,b-3);
+  if(card.type==="BUG") b+=2;
+  if(card.type==="ANIME"){f+=2;love+=5;updateLove();}
+  if(card.type==="LEGENDARY"){
+    f+=5;b=Math.max(0,b-5);love+=20;updateLove();
+    document.body.style.filter="hue-rotate(180deg)";
+    setTimeout(()=>document.body.style.filter="",800);
   }
 
-  if(e.key==="d"){
-    document.querySelectorAll(".rat").forEach(r=>r.remove());
-    floatText("ALL BUGS DELETED",innerWidth/2,150);
-  }
+  update();
+}
 
-  if(e.key==="p"){
-    f+=5;
-    update();
-    floatText("+5 FEATURES",innerWidth/2,200,"#00ff9f");
+function drawCard(){
+
+  let c=cardPool[Math.floor(Math.random()*cardPool.length)];
+  deck.push(c);
+  updateDeck();
+
+  let el=document.createElement("div");
+  el.className="entity feature";
+  el.innerText="🃏";
+  el.style.left=Math.random()*innerWidth+"px";
+  el.style.top=Math.random()*innerHeight+"px";
+  el.style.color="#00ffff";
+
+  el.onclick=()=>{
+    playCard(c);
+    el.remove();
+    deck.pop();
+    updateDeck();
+  };
+
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+setInterval(()=>{
+  if(run && Math.random()<0.12) drawCard();
+},1200);
+
+setInterval(()=>{
+  if(run) mana+=f*0.05;
+  updateMana();
+},1000);
+
+/* COMBO */
+function checkCombo(){
+  if(f>5 && b>5){
+    love+=10;
+    updateLove();
   }
-});
+}
+
+/* SECRET */
+setInterval(()=>{
+  if(Math.random()<0.03){
+    let s=document.createElement("div");
+    s.innerText="🧿 ARTEM WAS HERE";
+    s.style.position="fixed";
+    s.style.top=Math.random()*80+"%";
+    s.style.left=Math.random()*80+"%";
+    s.style.color="gold";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),2000);
+  }
+},2000);
 
 /* BOSS */
+const questions=["Ты любишь DEV?","А баги?","А фиксы?"];
+const answers=["❤️ да","💨 кальян","🍕 пицца"];
+
+let bossIndex=0;
+
 function boss(){
-  end();
+  const modal=document.getElementById("bossModal");
+  const q=document.getElementById("bossQuestion");
+  const opt=document.getElementById("options");
+
+  modal.style.display="flex";
+  bossIndex=0;
+
+  function render(){
+    if(bossIndex>=questions.length){
+      end();
+      return;
+    }
+
+    q.innerText=questions[bossIndex];
+    opt.innerHTML="";
+
+    answers.forEach(a=>{
+      let b=document.createElement("div");
+      b.className="optionBtn";
+      b.innerText=a;
+
+      b.onclick=()=>{
+        legendary();
+        love+=15;
+        updateLove();
+        bossIndex++;
+        setTimeout(render,600);
+      };
+
+      opt.appendChild(b);
+    });
+  }
+
+  render();
 }
 
 /* END */
 function end(){
-
-  bossModal.style.display="block";
-
-  bossModal.innerHTML=`
-    <div style="
-      position:fixed;
-      inset:0;
-      background:black;
-      overflow:hidden;
-    ">
-      <div style="
-        position:absolute;
-        top:40%;
-        left:50%;
-        transform:translateX(-50%);
-        font-size:40px;
-        color:#ff4d4d;
-        text-align:center;
-      ">
-        🎉 АРТЕМ ПОЧИНИЛ ПРОД 🎉<br>
-        С ДНЁМ РОЖДЕНИЯ!!!
-      </div>
-    </div>
-  `;
-
-  for(let i=0;i<30;i++){
-    let c=document.createElement("div");
-    c.className="cake";
-    c.innerText="🎂";
-    c.style.left=Math.random()*100+"%";
-    c.style.animationDuration=(Math.random()*3+2)+"s";
-    bossModal.appendChild(c);
-  }
-
-  legendary();
+  document.getElementById("bossModal").innerHTML=`
+  <div style="position:fixed;inset:0;background:black;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ff4d4d;">
+  🎉 ARTEM WIN 🎉
+  </div>`;
 }
-
-const timerEl=document.getElementById("timer");
 
 </script>
 </body>
