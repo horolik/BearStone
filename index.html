@@ -29,13 +29,13 @@ body{
 }
 
 /* MATRIX */
-canvas{
+#matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* CONSOLE */
+/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -44,6 +44,14 @@ canvas{
   display:flex;
   flex-direction:column;
   z-index:10;
+}
+
+#terminalHeader{opacity:0.8;margin-bottom:10px;}
+
+#terminalLog{
+  flex:1;
+  overflow:auto;
+  font-size:14px;
 }
 
 #terminalInputLine{
@@ -70,6 +78,7 @@ canvas{
   right:20px;
   display:none;
   justify-content:space-between;
+  font-size:18px;
   z-index:5;
 }
 
@@ -79,8 +88,21 @@ canvas{
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:20px;
+  font-size:22px;
+  z-index:5;
 }
+
+/* ENTITIES */
+.entity{
+  position:absolute;
+  font-size:60px;
+  cursor:pointer;
+}
+
+.feature{color:#00ff9f;}
+.rat{color:#ff4d4d;}
+.anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
+.kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
 /* STATS */
 #stats{
@@ -91,77 +113,43 @@ canvas{
   font-size:14px;
 }
 
-/* ENTITIES */
-.entity{
-  position:absolute;
-  font-size:60px;
-  cursor:pointer;
-}
-
-.rat{color:#ff4d4d;}
-.feature{color:#00ff9f;}
-.anime{color:#ff4dff;}
-.kalyan{color:#00ffaa;}
-
-/* FLASH */
-#flash{
-  position:fixed;
-  inset:0;
-  background:red;
-  opacity:0;
-  z-index:9999;
-  pointer-events:none;
-  transition:0.2s;
-}
-
-/* SHAKE */
-.shake{
-  animation:shake 0.2s;
-}
-
-@keyframes shake{
-  0%{transform:translate(0,0);}
-  25%{transform:translate(5px,-5px);}
-  50%{transform:translate(-5px,5px);}
-  75%{transform:translate(5px,5px);}
-  100%{transform:translate(0,0);}
-}
-
-/* CARDS */
+/* HAND */
 #hand{
   position:fixed;
   bottom:0;
   left:50%;
   transform:translateX(-50%);
-  display:flex;
+  width:90%;
+  height:200px;
   z-index:1000;
 }
 
 .card{
   width:140px;
-  height:90px;
+  height:120px;
   background:#111;
   border:2px solid #00ff9f;
-  margin:5px;
+  border-radius:10px;
   color:white;
   display:flex;
   align-items:center;
   justify-content:center;
   cursor:pointer;
+  margin:5px;
 }
 
 /* BOSS */
-#boss{
+#bossModal{
   position:fixed;
   inset:0;
+  background:rgba(0,0,0,0.9);
   display:none;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,0.9);
   z-index:999;
 }
 
-#box{
+#bossBox{
   width:420px;
   background:#111;
   border:2px solid red;
@@ -170,7 +158,7 @@ canvas{
   color:white;
 }
 
-#emo{
+#olgaEmotion{
   font-size:20px;
   margin-bottom:10px;
 }
@@ -180,32 +168,34 @@ canvas{
 
 <body>
 
+<!-- INTRO -->
 <div id="intro">
 🚨 PROD УПАЛ 🚨<br><br>
 
-🐀 баги = плохо<br>
-🐻 фичи = хорошо<br><br>
+🐀 БАГИ — кликай (плохо если много)<br>
+🐻 ФИЧИ — кликай (это хорошо)<br><br>
 
-🃏 карты: DEV / BUG / ANIME / KALYAN<br>
-❌ негатив: ВОПРОСЫ С РАБОТКИ / ОЛЬГА<br><br>
+🃏 КАРТЫ:<br>
+DEV / BUG / ANIME / KALYAN<br><br>
+
+🎯 JUNIOR → MIDDLE → SENIOR<br><br>
 
 👉 нажми любую клавишу
 </div>
 
-<div id="flash"></div>
-
 <canvas id="matrix"></canvas>
 
 <div id="console">
-  <div>> SYSTEM READY</div>
+  <div id="terminalHeader">SYSTEM TERMINAL</div>
+  <div id="terminalLog">> start</div>
   <div id="terminalInputLine">
     ><input id="cmd">
   </div>
 </div>
 
 <div id="hud">
-  <div>🐻 <span id="f">0</span></div>
-  <div>🐀 <span id="b">0</span></div>
+  <div id="left">🐻 0</div>
+  <div id="right">🐀 0</div>
 </div>
 
 <div id="level"></div>
@@ -217,27 +207,23 @@ HAPPY: <span id="happy">0</span>
 
 <div id="hand"></div>
 
-<div id="boss">
-  <div id="box">
-    <div id="emo">😐 Ольга</div>
-    <div id="q"></div>
-    <div id="cards"></div>
+<div id="bossModal">
+  <div id="bossBox">
+    <div id="olgaEmotion">😐 Ольга смотрит...</div>
+    <div id="olgaQ"></div>
+    <div id="answers"></div>
   </div>
 </div>
 
 <script>
 
-/* STATE */
-let f=0,b=0,hp=100,happy=0,bossHP=100;
-let lvl=0,run=false;
-
-/* START */
+/* INTRO */
 document.addEventListener("keydown",()=>{
   document.getElementById("intro").style.display="none";
 });
 
 /* MATRIX */
-const c=document.querySelector("canvas");
+const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
@@ -245,34 +231,50 @@ c.height=innerHeight;
 setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle="#00ff9f";
+  ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
 },50);
 
+/* STATE */
+let f=0,b=0,lvl=0,run=false;
+let hp=100;
+let happy=0;
+let bossHP=100;
+let olgaMood="neutral";
+
+/* LEVELS */
+const levels=[
+  {name:"JUNIOR",goal:4},
+  {name:"MIDDLE",goal:6},
+  {name:"SENIOR",goal:8}
+];
+
 /* CMD */
-document.getElementById("cmd").onkeydown=(e)=>{
-if(e.key==="Enter" && e.target.value==="start"){
+const cmd=document.getElementById("cmd");
+const log=document.getElementById("terminalLog");
+
+cmd.onkeydown=(e)=>{
+if(e.key!=="Enter") return;
+
+if(cmd.value==="start"){
   run=true;
   document.getElementById("console").style.display="none";
   document.getElementById("hud").style.display="flex";
   next();
 }
+
+cmd.value="";
 };
 
-/* FX */
-function shake(){
-document.body.classList.add("shake");
-setTimeout(()=>document.body.classList.remove("shake"),200);
-}
-
-function flash(){
-let f=document.getElementById("flash");
-f.style.opacity="0.4";
-setTimeout(()=>f.style.opacity=0,150);
-}
-
-/* GAME LOOP */
+/* GAME */
 function next(){
 
-document.getElementById("level").innerText="LEVEL "+lvl;
+if(lvl>=levels.length){
+  boss();
+  return;
+}
+
+document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
 setInterval(()=>{
 
@@ -287,21 +289,30 @@ if(r>0.75) type="anime";
 if(r>0.88) type="kalyan";
 
 e.className="entity "+type;
-e.innerText="●";
+
+e.innerText=type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"💨";
+
+e.style.left=Math.random()*innerWidth+"px";
+e.style.top=Math.random()*innerHeight+"px";
 
 e.onclick=()=>{
 
 if(type==="rat") b++;
 if(type==="feature") f++;
+
 if(type==="anime") happy+=25;
 if(type==="kalyan") happy+=40;
 
 update();
 
-};
+e.remove();
 
-e.style.left=Math.random()*innerWidth+"px";
-e.style.top=Math.random()*innerHeight+"px";
+if(f>=levels[lvl].goal){
+  lvl++;
+  next();
+}
+
+};
 
 document.body.appendChild(e);
 setTimeout(()=>e.remove(),2000);
@@ -309,96 +320,105 @@ setTimeout(()=>e.remove(),2000);
 },600);
 }
 
-/* UPDATE */
 function update(){
-f_el.innerText=f;
-b_el.innerText=b;
-hp_el.innerText=hp;
-happy_el.innerText=happy;
+document.getElementById("left").innerText="🐻 "+f;
+document.getElementById("right").innerText="🐀 "+b;
+document.getElementById("hp").innerText=hp;
+document.getElementById("happy").innerText=happy;
 }
 
 /* CARDS */
-const cards=[
-{t:"DEV FIX",d:10,h:0},
-{t:"BUG LOOP",d:-5,h:0},
-{t:"ANIME",d:0,h:25},
-{t:"KALYAN",d:0,h:40},
-{t:"ВОПРОСЫ С РАБОТКИ",d:-20,h:0},
-{t:"ВОПРОСИКИ ОЛЬГИ",d:0,h:-25}
+const answers=[
+{t:"Это фича",d:10,h:0},
+{t:"Я проверил локально",d:7,h:5},
+{t:"перезапусти прод",d:5,h:0},
+{t:"кальян и обсудим",d:0,h:20},
+{t:"аниме объясняет баг",d:5,h:25}
 ];
 
 /* BOSS */
-const qs=["Ты меня любишь?","Почему баги?","Это прод?"];
-
 function boss(){
-document.getElementById("boss").style.display="flex";
-round();
+
+document.getElementById("bossModal").style.display="flex";
+
+nextRound();
+
 }
 
-function round(){
+function nextRound(){
 
-setMood();
+if(hp<=0 || bossHP<=0){
+  end();
+  return;
+}
 
-document.getElementById("q").innerText=
-"🐀 "+qs[Math.floor(Math.random()*qs.length)];
+setOlgaMood();
 
-let c=document.getElementById("cards");
-c.innerHTML="";
+document.getElementById("olgaQ").innerText=
+"🐀 Ольга: "+["Ты меня любишь?","Почему всё ломается?","Это баг или фича?"][Math.floor(Math.random()*3)];
 
-cards.forEach(a=>{
+let box=document.getElementById("answers");
+box.innerHTML="";
 
-let el=document.createElement("div");
-el.className="card";
-el.innerText=a.t;
+answers.forEach(a=>{
 
-el.onclick=()=>{
+let c=document.createElement("div");
+c.className="card";
+c.innerText=a.t;
 
-if(a.d<0){hp+=a.d;shake();}
-if(a.d>0){bossHP-=a.d;}
-if(a.h<0){happy+=a.h;flash();}
-if(a.h>0){happy+=a.h;}
+c.onclick=()=>{
+
+bossHP -= a.d;
+hp -= Math.floor(Math.random()*8);
+happy += (a.h||0);
 
 update();
-
-if(hp<=0||bossHP<=0){
-end();
-return;
-}
-
-round();
+nextRound();
 
 };
 
-c.appendChild(el);
+box.appendChild(c);
 
 });
 
 }
 
-/* EMO */
-function setMood(){
-let e=document.getElementById("emo");
+/* EMOTION */
+function setOlgaMood(){
 
-if(bossHP<30){e.innerText="😱 паника";flash();}
-else if(hp<40){e.innerText="😡 злость";flash();}
-else{e.innerText="😐 Ольга";}
+let e=document.getElementById("olgaEmotion");
+
+if(bossHP<30){
+  e.innerText="😱 Ольга паникует!";
+}
+else if(hp<40){
+  e.innerText="😡 Ольга злится!";
+}
+else if(bossHP>80){
+  e.innerText="😊 Ольга радуется!";
+}
+else{
+  e.innerText="😐 Ольга смотрит...";
+}
+
 }
 
 /* END */
 function end(){
-document.getElementById("box").innerHTML="🎉 WIN 🎉";
+
+document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
 
 for(let i=0;i<30;i++){
-let d=document.createElement("div");
-d.innerText="🍰";
-d.style.position="absolute";
-d.style.left=Math.random()*100+"%";
-d.style.top=Math.random()*100+"%";
-document.body.appendChild(d);
+let c=document.createElement("div");
+c.innerText="🍰";
+c.style.position="absolute";
+c.style.left=Math.random()*100+"%";
+c.style.top=Math.random()*100+"%";
+document.body.appendChild(c);
 }
+
 }
 
 </script>
-
 </body>
 </html>
