@@ -13,7 +13,6 @@ body{
   color:#00ff9f;
 }
 
-/* INTRO */
 #intro{
   position:fixed;
   inset:0;
@@ -28,14 +27,12 @@ body{
   padding:20px;
 }
 
-/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -70,7 +67,6 @@ body{
   font-size:16px;
 }
 
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -82,7 +78,6 @@ body{
   z-index:5;
 }
 
-/* LEVEL */
 #level{
   position:fixed;
   top:60px;
@@ -92,19 +87,17 @@ body{
   z-index:5;
 }
 
-/* HINT */
 #hint{
   position:fixed;
   bottom:220px;
   left:20px;
-  color:#ffffff;
+  color:#fff;
   font-size:13px;
   z-index:6;
   opacity:0.8;
   max-width:300px;
 }
 
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
@@ -116,7 +109,6 @@ body{
 .anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
 .kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
-/* STATS */
 #stats{
   position:fixed;
   top:140px;
@@ -125,32 +117,6 @@ body{
   font-size:14px;
 }
 
-/* HAND */
-#hand{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:90%;
-  height:200px;
-  z-index:1000;
-}
-
-.card{
-  width:140px;
-  height:120px;
-  background:#111;
-  border:2px solid #00ff9f;
-  border-radius:10px;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  margin:5px;
-}
-
-/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
@@ -175,6 +141,20 @@ body{
   margin-bottom:10px;
 }
 
+.card{
+  width:140px;
+  height:120px;
+  background:#111;
+  border:2px solid #00ff9f;
+  border-radius:10px;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  margin:5px;
+}
+
 </style>
 </head>
 
@@ -182,11 +162,8 @@ body{
 
 <div id="intro">
 🚨 PROD УПАЛ 🚨<br><br>
-🐀 БАГИ — кликай (плохо если много)<br>
-🐻 ФИЧИ — кликай (это хорошо)<br><br>
-🃏 КАРТЫ:<br>
-DEV / BUG / ANIME / KALYAN<br><br>
-🎯 JUNIOR → MIDDLE → SENIOR<br><br>
+🐀 БАГИ — кликай<br>
+🐻 ФИЧИ — кликай<br><br>
 👉 нажми любую клавишу
 </div>
 
@@ -214,14 +191,11 @@ REPAIR: <span id="repair">30</span>
 </div>
 
 <div id="hint">
-Правила:<br>
 🐻 x3 = +10% repair<br>
-🐀 x3 пропуска = -5% repair<br>
-🌸 / 💨 = +5% happy, -1% repair<br>
-<15% repair = GAME OVER
+🐀 x3 = -5% repair<br>
+🌸💨 = +5% happy / -1% repair<br>
+<15% = GAME OVER
 </div>
-
-<div id="hand"></div>
 
 <div id="bossModal">
   <div id="bossBox">
@@ -255,11 +229,9 @@ let f=0,b=0,lvl=0,run=false;
 let hp=100;
 let happy=0;
 let bossHP=100;
-
 let repair=30;
 let missedRats=0;
 
-/* LEVELS */
 const levels=[
   {name:"JUNIOR",goal:4},
   {name:"MIDDLE",goal:6},
@@ -268,7 +240,6 @@ const levels=[
 
 /* CMD */
 const cmd=document.getElementById("cmd");
-const log=document.getElementById("terminalLog");
 
 cmd.onkeydown=(e)=>{
 if(e.key!=="Enter") return;
@@ -301,7 +272,6 @@ if(r>0.75) type="anime";
 if(r>0.88) type="kalyan";
 
 e.className="entity "+type;
-
 e.innerText=type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"💨";
 
 e.style.left=Math.random()*innerWidth+"px";
@@ -314,10 +284,9 @@ e.onclick=()=>{
 clicked=true;
 
 if(type==="rat") b++;
-if(type==="feature"){
-  f++;
-  if(f%3===0) repair+=10;
-}
+if(type==="feature") f++;
+
+if(f%3===0) repair+=10;
 
 if(type==="anime"||type==="kalyan"){
   happy+=5;
@@ -325,14 +294,14 @@ if(type==="anime"||type==="kalyan"){
 }
 
 update();
-
 e.remove();
-
-checkProgress();
+check();
 };
 
 setTimeout(()=>{
-if(!clicked && type==="rat") missedRats++;
+if(!clicked && type==="rat"){
+  missedRats++;
+}
 
 if(missedRats>=3){
   repair-=5;
@@ -341,7 +310,7 @@ if(missedRats>=3){
 
 e.remove();
 update();
-checkProgress();
+check();
 
 },2000);
 
@@ -350,8 +319,7 @@ document.body.appendChild(e);
 },600);
 }
 
-/* PROGRESS */
-function checkProgress(){
+function check(){
 
 if(repair<15){
   document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>GAME OVER</h1>";
@@ -365,8 +333,6 @@ if(happy>=100){
 
 if(happy>=70) lvl=2;
 else if(happy>=40) lvl=1;
-
-document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 }
 
 /* UPDATE */
@@ -378,9 +344,52 @@ document.getElementById("happy").innerText=happy;
 document.getElementById("repair").innerText=repair;
 }
 
-/* BOSS */
+/* BOSS FIXED */
 function boss(){
 document.getElementById("bossModal").style.display="flex";
+nextRound();
+}
+
+function nextRound(){
+
+const box=document.getElementById("answers");
+if(!box) return;
+
+if(hp<=0 || bossHP<=0){
+  return;
+}
+
+document.getElementById("olgaQ").innerText=
+"🐀 Ольга: "+["Ты меня любишь?","Почему всё ломается?","Это баг или фича?"][Math.floor(Math.random()*3)];
+
+box.innerHTML="";
+
+const answers=[
+{t:"Это фича",d:10,h:0},
+{t:"перезапусти прод",d:5,h:0},
+{t:"аниме объясняет баг",d:5,h:5}
+];
+
+answers.forEach(a=>{
+
+let c=document.createElement("div");
+c.className="card";
+c.innerText=a.t;
+
+c.onclick=()=>{
+
+bossHP-=a.d;
+hp-=5;
+happy+=a.h;
+
+update();
+nextRound();
+
+};
+
+box.appendChild(c);
+
+});
 }
 
 </script>
