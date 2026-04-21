@@ -97,7 +97,6 @@ body{
   position:absolute;
   font-size:60px;
   cursor:pointer;
-  text-align:center;
 }
 
 .feature{color:#00ff9f;}
@@ -133,67 +132,54 @@ body{
   z-index:5;
 }
 
-/* ===== HEARTHSTONE HAND ===== */
+/* HAND */
 #hand{
   position:fixed;
   bottom:0;
   left:50%;
   transform:translateX(-50%);
   width:90%;
-  height:220px;
+  height:200px;
   z-index:1000;
 }
 
 .card{
-  width:120px;
-  height:160px;
+  width:140px;
+  height:120px;
   background:#111;
   border:2px solid #00ff9f;
-  border-radius:12px;
-  position:absolute;
-  bottom:0;
-  cursor:grab;
+  border-radius:10px;
+  color:white;
   display:flex;
-  flex-direction:column;
   align-items:center;
   justify-content:center;
-  font-size:12px;
-  color:white;
-  transition:0.3s;
+  cursor:pointer;
+  margin:5px;
 }
 
-.card:hover{
-  transform:translateY(-60px) scale(1.1)!important;
+/* OLGA */
+#olgaEmotion{
+  font-size:22px;
+  margin-bottom:10px;
 }
 
-/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
+  background:rgba(0,0,0,0.9);
   display:none;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,0.9);
   z-index:999;
-  flex-direction:column;
 }
 
-#bossCard{
+#bossBox{
   width:420px;
   background:#111;
-  border:2px solid #ff4d4d;
-  border-radius:14px;
+  border:2px solid red;
   padding:20px;
   text-align:center;
-  color:#fff;
-}
-
-.optionBtn{
-  padding:10px;
-  background:black;
-  border:1px solid #00ff9f;
-  color:#00ff9f;
-  cursor:pointer;
+  color:white;
 }
 
 </style>
@@ -201,7 +187,6 @@ body{
 
 <body>
 
-<!-- INTRO -->
 <div id="intro">
 🚨 PROD УПАЛ<br>
 SUPER ARTEEM СПАСАЕТ<br><br>
@@ -235,21 +220,21 @@ HAPPY: <span id="happy">0</span>
 <div id="hand"></div>
 
 <div id="bossModal">
-  <div id="bossCard">
-    <div style="color:#ff4d4d;font-size:20px;">🐀 ОЛЬГА КРЫСА</div>
-    <div id="bossQ">...</div>
-    <div id="bossOptions"></div>
+  <div id="bossBox">
+    <div id="olgaEmotion">😐 Ольга смотрит...</div>
+    <div id="olgaQ"></div>
+    <div id="answers"></div>
   </div>
 </div>
 
 <script>
 
-/* ===== INTRO ===== */
+/* INTRO */
 document.addEventListener("keydown",()=>{
   document.getElementById("intro").style.display="none";
 });
 
-/* ===== MATRIX ===== */
+/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
@@ -262,27 +247,28 @@ setInterval(()=>{
   ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
 },50);
 
-/* ===== STATE ===== */
+/* STATE */
 let f=0,b=0,lvl=0,run=false;
-let hp=100,happy=0;
+let hp=100;
+let happy=0;
+let bossHP=100;
+let olgaMood="neutral";
 
+/* LEVELS */
 const levels=[
   {name:"JUNIOR",goal:4},
   {name:"MIDDLE",goal:6},
   {name:"SENIOR",goal:8}
 ];
 
-/* ===== CMD ===== */
+/* CMD */
 const cmd=document.getElementById("cmd");
 const log=document.getElementById("terminalLog");
 
 cmd.onkeydown=(e)=>{
 if(e.key!=="Enter") return;
 
-let v=cmd.value;
-log.innerHTML+="<br>> "+v;
-
-if(v==="start"){
+if(cmd.value==="start"){
   run=true;
   document.getElementById("console").style.display="none";
   document.getElementById("hud").style.display="flex";
@@ -292,7 +278,7 @@ if(v==="start"){
 cmd.value="";
 };
 
-/* ===== GAME ===== */
+/* GAME */
 function next(){
 
 if(lvl>=levels.length){
@@ -307,17 +293,14 @@ setInterval(()=>{
 if(!run) return;
 
 let e=document.createElement("div");
-
 let r=Math.random();
 let type="feature";
+
 if(r<0.4) type="rat";
 if(r>0.85) type="joker";
 
 e.className="entity "+type;
-
-if(type==="rat") e.innerHTML="🐀";
-if(type==="feature") e.innerHTML="🐻";
-if(type==="joker") e.innerHTML="🃏";
+e.innerText=type==="rat"?"🐀":type==="joker"?"🃏":"🐻";
 
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
@@ -349,138 +332,106 @@ setTimeout(()=>e.remove(),2000);
 },600);
 }
 
-/* ===== UPDATE ===== */
 function update(){
-left.innerText="🐻 "+f;
-right.innerText="🐀 "+b;
+document.getElementById("left").innerText="🐻 "+f;
+document.getElementById("right").innerText="🐀 "+b;
 }
 
-/* ===== STATS ===== */
 function updateStats(){
 document.getElementById("hp").innerText=hp;
 document.getElementById("happy").innerText=happy;
 }
 
-/* ===== HEARTHSTONE HAND ===== */
+/* ===== OLGA EMOTIONS ===== */
+function setOlgaMood(){
 
-let hand=[];
-const cards=[
-  {name:"🧙 DEV FIX",type:"DEV"},
-  {name:"🐀 BUG LOOP",type:"BUG"},
-  {name:"🌸 ANIME BOOST",type:"ANIME"},
-  {name:"👑 LEGENDARY",type:"LEG"}
+let el=document.getElementById("olgaEmotion");
+
+if(bossHP < 30){
+  olgaMood="panic";
+  el.innerText="😱 Ольга паникует!";
+}
+else if(hp < 40){
+  olgaMood="angry";
+  el.innerText="😡 Ольга злится!";
+}
+else if(bossHP > 80){
+  olgaMood="happy";
+  el.innerText="😊 Ольга довольна!";
+}
+else{
+  olgaMood="neutral";
+  el.innerText="😐 Ольга смотрит...";
+}
+
+}
+
+/* ===== BOSS CARD DUEL ===== */
+const questions=[
+"Ты меня любишь?",
+"Почему всё ломается?",
+"Это баг или фича?"
 ];
 
-function drawCard(){
+const answers=[
+{t:"Это фича",d:10},
+{t:"Я проверил локально",d:7},
+{t:"перезапусти прод",d:5}
+];
 
-let c=cards[Math.floor(Math.random()*cards.length)];
-
-let el=document.createElement("div");
-el.className="card";
-el.innerHTML=c.name;
-
-document.getElementById("hand").appendChild(el);
-
-el.onmousedown=(e)=>{
-
-document.onmousemove=(ev)=>{
-el.style.position="fixed";
-el.style.left=ev.clientX+"px";
-el.style.top=ev.clientY+"px";
-};
-
-document.onmouseup=()=>{
-
-document.onmousemove=null;
-
-/* EFFECTS */
-if(c.type==="BUG") b++;
-if(c.type==="DEV") f++;
-if(c.type==="ANIME") hp+=20;
-if(c.type==="LEG") happy+=50;
-
-update();
-updateStats();
-
-el.remove();
-};
-
-};
-
-}
-
-/* AUTO DRAW */
-setInterval(()=>{
-if(run && Math.random()<0.15){
-drawCard();
-}
-},1200);
-
-/* ===== OLGA BOSS (RESTORED FULL) ===== */
 function boss(){
 
-const modal=document.getElementById("bossModal");
-modal.style.display="flex";
+document.getElementById("bossModal").style.display="flex";
 
-const q=document.getElementById("bossQ");
-const opt=document.getElementById("bossOptions");
+nextRound();
 
-let questions=[
-"Ты меня любишь?",
-"А если я баг?",
-"Я фикс или нет?"
-];
+}
 
-let answers=["❤️ да","💨 кальян","🍕 пицца", "БААААААААААААААО", "ты БАГ", "Я АРТЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕЕМ"];
+function nextRound(){
 
-let i=0;
-
-function render(){
-
-if(i>=questions.length){
+if(hp<=0 || bossHP<=0){
   end();
   return;
 }
 
-q.innerText=questions[i];
-opt.innerHTML="";
+setOlgaMood();
+
+document.getElementById("olgaQ").innerText=
+"🐀 Ольга: "+questions[Math.floor(Math.random()*questions.length)];
+
+let box=document.getElementById("answers");
+box.innerHTML="";
 
 answers.forEach(a=>{
-let b=document.createElement("div");
-b.className="optionBtn";
-b.innerText=a;
 
-b.onclick=()=>{
-hp+=10;
-happy+=10;
+let c=document.createElement("div");
+c.className="card";
+c.innerText=a.t;
+
+c.onclick=()=>{
+
+bossHP -= a.d;
+hp -= Math.floor(Math.random()*8);
+
 updateStats();
-i++;
-render();
+
+nextRound();
+
 };
 
-opt.appendChild(b);
+box.appendChild(c);
+
 });
 
 }
 
-render();
-}
-
-/* ===== END (CAKES RESTORED) ===== */
+/* END */
 function end(){
 
-let win=document.createElement("div");
-win.style.position="fixed";
-win.style.inset="0";
-win.style.background="black";
-win.style.color="#ff4d4d";
-win.style.display="flex";
-win.style.alignItems="center";
-win.style.justifyContent="center";
-win.innerHTML="🎉 ARTEM WIN 🎉";
-document.body.appendChild(win);
+document.getElementById("bossBox").innerHTML=
+"🎉 БОСС ПОБЕЖДЁН 🎉";
 
-for(let i=0;i<40;i++){
+for(let i=0;i<30;i++){
 let c=document.createElement("div");
 c.innerText="🍰";
 c.style.position="absolute";
