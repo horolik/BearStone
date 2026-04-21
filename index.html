@@ -152,7 +152,6 @@ body{
   cursor:pointer;
   margin:5px;
 }
-
 </style>
 </head>
 
@@ -162,7 +161,6 @@ body{
 🚨 PROD УПАЛ 🚨<br><br>
 🐀 БАГИ — кликай<br>
 🐻 ФИЧИ — кликай<br><br>
-🃏 DEV / BUG / ANIME / KALYAN<br><br>
 🎯 JUNIOR → MIDDLE → SENIOR<br><br>
 👉 нажми любую клавишу
 </div>
@@ -228,7 +226,7 @@ let bossHP=100;
 let fix=30;
 let bears=0;
 let ratsMissed=0;
-let qIndex=0;
+let spawnTimer=null;
 
 /* LEVELS */
 const levels=[
@@ -237,7 +235,6 @@ const levels=[
   {name:"SENIOR",goal:8}
 ];
 
-/* LOWERED PROGRESSION */
 const happyGate=[0,20,35];
 
 /* CMD */
@@ -270,10 +267,11 @@ if(fix<=15){
   return;
 }
 
+/* 🔥 БОСС ГАРАНТИРОВАННО */
 if(lvl>=levels.length){
   if(happy>=50){
     boss();
-  }else{
+  } else {
     tip("Нужно 50% happiness для босса");
   }
   return;
@@ -282,7 +280,10 @@ if(lvl>=levels.length){
 document.getElementById("level").innerText=
 "LEVEL "+levels[lvl].name+" | FIX "+fix+"%";
 
-setInterval(()=>{
+/* один единственный loop */
+if(spawnTimer) clearInterval(spawnTimer);
+
+spawnTimer=setInterval(()=>{
 
 if(!run) return;
 
@@ -417,12 +418,10 @@ box.appendChild(c);
 
 }
 
-/* END */
 function end(){
 document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
 }
 
-/* GAME OVER */
 function gameover(t){
 run=false;
 document.body.innerHTML=
@@ -430,6 +429,5 @@ document.body.innerHTML=
 }
 
 </script>
-
 </body>
 </html>
