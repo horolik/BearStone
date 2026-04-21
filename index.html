@@ -154,6 +154,7 @@ body{
   cursor:pointer;
   margin:5px;
 }
+
 </style>
 </head>
 
@@ -232,6 +233,7 @@ let bossHP=100;
 let repair=30;
 let missedRats=0;
 
+/* LEVELS */
 const levels=[
   {name:"JUNIOR"},
   {name:"MIDDLE"},
@@ -321,7 +323,7 @@ document.body.appendChild(e);
 },600);
 }
 
-/* CHECK LEVELS */
+/* LEVEL + END CHECK */
 function check(){
 
 if(repair<15){
@@ -335,6 +337,7 @@ else lvl=0;
 
 document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
 
+/* START BOSS */
 if(happy>=100){
   boss();
 }
@@ -354,16 +357,21 @@ document.getElementById("repair").innerText=repair;
 function boss(){
 document.getElementById("bossModal").style.display="flex";
 bossHP = 100;
+window.bossActive = true;
 nextRound();
 }
 
 /* QUESTIONS */
 function nextRound(){
 
+if(!window.bossActive) return;
+
 const box=document.getElementById("answers");
 if(!box) return;
 
-if(bossHP<=0){
+/* FINISH */
+if(bossHP <= 0){
+  window.bossActive = false;
   endGame();
   return;
 }
@@ -394,13 +402,16 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
+if(!window.bossActive) return;
+
 bossHP-=a.d;
 hp-=3;
 happy+=a.h;
 
 update();
 
-if(bossHP<=0){
+if(bossHP <= 0){
+  window.bossActive = false;
   endGame();
   return;
 }
@@ -418,6 +429,8 @@ box.appendChild(c);
 /* END */
 function endGame(){
 
+window.bossActive = false;
+
 document.getElementById("bossBox").innerHTML=`
 <h1>🎉 ИГРА ПРОЙДЕНА 🎉</h1>
 <br>
@@ -428,13 +441,13 @@ document.getElementById("bossBox").innerHTML=`
 `;
 
 for(let i=0;i<30;i++){
-let c=document.createElement("div");
-c.innerText="🍰";
-c.style.position="absolute";
-c.style.left=Math.random()*100+"%";
-c.style.top=Math.random()*100+"%";
-c.style.fontSize="22px";
-document.body.appendChild(c);
+let cake=document.createElement("div");
+cake.innerText="🍰";
+cake.style.position="absolute";
+cake.style.left=Math.random()*100+"%";
+cake.style.top=Math.random()*100+"%";
+cake.style.fontSize="22px";
+document.body.appendChild(cake);
 }
 
 }
