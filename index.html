@@ -136,11 +136,6 @@ body{
   color:white;
 }
 
-#olgaEmotion{
-  font-size:20px;
-  margin-bottom:10px;
-}
-
 .card{
   width:140px;
   height:120px;
@@ -198,7 +193,6 @@ REPAIR: <span id="repair">30</span>
 
 <div id="bossModal">
   <div id="bossBox">
-    <div id="olgaEmotion">😐 Ольга смотрит...</div>
     <div id="olgaQ"></div>
     <div id="answers"></div>
   </div>
@@ -228,9 +222,7 @@ setInterval(()=>{
 let f=0,b=0,lvl=0,run=false;
 let hp=100;
 let happy=0;
-let bossHP=100;
 let repair=30;
-let missedRats=0;
 
 const levels=[
   {name:"JUNIOR"},
@@ -277,11 +269,7 @@ e.innerText=type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"�
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
 
-let clicked=false;
-
 e.onclick=()=>{
-
-clicked=true;
 
 if(type==="rat") b++;
 if(type==="feature"){
@@ -300,20 +288,9 @@ check();
 };
 
 setTimeout(()=>{
-
-if(!clicked && type==="rat"){
-  missedRats++;
-}
-
-if(missedRats>=3){
-  repair-=5;
-  missedRats=0;
-}
-
 e.remove();
 update();
 check();
-
 },2000);
 
 document.body.appendChild(e);
@@ -321,7 +298,7 @@ document.body.appendChild(e);
 },600);
 }
 
-/* LEVEL CHECK */
+/* CHECK */
 function check(){
 
 if(repair<15){
@@ -350,67 +327,50 @@ document.getElementById("happy").innerText=happy;
 document.getElementById("repair").innerText=repair;
 }
 
-/* BOSS FIXED */
+/* BOSS (5 QUESTIONS ONLY) */
 function boss(){
 
 document.getElementById("bossModal").style.display="flex";
 
-bossHP = 100;
-window.bossActive = true;
-window.bossLocked = false;
-
+window.bossHP = 100;
 window.round = 0;
 window.maxRounds = 5;
-window.nextLocked = false;
+window.lock = false;
 
 nextRound();
 }
 
-/* QUESTIONS FIXED FINAL */
+/* QUESTIONS */
 function nextRound(){
 
-if(!window.bossActive || window.bossLocked) return;
+if(window.lock) return;
 
-const box=document.getElementById("answers");
-if(!box) return;
-
-/* стоп */
-if(bossHP <= 0 || window.round >= window.maxRounds){
-  window.bossActive = false;
-  window.bossLocked = true;
+if(window.round >= window.maxRounds){
   endGame();
   return;
 }
 
 window.round++;
 
-if(window.nextLocked) return;
-window.nextLocked = true;
-
 const questions=[
   "а ты меня любишь?",
   "а ты любил бы меня, если бы я была червем?",
   "будешь меня любить, если я буду толстая?",
-  "кто самая сладкая Мишка?"
+  "кто самая сладкая Мишка?",
+  "ты останешься до конца?"
 ];
 
 document.getElementById("olgaQ").innerText =
-"🐀 Ольга: " + questions[Math.floor(Math.random()*questions.length)];
+"🐀 Ольга: " + questions[window.round - 1];
 
+const box=document.getElementById("answers");
 box.innerHTML="";
 
 const answers=[
   {t:"кальян",d:5,h:10},
   {t:"пицца",d:5,h:10},
-  {t:"Я АРТЕЕЕЕЕМ",d:10,h:15}
+  {t:"шутки про программистов",d:10,h:15}
 ];
-
-let autoNext=setTimeout(()=>{
-  if(window.bossActive && !window.bossLocked){
-    window.nextLocked=false;
-    nextRound();
-  }
-},3500);
 
 answers.forEach(a=>{
 
@@ -420,25 +380,24 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
-if(!window.bossActive || window.bossLocked) return;
+if(window.lock) return;
 
-clearTimeout(autoNext);
+window.lock = true;
 
-bossHP-=a.d;
-hp-=3;
-happy+=a.h;
+window.bossHP -= a.d;
+hp -= 3;
+happy += a.h;
 
 update();
 
-if(bossHP <= 0){
-  window.bossActive=false;
-  window.bossLocked=true;
+window.lock = false;
+
+if(window.bossHP <= 0){
   endGame();
   return;
 }
 
-window.nextLocked=false;
-nextRound();
+setTimeout(nextRound,300);
 
 };
 
@@ -448,11 +407,8 @@ box.appendChild(c);
 
 }
 
-/* END GAME */
+/* END */
 function endGame(){
-
-window.bossActive=false;
-window.bossLocked=true;
 
 document.getElementById("bossBox").innerHTML=`
 <h1>🎉 ИГРА ПРОЙДЕНА 🎉</h1>
@@ -462,6 +418,8 @@ document.getElementById("bossBox").innerHTML=`
 <br>
 <p>Ольга довольна 😌</p>
 `;
+
+window.lock = true;
 
 for(let i=0;i<30;i++){
 let cake=document.createElement("div");
