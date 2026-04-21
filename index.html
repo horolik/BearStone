@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM // PROD DEBUG GAME</title>
+<title>SUPER ARTEM</title>
 
 <style>
 body{
@@ -13,60 +13,21 @@ body{
   color:#00ff9f;
 }
 
-#intro{
+/* START SCREEN */
+#start{
   position:fixed;
   inset:0;
-  background:black;
   display:flex;
   align-items:center;
   justify-content:center;
   flex-direction:column;
-  font-size:20px;
-  z-index:9999;
-  text-align:center;
-  padding:20px;
-}
-
-#matrix{
-  position:fixed;
-  inset:0;
-  z-index:0;
-}
-
-#console{
-  position:fixed;
-  inset:0;
+  font-size:22px;
   background:black;
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  z-index:10;
+  z-index:1000;
+  cursor:pointer;
 }
 
-#terminalHeader{opacity:0.8;margin-bottom:10px;}
-
-#terminalLog{
-  flex:1;
-  overflow:auto;
-  font-size:14px;
-}
-
-#terminalInputLine{
-  display:flex;
-  gap:10px;
-  border-top:1px solid #00ff9f;
-  padding-top:10px;
-}
-
-#cmd{
-  flex:1;
-  background:black;
-  border:none;
-  color:#00ff9f;
-  outline:none;
-  font-size:16px;
-}
-
+/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -74,325 +35,247 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
-  font-size:18px;
-  z-index:5;
 }
 
 #level{
   position:fixed;
-  top:60px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:22px;
-  z-index:5;
+  top:40px;
+  width:100%;
+  text-align:center;
 }
 
+#stats{
+  position:fixed;
+  top:80px;
+  left:20px;
+  color:white;
+}
+
+#guide{
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  right:20px;
+  border:1px solid #00ff9f;
+  padding:10px;
+  background:rgba(0,0,0,0.5);
+}
+
+/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
   cursor:pointer;
 }
 
-.rat{color:#ff4d4d;}
+.rat{color:red;}
 .feature{color:#00ff9f;}
-.anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
-.kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
+.fun{color:#ff4dff;}
 
-#stats{
-  position:fixed;
-  top:140px;
-  left:20px;
-  color:white;
-  font-size:14px;
-}
-
-#tip{
-  position:fixed;
-  bottom:160px;
-  left:20px;
-  color:#00ff9f;
-  font-size:14px;
-}
-
-#guide{
-  position:fixed;
-  bottom:60px;
-  left:20px;
-  right:20px;
-  color:#ffffff;
-  font-size:14px;
-  opacity:0.9;
-  background:rgba(0,0,0,0.5);
-  padding:10px;
-  border:1px solid #00ff9f;
-}
-
-#bossModal{
+#boss{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.9);
+  background:black;
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:999;
-}
-
-#bossBox{
-  width:420px;
-  background:#111;
-  border:2px solid red;
-  padding:20px;
-  text-align:center;
+  flex-direction:column;
   color:white;
-}
-
-.card{
-  width:140px;
-  height:120px;
-  background:#111;
-  border:2px solid #00ff9f;
-  border-radius:10px;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  margin:5px;
+  font-size:20px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="intro">
-ООООО НЕТ🚨 PROD УПАЛ 🚨 ТОЛЬКО SUPER ARTEM сможет его починить<br><br>
-🐀 БАГИ — кликай<br>
-🐻 ФИЧИ — кликай<br><br>
-👉 нажми любую клавишу
-</div>
-
-<canvas id="matrix"></canvas>
-
-<div id="console">
-  <div id="terminalHeader">SYSTEM TERMINAL</div>
-  <div id="terminalLog">> start</div>
-  <div id="terminalInputLine">
-    ><input id="cmd">
-  </div>
+<div id="start">
+🚨 PROD УПАЛ 🚨<br><br>
+КЛИКНИ ЧТОБЫ НАЧАТЬ
 </div>
 
 <div id="hud">
-  <div id="left">🐻 0</div>
-  <div id="right">🐀 0</div>
+<div id="f">🐻 0</div>
+<div id="r">🐀 0</div>
 </div>
 
 <div id="level"></div>
 
 <div id="stats">
-HP: <span id="hp">100</span> |
+FIX: <span id="fix">30</span>% |
 HAPPY: <span id="happy">0</span>
 </div>
 
-<!-- 🔥 ИНСТРУКЦИЯ НА ЭКРАНЕ -->
-<div id="guide">
-🎯 ЦЕЛЬ: доведи HAPPINESS до 50% → появится БОСС<br>
-🐀 Лови баги — иначе ломается PROD<br>
-🐻 Лови фичи — ускоряют FIX<br>
-🌸 Аниме / кальян — дают HAPPINESS<br>
-⚠️ не пропускай баги (🐀) подряд
-</div>
+<div id="guide"></div>
 
-<div id="tip"></div>
-
-<div id="bossModal">
-  <div id="bossBox">
-    <div id="olgaQ"></div>
-    <div id="answers"></div>
-  </div>
-</div>
+<div id="boss"></div>
 
 <script>
 
-/* INTRO */
-document.addEventListener("keydown",()=>{
-  document.getElementById("intro").style.display="none";
-});
-
-/* MATRIX */
-const c=document.getElementById("matrix");
-const ctx=c.getContext("2d");
-c.width=innerWidth;
-c.height=innerHeight;
-
-setInterval(()=>{
-  ctx.fillStyle="rgba(0,0,0,0.05)";
-  ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#00ff9f";
-  ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
-},50);
-
 /* STATE */
-let f=0,b=0,lvl=0,run=false;
-let hp=100;
-let happy=0;
-let bossStarted=false;
-let qIndex=0;
-
+let run=false;
+let f=0, r=0;
 let fix=30;
-let bears=0;
-let ratsMissed=0;
-let spawnTimer=null;
+let happy=0;
+let lvl=0;
+let bossStarted=false;
+let timer;
 
-/* CMD */
-const cmd=document.getElementById("cmd");
+/* LEVELS */
+const levels=["JUNIOR","MIDDLE","SENIOR"];
 
-cmd.onkeydown=(e)=>{
-if(e.key!=="Enter") return;
-
-if(cmd.value==="start"){
-  run=true;
-  document.getElementById("console").style.display="none";
-  document.getElementById("hud").style.display="flex";
-  next();
-}
-cmd.value="";
+/* START */
+document.getElementById("start").onclick=()=>{
+document.getElementById("start").style.display="none";
+document.getElementById("hud").style.display="flex";
+run=true;
+loop();
 };
 
-/* TIP */
-function tip(t){
-  let el=document.getElementById("tip");
-  el.innerText=t;
-  setTimeout(()=>el.innerText="",2000);
-}
-
-/* UPDATE */
+/* UPDATE UI */
 function update(){
-document.getElementById("left").innerText="🐻 "+f;
-document.getElementById("right").innerText="🐀 "+b;
-document.getElementById("hp").innerText=hp;
+
+document.getElementById("f").innerText="🐻 "+f;
+document.getElementById("r").innerText="🐀 "+r;
+document.getElementById("fix").innerText=fix;
 document.getElementById("happy").innerText=happy;
 
-/* 🔥 ОБНОВЛЕНИЕ ГАЙДА */
-let g=document.getElementById("guide");
+document.getElementById("level").innerText=
+"LEVEL: "+levels[lvl];
 
-if(happy<50){
-g.innerHTML="🎯 НАБЕРИ 50% HAPPINESS → БОСС<br>🐀 баги мешают PROD<br>🐻 фичи стабилизируют систему<br>🌸 дают счастье";
-} else {
-g.innerHTML="⚠️ БОСС АКТИВИРУЕТСЯ!";
-}
-}
-
-/* GAME */
-function next(){
-
-/* 🔥 БОСС ПО HAPPINESS */
-if(!bossStarted && happy>=50){
-bossStarted=true;
-
-if(spawnTimer) clearInterval(spawnTimer);
-
-boss();
-return;
+document.getElementById("guide").innerHTML=
+"🐀 Лови баги (иначе -FIX)<br>"+
+"🐻 Фичи дают +FIX<br>"+
+"🌸 Дают happiness<br>"+
+"🎯 50% happiness → БОСС";
 }
 
-if(fix<=15){
-gameover("PROD УПАЛ");
-return;
-}
+/* GAME LOOP */
+function loop(){
 
-if(spawnTimer) clearInterval(spawnTimer);
-
-spawnTimer=setInterval(()=>{
+timer=setInterval(()=>{
 
 if(!run) return;
 
+/* BOSS */
+if(!bossStarted && happy>=50){
+bossStarted=true;
+clearInterval(timer);
+showBoss();
+return;
+}
+
+/* GAME OVER */
+if(fix<=0){
+document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
+return;
+}
+
+/* SPAWN */
 let e=document.createElement("div");
-let r=Math.random();
+let rand=Math.random();
 let type="feature";
 
-if(r<0.4) type="rat";
-if(r>0.75) type="anime";
-if(r>0.88) type="kalyan";
+if(rand<0.4) type="rat";
+if(rand>0.75) type="fun";
 
 e.className="entity "+type;
 
 e.innerText=
 type==="rat"?"🐀":
-type==="feature"?"🐻":
-type==="anime"?"🌸":"💨";
+type==="feature"?"🐻":"🌸";
 
-e.style.left=Math.random()*innerWidth+"px";
-e.style.top=Math.random()*innerHeight+"px";
-
-e.clicked=false;
+e.style.left=Math.random()*window.innerWidth+"px";
+e.style.top=Math.random()*window.innerHeight+"px";
 
 e.onclick=()=>{
 
-e.clicked=true;
-
-if(type==="rat") b++;
-if(type==="feature"){ f++; bears++; }
-
-if(bears>=3){
-  fix+=10;
-  bears=0;
-  tip("+10% FIX");
+if(type==="rat"){
+r++;
+fix+=2;
 }
 
-if(type==="anime"||type==="kalyan"){
-  happy+=5;
-  fix-=1;
+if(type==="feature"){
+f++;
+fix+=3;
+}
+
+if(type==="fun"){
+happy+=5;
+fix-=1;
+}
+
+/* LEVEL UP */
+if(f>=5 && lvl<2){
+lvl++;
+f=0;
 }
 
 update();
-
 };
 
 document.body.appendChild(e);
 
+/* REMOVE */
 setTimeout(()=>{
+if(e.parentNode) e.remove();
+},1500);
 
-if(!e.clicked && type==="rat"){
-ratsMissed++;
-if(ratsMissed>=3){
-fix-=5;
-ratsMissed=0;
-}
-}
-
-e.remove();
-
-},2000);
-
-},600);
+},500);
 }
 
 /* BOSS */
-function boss(){
-document.getElementById("bossModal").style.display="flex";
-document.getElementById("olgaQ").innerText="Ольга: Ты меня любишь?";
-document.getElementById("answers").innerHTML="";
+function showBoss(){
 
-["Фича","Баг","Кальян"].forEach(t=>{
-let c=document.createElement("div");
-c.className="card";
-c.innerText=t;
-c.onclick=()=>{
-end();
+let b=document.getElementById("boss");
+b.style.display="flex";
+
+/* ВОПРОСЫ */
+let questions = [
+"Ты меня любишь?",
+"Ты будешь меня любить, если я буду рыбой?",
+"А если я превращусь в баг?",
+"А если я удалю прод?",
+"А если я буду просто console.log?",
+"А если я никогда не закрою тикет?"
+];
+
+let qIndex = 0;
+
+function renderQuestion(){
+
+b.innerHTML = "😈 ОЛЬГА БОСС<br><br>" + questions[qIndex] + "<br><br>";
+
+["ДА","НЕТ","ЭТО ФИЧА"].forEach(t=>{
+let btn=document.createElement("div");
+
+btn.innerText=t;
+btn.style.border="1px solid white";
+btn.style.padding="10px";
+btn.style.margin="5px";
+btn.style.cursor="pointer";
+
+btn.onclick=()=>{
+
+qIndex++;
+
+/* ЕСЛИ ВОПРОСЫ ЗАКОНЧИЛИСЬ */
+if(qIndex >= questions.length){
+b.innerHTML="🎉 ПОБЕДА! PROD ПОЧИНЕН 🎉";
+return;
+}
+
+renderQuestion();
 };
-document.getElementById("answers").appendChild(c);
+
+b.appendChild(btn);
 });
+
 }
 
-function end(){
-document.getElementById("bossBox").innerHTML=
-"🎉 ПОБЕДА! SUPER ARTEM ПОЧИНИЛ PROD 🎉";
+renderQuestion();
 }
 
-function gameover(t){
-document.body.innerHTML=
-"<div style='color:red;font-size:40px;text-align:center;margin-top:20%'>"+t+"</div>";
-}
+update();
 
 </script>
 </body>
