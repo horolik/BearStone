@@ -2,168 +2,100 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM // PROD DEBUG GAME</title>
+<title>PROD GAME</title>
 
 <style>
 body{
   margin:0;
   background:black;
+  color:#00ff9f;
   font-family:monospace;
   overflow:hidden;
-  color:#00ff9f;
 }
 
 /* INTRO */
 #intro{
   position:fixed;
   inset:0;
-  background:black;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
   flex-direction:column;
-  font-size:20px;
-  z-index:9999;
   text-align:center;
-  padding:20px;
+  background:black;
+  z-index:9999;
 }
 
 /* MATRIX */
-#matrix{
+canvas{
   position:fixed;
   inset:0;
   z-index:0;
-}
-
-/* TERMINAL */
-#console{
-  position:fixed;
-  inset:0;
-  background:black;
-  padding:20px;
-  display:flex;
-  flex-direction:column;
-  z-index:10;
-}
-
-#terminalHeader{opacity:0.8;margin-bottom:10px;}
-
-#terminalLog{
-  flex:1;
-  overflow:auto;
-  font-size:14px;
-}
-
-#terminalInputLine{
-  display:flex;
-  gap:10px;
-  border-top:1px solid #00ff9f;
-  padding-top:10px;
-}
-
-#cmd{
-  flex:1;
-  background:black;
-  border:none;
-  color:#00ff9f;
-  outline:none;
-  font-size:16px;
 }
 
 /* HUD */
 #hud{
   position:fixed;
   top:10px;
-  left:20px;
-  right:20px;
+  left:10px;
   display:none;
-  justify-content:space-between;
-  font-size:18px;
-  z-index:5;
+  gap:20px;
+  z-index:10;
 }
 
 /* LEVEL */
 #level{
   position:fixed;
-  top:60px;
+  top:50px;
   left:50%;
   transform:translateX(-50%);
-  font-size:22px;
-  z-index:5;
+  z-index:10;
 }
 
 /* RULES */
 #rules{
   position:fixed;
   bottom:10px;
-  left:20px;
-  color:#888;
+  left:10px;
   font-size:12px;
-  z-index:5;
+  color:#888;
 }
 
-/* ENTITIES */
+/* ENTITY */
 .entity{
   position:absolute;
-  font-size:60px;
+  font-size:50px;
   cursor:pointer;
 }
 
-.rat{color:#ff4d4d;}
+/* TYPES */
+.rat{color:red;}
 .feature{color:#00ff9f;}
-.anime{color:#ff4dff;font-size:70px;}
-.kalyan{color:#00ffaa;font-size:75px;}
-
-/* STATS */
-#stats{
-  position:fixed;
-  top:140px;
-  left:20px;
-  color:white;
-  font-size:14px;
-}
-
-/* HAND */
-#hand{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:90%;
-  height:200px;
-  z-index:1000;
-}
+.anime{color:#ff4dff;}
+.kalyan{color:#00ffaa;}
 
 /* BOSS */
-#bossModal{
+#boss{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.9);
   display:none;
-  align-items:center;
+  background:rgba(0,0,0,0.9);
   justify-content:center;
+  align-items:center;
   z-index:999;
 }
 
-#bossBox{
-  width:420px;
+#box{
+  width:400px;
   background:#111;
-  border:2px solid red;
   padding:20px;
-  text-align:center;
-  color:white;
+  border:2px solid red;
 }
-
 .card{
-  width:140px;
-  height:120px;
-  background:#111;
-  border:2px solid #00ff9f;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
+  border:1px solid #00ff9f;
   margin:5px;
+  padding:10px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -171,53 +103,38 @@ body{
 <body>
 
 <div id="intro">
-🚨 PROD УПАЛ 🚨<br><br>
-🐀 баги / 🐻 фичи<br>
-🌸 аниме / 💨 кальян<br><br>
-👉 нажми любую клавишу
+🚨 PROD SIM 🚨<br><br>
+Нажми любую клавишу
 </div>
 
-<canvas id="matrix"></canvas>
-
-<div id="console">
-<div id="terminalHeader">SYSTEM TERMINAL</div>
-<div id="terminalLog">> start</div>
-<div id="terminalInputLine">
-><input id="cmd">
-</div>
-</div>
+<canvas id="m"></canvas>
 
 <div id="hud">
-<div id="left">🐻 0</div>
-<div id="right">🐀 0</div>
+<div id="prod">PROD: 30%</div>
+<div id="happy">HAPPY: 0%</div>
 </div>
 
 <div id="level"></div>
-
-<div id="stats">
-PROD: <span id="hp">30</span>% |
-HAPPY: <span id="happy">0</span>
-</div>
 
 <div id="rules">
 🐻 x3 = +10% PROD<br>
 🐀 x3 miss = -5% PROD<br>
 🌸💨 +5% HAPPY / -1% PROD<br>
-40% MID | 70% SENIOR | 100% BOSS<br>
-PROD < 15% = GAME OVER
+40 MID | 70 SENIOR | 100 BOSS<br>
+PROD < 15 = GAME OVER
 </div>
 
-<div id="bossModal">
-<div id="bossBox">
-<div id="olgaQ"></div>
-<div id="answers"></div>
+<div id="boss">
+<div id="box">
+<div id="q"></div>
+<div id="a"></div>
 </div>
 </div>
 
 <script>
 
 /* MATRIX */
-const c=document.getElementById("matrix");
+const c=document.getElementById("m");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
 c.height=innerHeight;
@@ -231,50 +148,38 @@ ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height)
 
 /* STATE */
 let run=false;
-let f=0,b=0;
 let prod=30;
 let happy=0;
 
 let bears=0;
 let missed=0;
 
-/* CMD */
-const cmd=document.getElementById("cmd");
-
-cmd.onkeydown=(e)=>{
-if(e.key!=="Enter") return;
-
-if(cmd.value==="start"){
+/* START */
+document.addEventListener("keydown",()=>{
+document.getElementById("intro").style.display="none";
 run=true;
-document.getElementById("console").style.display="none";
-document.getElementById("hud").style.display="flex";
-next();
-}
-
-cmd.value="";
-};
+start();
+});
 
 /* UPDATE */
 function update(){
-document.getElementById("left").innerText="🐻 "+f;
-document.getElementById("right").innerText="🐀 "+b;
-document.getElementById("hp").innerText=Math.round(prod);
-document.getElementById("happy").innerText=happy;
+
+document.getElementById("prod").innerText="PROD: "+Math.round(prod)+"%";
+document.getElementById("happy").innerText="HAPPY: "+happy+"%";
 
 if(prod<=15){
 alert("💥 GAME OVER");
 location.reload();
 }
 
-if(happy>=100){
-boss();
-}
+if(happy>=40) document.getElementById("level").innerText="MID";
+if(happy>=70) document.getElementById("level").innerText="SENIOR";
+if(happy>=100) boss();
+
 }
 
-/* GAME LOOP */
-function next(){
-
-document.getElementById("level").innerText="LEVEL GAME";
+/* SPAWN */
+function start(){
 
 setInterval(()=>{
 
@@ -290,11 +195,7 @@ else if(r<0.9) type="anime";
 else type="kalyan";
 
 e.className="entity "+type;
-
-e.innerText=
-type==="rat"?"🐀":
-type==="feature"?"🐻":
-type==="anime"?"🌸":"💨";
+e.innerText = type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"💨";
 
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
@@ -305,16 +206,16 @@ e.onclick=()=>{
 
 clicked=true;
 
-if(type==="rat") b++;
-
 if(type==="feature"){
-f++;
 bears++;
-
 if(bears>=3){
 prod+=10;
 bears=0;
 }
+}
+
+if(type==="rat"){
+// ничего
 }
 
 if(type==="anime"||type==="kalyan"){
@@ -326,6 +227,7 @@ update();
 e.remove();
 };
 
+/* MISS */
 setTimeout(()=>{
 
 if(!clicked && type==="rat"){
@@ -343,50 +245,51 @@ e.remove();
 document.body.appendChild(e);
 
 },600);
+
 }
 
 /* BOSS */
-const answers=[
-{t:"Это фича",d:10,h:0},
-{t:"Я проверил локально",d:7,h:5},
-{t:"перезапусти прод",d:5,h:0},
-{t:"кальян и обсудим",d:0,h:20},
-{t:"аниме объясняет баг",d:5,h:25}
-];
-
 function boss(){
 
-document.getElementById("bossModal").style.display="flex";
+document.getElementById("boss").style.display="flex";
 
-nextBoss();
+let answers=[
+{t:"Это фича",h:0,p:10},
+{t:"Я проверил локально",h:5,p:7},
+{t:"перезапусти прод",h:0,p:5},
+{t:"кальян и обсудим",h:20,p:0},
+{t:"аниме объясняет баг",h:25,p:5}
+];
 
-}
+function round(){
 
-function nextBoss(){
+document.getElementById("q").innerText="Ольга: ты меня любишь?";
+let a=document.getElementById("a");
+a.innerHTML="";
 
-document.getElementById("olgaQ").innerText="Ольга: ты меня любишь?";
+answers.forEach(x=>{
 
-let box=document.getElementById("answers");
-box.innerHTML="";
+let d=document.createElement("div");
+d.className="card";
+d.innerText=x.t;
 
-answers.forEach(a=>{
+d.onclick=()=>{
 
-let c=document.createElement("div");
-c.className="card";
-c.innerText=a.t;
+happy+=x.h;
+prod-=Math.random()*x.p;
 
-c.onclick=()=>{
-
-prod-=Math.random()*3;
-happy+=a.h;
 update();
-nextBoss();
+round();
 
 };
 
-box.appendChild(c);
+a.appendChild(d);
 
 });
+
+}
+
+round();
 
 }
 
