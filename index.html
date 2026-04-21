@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM // STATE GAME</title>
+<title>SUPER ARTEEM // PROD DEBUG GAME</title>
 
 <style>
 body{
@@ -13,6 +13,7 @@ body{
   color:#00ff9f;
 }
 
+/* INTRO */
 #intro{
   position:fixed;
   inset:0;
@@ -24,14 +25,17 @@ body{
   font-size:20px;
   z-index:9999;
   text-align:center;
+  padding:20px;
 }
 
+/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
+/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -42,6 +46,31 @@ body{
   z-index:10;
 }
 
+#terminalHeader{opacity:0.8;margin-bottom:10px;}
+
+#terminalLog{
+  flex:1;
+  overflow:auto;
+  font-size:14px;
+}
+
+#terminalInputLine{
+  display:flex;
+  gap:10px;
+  border-top:1px solid #00ff9f;
+  padding-top:10px;
+}
+
+#cmd{
+  flex:1;
+  background:black;
+  border:none;
+  color:#00ff9f;
+  outline:none;
+  font-size:16px;
+}
+
+/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -49,35 +78,84 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
+  font-size:18px;
   z-index:5;
 }
 
+/* LEVEL */
 #level{
   position:fixed;
   top:60px;
   left:50%;
   transform:translateX(-50%);
+  font-size:22px;
   z-index:5;
 }
 
+/* ENTITIES */
 .entity{
   position:absolute;
-  font-size:50px;
+  font-size:60px;
   cursor:pointer;
 }
 
-.rat{color:red;}
 .feature{color:#00ff9f;}
-.anime{color:#ff4dff;}
-.kalyan{color:#00ffaa;}
+.rat{color:#ff4d4d;}
+.anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
+.kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
+/* STATS */
+#stats{
+  position:fixed;
+  top:140px;
+  left:20px;
+  color:white;
+  font-size:14px;
+}
+
+/* TIP */
+#tip{
+  position:fixed;
+  bottom:210px;
+  left:20px;
+  color:#00ff9f;
+  font-size:14px;
+  opacity:0.9;
+}
+
+/* HAND */
+#hand{
+  position:fixed;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:90%;
+  height:200px;
+  z-index:1000;
+}
+
+.card{
+  width:140px;
+  height:120px;
+  background:#111;
+  border:2px solid #00ff9f;
+  border-radius:10px;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  margin:5px;
+}
+
+/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
+  background:rgba(0,0,0,0.9);
   display:none;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,0.9);
   z-index:999;
 }
 
@@ -87,40 +165,63 @@ body{
   border:2px solid red;
   padding:20px;
   text-align:center;
+  color:white;
 }
-.card{
-  width:120px;
-  height:100px;
-  border:2px solid #00ff9f;
-  margin:5px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
+
+#olgaEmotion{
+  font-size:20px;
+  margin-bottom:10px;
 }
+
 </style>
 </head>
 
 <body>
 
-<div id="intro">Нажми любую клавишу</div>
+<!-- INTRO -->
+<div id="intro">
+🚨 PROD УПАЛ 🚨<br><br>
+
+🐀 БАГИ — кликай (плохо если много)<br>
+🐻 ФИЧИ — кликай (это хорошо)<br><br>
+
+🃏 КАРТЫ:<br>
+DEV / BUG / ANIME / KALYAN<br><br>
+
+🎯 JUNIOR → MIDDLE → SENIOR<br><br>
+
+👉 нажми любую клавишу
+</div>
 
 <canvas id="matrix"></canvas>
 
 <div id="console">
-  <div>terminal</div>
-  <input id="cmd">
+  <div id="terminalHeader">SYSTEM TERMINAL</div>
+  <div id="terminalLog">> start</div>
+  <div id="terminalInputLine">
+    ><input id="cmd">
+  </div>
 </div>
 
 <div id="hud">
-  <div id="left"></div>
-  <div id="right"></div>
+  <div id="left">🐻 0</div>
+  <div id="right">🐀 0</div>
 </div>
 
 <div id="level"></div>
 
+<div id="stats">
+HP: <span id="hp">100</span> |
+HAPPY: <span id="happy">0</span>
+</div>
+
+<div id="tip"></div>
+
+<div id="hand"></div>
+
 <div id="bossModal">
   <div id="bossBox">
+    <div id="olgaEmotion">😐 Ольга смотрит...</div>
     <div id="olgaQ"></div>
     <div id="answers"></div>
   </div>
@@ -128,38 +229,12 @@ body{
 
 <script>
 
-/* =========================
-   STATE MACHINE
-========================= */
-
-const STATE = {
-  PLAY: "play",
-  BOSS: "boss",
-  END: "end"
-};
-
-let gameState = STATE.PLAY;
-
-/* =========================
-   GAME STATE
-========================= */
-
-let f=0,b=0,happy=0,repair=30;
-
-let spawnInterval = null;
-
-/* =========================
-   INTRO
-========================= */
-
+/* INTRO */
 document.addEventListener("keydown",()=>{
   document.getElementById("intro").style.display="none";
 });
 
-/* =========================
-   MATRIX (optional)
-========================= */
-
+/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
@@ -169,167 +244,198 @@ setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
-  ctx.fillText(Math.random()>0.5?"0":"1",Math.random()*c.width,Math.random()*c.height);
+  ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
 },50);
 
-/* =========================
-   START
-========================= */
+/* STATE */
+let f=0,b=0,lvl=0,run=false;
+let hp=100;
+let happy=0;
+let bossHP=100;
 
-document.getElementById("cmd").onkeydown=(e)=>{
+let fix=30;
+let bears=0;
+let ratsMissed=0;
+
+let qIndex=0;
+
+/* LEVELS */
+const levels=[
+  {name:"JUNIOR",goal:4},
+  {name:"MIDDLE",goal:6},
+  {name:"SENIOR",goal:8}
+];
+
+const happyGate=[0,40,70];
+
+/* CMD */
+const cmd=document.getElementById("cmd");
+
+cmd.onkeydown=(e)=>{
 if(e.key!=="Enter") return;
 
-if(e.target.value==="start"){
-  startGame();
-}
-
-e.target.value="";
-};
-
-/* =========================
-   START GAME
-========================= */
-
-function startGame(){
-  gameState = STATE.PLAY;
-
+if(cmd.value==="start"){
+  run=true;
   document.getElementById("console").style.display="none";
   document.getElementById("hud").style.display="flex";
-
-  startSpawn();
+  next();
 }
 
-/* =========================
-   SPAWN SYSTEM
-========================= */
+cmd.value="";
+};
 
-function startSpawn(){
+/* TIP */
+function tip(t){
+  let el=document.getElementById("tip");
+  el.innerText=t;
+  setTimeout(()=>el.innerText="",2500);
+}
 
-if(spawnInterval) clearInterval(spawnInterval);
+/* GAME */
+function next(){
 
-spawnInterval = setInterval(()=>{
+if(fix<=15){
+  gameover("PROD УПАЛ (fix < 15%)");
+  return;
+}
 
-if(gameState !== STATE.PLAY) return;
+if(lvl>=levels.length){
+  if(happy>=100) boss();
+  else tip("Нужно 100% happiness для босса");
+  return;
+}
+
+document.getElementById("level").innerText=
+"LEVEL: "+levels[lvl].name+" | FIX: "+fix+"%";
+
+setInterval(()=>{
+
+if(!run) return;
 
 let e=document.createElement("div");
 let r=Math.random();
 let type="feature";
 
 if(r<0.4) type="rat";
-else if(r<0.75) type="feature";
-else if(r<0.9) type="anime";
-else type="kalyan";
+if(r>0.75) type="anime";
+if(r>0.88) type="kalyan";
 
 e.className="entity "+type;
-e.innerText = type==="rat"?"🐀":"🐻";
+
+e.innerText=
+type==="rat"?"🐀":
+type==="feature"?"🐻":
+type==="anime"?"🌸":"💨";
 
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
 
+e.clicked=false;
+
 e.onclick=()=>{
 
-if(gameState !== STATE.PLAY) return;
+e.clicked=true;
 
-if(type==="rat") b++;
-if(type==="feature") f++;
-if(type!=="rat" && type!=="feature") happy+=5;
+if(type==="rat"){
+  b++;
+  ratsMissed=Math.max(0,ratsMissed-1);
+  tip("Баг пойман");
+}
+
+if(type==="feature"){
+  f++;
+  bears++;
+  tip("Фича собрана");
+}
+
+if(bears>=3){
+  fix+=10;
+  bears=0;
+  tip("+10% FIX за 3 мишки");
+}
+
+if(type==="anime"||type==="kalyan"){
+  happy+=5;
+  fix-=1;
+  tip("+5% happiness, -1% fix");
+}
 
 update();
-e.remove();
-check();
+
+if(
+  f>=levels[lvl].goal &&
+  happy>=happyGate[lvl]
+){
+  lvl++;
+  next();
+}
+
 };
 
-setTimeout(()=>{
-e.remove();
-},2000);
-
 document.body.appendChild(e);
+
+setTimeout(()=>{
+
+if(!e.clicked && type==="rat"){
+  ratsMissed++;
+  tip("Пропущен баг!");
+
+  if(ratsMissed>=3){
+    fix-=5;
+    ratsMissed=0;
+    tip("-5% FIX за пропущенные баги");
+  }
+}
+
+e.remove();
+
+},2000);
 
 },600);
 }
 
-/* =========================
-   CHECK
-========================= */
-
-function check(){
-
-if(repair<15){
-  endGame();
-  return;
-}
-
-if(happy>=80){
-  startBoss();
-}
-
-}
-
-/* =========================
-   UPDATE
-========================= */
-
 function update(){
 document.getElementById("left").innerText="🐻 "+f;
 document.getElementById("right").innerText="🐀 "+b;
+document.getElementById("hp").innerText=hp;
+document.getElementById("happy").innerText=happy;
 }
 
-/* =========================
-   BOSS START
-========================= */
+/* BOSS */
+const questions=[
+"Ты меня любишь?",
+"Почему всё ломается?",
+"Это баг или фича?"
+];
 
-function startBoss(){
+const answers=[
+{t:"Это фича",d:10,h:0},
+{t:"Я проверил локально",d:7,h:5},
+{t:"перезапусти прод",d:5,h:0},
+{t:"кальян и обсудим",d:0,h:20},
+{t:"аниме объясняет баг",d:5,h:25}
+];
 
-gameState = STATE.BOSS;
-
-/* STOP SPAWN */
-if(spawnInterval){
-  clearInterval(spawnInterval);
-  spawnInterval = null;
-}
-
+function boss(){
 document.getElementById("bossModal").style.display="flex";
-
-window.bossHP = 100;
-window.round = 0;
-window.maxRounds = 5;
-
+qIndex=0;
 nextRound();
 }
 
-/* =========================
-   BOSS LOGIC
-========================= */
-
 function nextRound(){
 
-if(gameState !== STATE.BOSS) return;
-
-if(window.round >= window.maxRounds){
-  endGame();
+if(hp<=0 || bossHP<=0 || qIndex>=questions.length){
+  end();
   return;
 }
 
-window.round++;
+setOlgaMood();
 
-const q=[
-"ты меня любишь?",
-"если я червь?",
-"если я толстая?",
-"кто милашка?",
-"останешься?"
-];
+document.getElementById("olgaQ").innerText=
+"🐀 Ольга: "+questions[qIndex];
 
-document.getElementById("olgaQ").innerText="🐀 "+q[window.round-1];
-
-const box=document.getElementById("answers");
+let box=document.getElementById("answers");
 box.innerHTML="";
-
-const answers=[
-{t:"кальян",d:10,h:10},
-{t:"пицца",d:5,h:5},
-{t:"шутки",d:15,h:20}
-];
 
 answers.forEach(a=>{
 
@@ -339,19 +445,15 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
-if(gameState !== STATE.BOSS) return;
-
-window.bossHP -= a.d;
-happy += a.h;
+bossHP-=a.d;
+hp-=Math.floor(Math.random()*8);
+happy+=(a.h||0);
 
 update();
 
-if(window.bossHP<=0){
-  endGame();
-  return;
-}
-
+qIndex++;
 nextRound();
+
 };
 
 box.appendChild(c);
@@ -360,23 +462,34 @@ box.appendChild(c);
 
 }
 
-/* =========================
-   END GAME
-========================= */
+function setOlgaMood(){
 
-function endGame(){
+let e=document.getElementById("olgaEmotion");
 
-gameState = STATE.END;
-
-/* STOP EVERYTHING */
-if(spawnInterval){
-  clearInterval(spawnInterval);
-  spawnInterval=null;
+if(bossHP<30) e.innerText="😱 Ольга паникует!";
+else if(hp<40) e.innerText="😡 Ольга злится!";
+else if(bossHP>80) e.innerText="😊 Ольга радуется!";
+else e.innerText="😐 Ольга смотрит...";
 }
 
+/* GAME OVER */
+function gameover(t){
+run=false;
 document.body.innerHTML=
-"<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 WIN 🎉</h1>";
+"<div style='color:red;font-size:40px;text-align:center;margin-top:20%'>"+t+"</div>";
+}
 
+/* END */
+function end(){
+document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
+for(let i=0;i<30;i++){
+let c=document.createElement("div");
+c.innerText="🍰";
+c.style.position="absolute";
+c.style.left=Math.random()*100+"%";
+c.style.top=Math.random()*100+"%";
+document.body.appendChild(c);
+}
 }
 
 </script>
