@@ -93,8 +93,8 @@ body{
   cursor:pointer;
 }
 
-.feature{color:#00ff9f;}
 .rat{color:#ff4d4d;}
+.feature{color:#00ff9f;}
 .anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
 .kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
@@ -108,11 +108,23 @@ body{
 
 #tip{
   position:fixed;
-  bottom:210px;
+  bottom:160px;
   left:20px;
   color:#00ff9f;
   font-size:14px;
+}
+
+#guide{
+  position:fixed;
+  bottom:60px;
+  left:20px;
+  right:20px;
+  color:#ffffff;
+  font-size:14px;
   opacity:0.9;
+  background:rgba(0,0,0,0.5);
+  padding:10px;
+  border:1px solid #00ff9f;
 }
 
 #bossModal{
@@ -132,11 +144,6 @@ body{
   padding:20px;
   text-align:center;
   color:white;
-}
-
-#olgaEmotion{
-  font-size:20px;
-  margin-bottom:10px;
 }
 
 .card{
@@ -161,7 +168,6 @@ body{
 ООООО НЕТ🚨 PROD УПАЛ 🚨 ТОЛЬКО SUPER ARTEM сможет его починить<br><br>
 🐀 БАГИ — кликай<br>
 🐻 ФИЧИ — кликай<br><br>
-🎯 JUNIOR → MIDDLE → SENIOR<br><br>
 👉 нажми любую клавишу
 </div>
 
@@ -187,11 +193,19 @@ HP: <span id="hp">100</span> |
 HAPPY: <span id="happy">0</span>
 </div>
 
+<!-- 🔥 ИНСТРУКЦИЯ НА ЭКРАНЕ -->
+<div id="guide">
+🎯 ЦЕЛЬ: доведи HAPPINESS до 50% → появится БОСС<br>
+🐀 Лови баги — иначе ломается PROD<br>
+🐻 Лови фичи — ускоряют FIX<br>
+🌸 Аниме / кальян — дают HAPPINESS<br>
+⚠️ не пропускай баги (🐀) подряд
+</div>
+
 <div id="tip"></div>
 
 <div id="bossModal">
   <div id="bossBox">
-    <div id="olgaEmotion">😐 Ольга смотрит...</div>
     <div id="olgaQ"></div>
     <div id="answers"></div>
   </div>
@@ -221,21 +235,13 @@ setInterval(()=>{
 let f=0,b=0,lvl=0,run=false;
 let hp=100;
 let happy=0;
-let bossHP=100;
+let bossStarted=false;
+let qIndex=0;
 
 let fix=30;
 let bears=0;
 let ratsMissed=0;
 let spawnTimer=null;
-
-/* LEVELS */
-const levels=[
-  {name:"JUNIOR",goal:4},
-  {name:"MIDDLE",goal:6},
-  {name:"SENIOR",goal:8}
-];
-
-const happyGate=[0,20,35];
 
 /* CMD */
 const cmd=document.getElementById("cmd");
@@ -259,28 +265,41 @@ function tip(t){
   setTimeout(()=>el.innerText="",2000);
 }
 
-/* GAME LOOP */
+/* UPDATE */
+function update(){
+document.getElementById("left").innerText="🐻 "+f;
+document.getElementById("right").innerText="🐀 "+b;
+document.getElementById("hp").innerText=hp;
+document.getElementById("happy").innerText=happy;
+
+/* 🔥 ОБНОВЛЕНИЕ ГАЙДА */
+let g=document.getElementById("guide");
+
+if(happy<50){
+g.innerHTML="🎯 НАБЕРИ 50% HAPPINESS → БОСС<br>🐀 баги мешают PROD<br>🐻 фичи стабилизируют систему<br>🌸 дают счастье";
+} else {
+g.innerHTML="⚠️ БОСС АКТИВИРУЕТСЯ!";
+}
+}
+
+/* GAME */
 function next(){
 
+/* 🔥 БОСС ПО HAPPINESS */
+if(!bossStarted && happy>=50){
+bossStarted=true;
+
+if(spawnTimer) clearInterval(spawnTimer);
+
+boss();
+return;
+}
+
 if(fix<=15){
-  gameover("PROD УПАЛ");
-  return;
+gameover("PROD УПАЛ");
+return;
 }
 
-/* 🔥 БОСС ГАРАНТИРОВАННО */
-if(lvl>=levels.length){
-  if(happy>=50){
-    boss();
-  } else {
-    tip("Нужно 50% happiness для босса");
-  }
-  return;
-}
-
-document.getElementById("level").innerText=
-"LEVEL "+levels[lvl].name+" | FIX "+fix+"%";
-
-/* один единственный loop */
 if(spawnTimer) clearInterval(spawnTimer);
 
 spawnTimer=setInterval(()=>{
@@ -327,11 +346,6 @@ if(type==="anime"||type==="kalyan"){
 
 update();
 
-if(f>=levels[lvl].goal && happy>=happyGate[lvl]){
-  lvl++;
-  next();
-}
-
 };
 
 document.body.appendChild(e);
@@ -339,11 +353,11 @@ document.body.appendChild(e);
 setTimeout(()=>{
 
 if(!e.clicked && type==="rat"){
-  ratsMissed++;
-  if(ratsMissed>=3){
-    fix-=5;
-    ratsMissed=0;
-  }
+ratsMissed++;
+if(ratsMissed>=3){
+fix-=5;
+ratsMissed=0;
+}
 }
 
 e.remove();
@@ -353,77 +367,29 @@ e.remove();
 },600);
 }
 
-function update(){
-document.getElementById("left").innerText="🐻 "+f;
-document.getElementById("right").innerText="🐀 "+b;
-document.getElementById("hp").innerText=hp;
-document.getElementById("happy").innerText=happy;
-}
-
 /* BOSS */
-const questions=[
-"Ты меня любишь?",
-"Ты бы любил меня, если бы я была толстой?",
-"Ты бы любил меня, если бы я была багом?"
-];
-
-const answers=[
-{t:"Это фича",d:10,h:0},
-{t:"Я проверил",d:7,h:5},
-{t:"БАААААААААААААААО",d:5,h:0},
-{t:"на кальян",d:0,h:20},
-{t:"включаю аниме",d:5,h:25}
-];
-
 function boss(){
 document.getElementById("bossModal").style.display="flex";
-qIndex=0;
-nextRound();
-}
+document.getElementById("olgaQ").innerText="Ольга: Ты меня любишь?";
+document.getElementById("answers").innerHTML="";
 
-function nextRound(){
-
-if(hp<=0 || bossHP<=0 || qIndex>=questions.length){
-  end();
-  return;
-}
-
-document.getElementById("olgaQ").innerText="Ольга: "+questions[qIndex];
-
-let box=document.getElementById("answers");
-box.innerHTML="";
-
-answers.forEach(a=>{
-
+["Фича","Баг","Кальян"].forEach(t=>{
 let c=document.createElement("div");
 c.className="card";
-c.innerText=a.t;
-
+c.innerText=t;
 c.onclick=()=>{
-
-bossHP-=a.d;
-hp-=Math.floor(Math.random()*8);
-happy+=a.h;
-
-update();
-
-qIndex++;
-nextRound();
-
+end();
 };
-
-box.appendChild(c);
-
+document.getElementById("answers").appendChild(c);
 });
-
 }
 
 function end(){
-document.getElementById("bossBox").innerHTML="🎉SUPER ARTEM, ты прошел все вопросики от BOSS ОЛГА! С ДНЕМ РОЖДЕНИЯ! ЛЮБЛЮ ТЕБЯ 🎉";
+document.getElementById("bossBox").innerHTML=
+"🎉 ПОБЕДА! SUPER ARTEM ПОЧИНИЛ PROD 🎉";
 }
 
 function gameover(t){
-run=false;
 document.body.innerHTML=
 "<div style='color:red;font-size:40px;text-align:center;margin-top:20%'>"+t+"</div>";
 }
