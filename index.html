@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEEM // PROD DEBUG GAME</title>
+<title>SUPER ARTEEM // STATE GAME</title>
 
 <style>
 body{
@@ -24,7 +24,6 @@ body{
   font-size:20px;
   z-index:9999;
   text-align:center;
-  padding:20px;
 }
 
 #matrix{
@@ -43,30 +42,6 @@ body{
   z-index:10;
 }
 
-#terminalHeader{opacity:0.8;margin-bottom:10px;}
-
-#terminalLog{
-  flex:1;
-  overflow:auto;
-  font-size:14px;
-}
-
-#terminalInputLine{
-  display:flex;
-  gap:10px;
-  border-top:1px solid #00ff9f;
-  padding-top:10px;
-}
-
-#cmd{
-  flex:1;
-  background:black;
-  border:none;
-  color:#00ff9f;
-  outline:none;
-  font-size:16px;
-}
-
 #hud{
   position:fixed;
   top:10px;
@@ -74,7 +49,6 @@ body{
   right:20px;
   display:none;
   justify-content:space-between;
-  font-size:18px;
   z-index:5;
 }
 
@@ -83,47 +57,27 @@ body{
   top:60px;
   left:50%;
   transform:translateX(-50%);
-  font-size:22px;
   z-index:5;
-}
-
-#hint{
-  position:fixed;
-  bottom:220px;
-  left:20px;
-  color:#fff;
-  font-size:13px;
-  z-index:6;
-  opacity:0.8;
-  max-width:300px;
 }
 
 .entity{
   position:absolute;
-  font-size:60px;
+  font-size:50px;
   cursor:pointer;
 }
 
+.rat{color:red;}
 .feature{color:#00ff9f;}
-.rat{color:#ff4d4d;}
-.anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
-.kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
-
-#stats{
-  position:fixed;
-  top:140px;
-  left:20px;
-  color:white;
-  font-size:14px;
-}
+.anime{color:#ff4dff;}
+.kalyan{color:#00ffaa;}
 
 #bossModal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,0.9);
   display:none;
   align-items:center;
   justify-content:center;
+  background:rgba(0,0,0,0.9);
   z-index:999;
 }
 
@@ -133,63 +87,37 @@ body{
   border:2px solid red;
   padding:20px;
   text-align:center;
-  color:white;
 }
-
 .card{
-  width:140px;
-  height:120px;
-  background:#111;
+  width:120px;
+  height:100px;
   border:2px solid #00ff9f;
-  border-radius:10px;
-  color:white;
+  margin:5px;
   display:flex;
   align-items:center;
   justify-content:center;
   cursor:pointer;
-  margin:5px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="intro">
-🚨 PROD УПАЛ 🚨<br><br>
-🐀 БАГИ — кликай<br>
-🐻 ФИЧИ — кликай<br><br>
-👉 нажми любую клавишу
-</div>
+<div id="intro">Нажми любую клавишу</div>
 
 <canvas id="matrix"></canvas>
 
 <div id="console">
-  <div id="terminalHeader">SYSTEM TERMINAL</div>
-  <div id="terminalLog">> start</div>
-  <div id="terminalInputLine">
-    ><input id="cmd">
-  </div>
+  <div>terminal</div>
+  <input id="cmd">
 </div>
 
 <div id="hud">
-  <div id="left">🐻 0</div>
-  <div id="right">🐀 0</div>
+  <div id="left"></div>
+  <div id="right"></div>
 </div>
 
 <div id="level"></div>
-
-<div id="stats">
-HP: <span id="hp">100</span> |
-HAPPY: <span id="happy">0</span> |
-REPAIR: <span id="repair">30</span>
-</div>
-
-<div id="hint">
-🐻 x3 = +10% repair<br>
-🐀 x3 = -5% repair<br>
-🌸💨 = +5% happy / -1% repair<br>
-<15% = GAME OVER
-</div>
 
 <div id="bossModal">
   <div id="bossBox">
@@ -200,12 +128,38 @@ REPAIR: <span id="repair">30</span>
 
 <script>
 
-/* INTRO */
+/* =========================
+   STATE MACHINE
+========================= */
+
+const STATE = {
+  PLAY: "play",
+  BOSS: "boss",
+  END: "end"
+};
+
+let gameState = STATE.PLAY;
+
+/* =========================
+   GAME STATE
+========================= */
+
+let f=0,b=0,happy=0,repair=30;
+
+let spawnInterval = null;
+
+/* =========================
+   INTRO
+========================= */
+
 document.addEventListener("keydown",()=>{
   document.getElementById("intro").style.display="none";
 });
 
-/* MATRIX */
+/* =========================
+   MATRIX (optional)
+========================= */
+
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
@@ -215,72 +169,70 @@ setInterval(()=>{
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#00ff9f";
-  ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
+  ctx.fillText(Math.random()>0.5?"0":"1",Math.random()*c.width,Math.random()*c.height);
 },50);
 
-/* STATE */
-let f=0,b=0,lvl=0,run=false;
-let hp=100;
-let happy=0;
-let repair=30;
+/* =========================
+   START
+========================= */
 
-const levels=[
-  {name:"JUNIOR"},
-  {name:"MIDDLE"},
-  {name:"SENIOR"}
-];
-
-/* CMD */
-const cmd=document.getElementById("cmd");
-
-cmd.onkeydown=(e)=>{
+document.getElementById("cmd").onkeydown=(e)=>{
 if(e.key!=="Enter") return;
 
-if(cmd.value==="start"){
-  run=true;
-  document.getElementById("console").style.display="none";
-  document.getElementById("hud").style.display="flex";
-  next();
+if(e.target.value==="start"){
+  startGame();
 }
 
-cmd.value="";
+e.target.value="";
 };
 
-/* GAME */
-function next(){
+/* =========================
+   START GAME
+========================= */
 
-document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
+function startGame(){
+  gameState = STATE.PLAY;
 
-setInterval(()=>{
+  document.getElementById("console").style.display="none";
+  document.getElementById("hud").style.display="flex";
 
-if(!run) return;
+  startSpawn();
+}
+
+/* =========================
+   SPAWN SYSTEM
+========================= */
+
+function startSpawn(){
+
+if(spawnInterval) clearInterval(spawnInterval);
+
+spawnInterval = setInterval(()=>{
+
+if(gameState !== STATE.PLAY) return;
 
 let e=document.createElement("div");
 let r=Math.random();
 let type="feature";
 
 if(r<0.4) type="rat";
-if(r>0.75) type="anime";
-if(r>0.88) type="kalyan";
+else if(r<0.75) type="feature";
+else if(r<0.9) type="anime";
+else type="kalyan";
 
 e.className="entity "+type;
-e.innerText=type==="rat"?"🐀":type==="feature"?"🐻":type==="anime"?"🌸":"💨";
+e.innerText = type==="rat"?"🐀":"🐻";
 
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
 
 e.onclick=()=>{
 
-if(type==="rat") b++;
-if(type==="feature"){
-  f++;
-  if(f%3===0) repair+=10;
-}
+if(gameState !== STATE.PLAY) return;
 
-if(type==="anime"||type==="kalyan"){
-  happy+=5;
-  repair-=1;
-}
+if(type==="rat") b++;
+if(type==="feature") f++;
+if(type!=="rat" && type!=="feature") happy+=5;
 
 update();
 e.remove();
@@ -289,8 +241,6 @@ check();
 
 setTimeout(()=>{
 e.remove();
-update();
-check();
 },2000);
 
 document.body.appendChild(e);
@@ -298,52 +248,62 @@ document.body.appendChild(e);
 },600);
 }
 
-/* CHECK */
+/* =========================
+   CHECK
+========================= */
+
 function check(){
 
 if(repair<15){
-  document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>GAME OVER</h1>";
+  endGame();
   return;
 }
 
-if(happy>=70) lvl=2;
-else if(happy>=40) lvl=1;
-else lvl=0;
-
-document.getElementById("level").innerText="LEVEL: "+levels[lvl].name;
-
-if(happy>=100){
-  boss();
+if(happy>=80){
+  startBoss();
 }
 
 }
 
-/* UPDATE */
+/* =========================
+   UPDATE
+========================= */
+
 function update(){
 document.getElementById("left").innerText="🐻 "+f;
 document.getElementById("right").innerText="🐀 "+b;
-document.getElementById("hp").innerText=hp;
-document.getElementById("happy").innerText=happy;
-document.getElementById("repair").innerText=repair;
 }
 
-/* BOSS (5 QUESTIONS ONLY) */
-function boss(){
+/* =========================
+   BOSS START
+========================= */
+
+function startBoss(){
+
+gameState = STATE.BOSS;
+
+/* STOP SPAWN */
+if(spawnInterval){
+  clearInterval(spawnInterval);
+  spawnInterval = null;
+}
 
 document.getElementById("bossModal").style.display="flex";
 
 window.bossHP = 100;
 window.round = 0;
 window.maxRounds = 5;
-window.lock = false;
 
 nextRound();
 }
 
-/* QUESTIONS */
+/* =========================
+   BOSS LOGIC
+========================= */
+
 function nextRound(){
 
-if(window.lock) return;
+if(gameState !== STATE.BOSS) return;
 
 if(window.round >= window.maxRounds){
   endGame();
@@ -352,24 +312,23 @@ if(window.round >= window.maxRounds){
 
 window.round++;
 
-const questions=[
-  "а ты меня любишь?",
-  "а ты любил бы меня, если бы я была червем?",
-  "будешь меня любить, если я буду толстая?",
-  "кто самая сладкая Мишка?",
-  "ты останешься до конца?"
+const q=[
+"ты меня любишь?",
+"если я червь?",
+"если я толстая?",
+"кто милашка?",
+"останешься?"
 ];
 
-document.getElementById("olgaQ").innerText =
-"🐀 Ольга: " + questions[window.round - 1];
+document.getElementById("olgaQ").innerText="🐀 "+q[window.round-1];
 
 const box=document.getElementById("answers");
 box.innerHTML="";
 
 const answers=[
-  {t:"кальян",d:5,h:10},
-  {t:"пицца",d:5,h:10},
-  {t:"шутки про программистов",d:10,h:15}
+{t:"кальян",d:10,h:10},
+{t:"пицца",d:5,h:5},
+{t:"шутки",d:15,h:20}
 ];
 
 answers.forEach(a=>{
@@ -380,25 +339,19 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
-if(window.lock) return;
-
-window.lock = true;
+if(gameState !== STATE.BOSS) return;
 
 window.bossHP -= a.d;
-hp -= 3;
 happy += a.h;
 
 update();
 
-window.lock = false;
-
-if(window.bossHP <= 0){
+if(window.bossHP<=0){
   endGame();
   return;
 }
 
-setTimeout(nextRound,300);
-
+nextRound();
 };
 
 box.appendChild(c);
@@ -407,29 +360,22 @@ box.appendChild(c);
 
 }
 
-/* END */
+/* =========================
+   END GAME
+========================= */
+
 function endGame(){
 
-document.getElementById("bossBox").innerHTML=`
-<h1>🎉 ИГРА ПРОЙДЕНА 🎉</h1>
-<br>
-<p>Артему приз:</p>
-<h2>🍰 30 кусочков тортика 🍰</h2>
-<br>
-<p>Ольга довольна 😌</p>
-`;
+gameState = STATE.END;
 
-window.lock = true;
-
-for(let i=0;i<30;i++){
-let cake=document.createElement("div");
-cake.innerText="🍰";
-cake.style.position="absolute";
-cake.style.left=Math.random()*100+"%";
-cake.style.top=Math.random()*100+"%";
-cake.style.fontSize="22px";
-document.body.appendChild(cake);
+/* STOP EVERYTHING */
+if(spawnInterval){
+  clearInterval(spawnInterval);
+  spawnInterval=null;
 }
+
+document.body.innerHTML=
+"<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 WIN 🎉</h1>";
 
 }
 
