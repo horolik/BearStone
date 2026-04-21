@@ -350,7 +350,7 @@ document.getElementById("happy").innerText=happy;
 document.getElementById("repair").innerText=repair;
 }
 
-/* BOSS FIXED CORE */
+/* BOSS FIXED */
 function boss(){
 
 document.getElementById("bossModal").style.display="flex";
@@ -359,10 +359,13 @@ bossHP = 100;
 window.bossActive = true;
 window.bossLocked = false;
 
+window.round = 0;
+window.maxRounds = 5;
+
 nextRound();
 }
 
-/* QUESTIONS */
+/* QUESTIONS FIXED */
 function nextRound(){
 
 if(!window.bossActive || window.bossLocked) return;
@@ -370,13 +373,15 @@ if(!window.bossActive || window.bossLocked) return;
 const box=document.getElementById("answers");
 if(!box) return;
 
-/* FINAL STOP */
-if(bossHP <= 0){
+/* STOP */
+if(bossHP <= 0 || window.round >= window.maxRounds){
   window.bossActive = false;
   window.bossLocked = true;
   endGame();
   return;
 }
+
+window.round++;
 
 const questions=[
   "а ты меня любишь?",
@@ -396,6 +401,12 @@ const answers=[
   {t:"шутки про программистов",d:10,h:15}
 ];
 
+let autoNext = setTimeout(()=>{
+  if(window.bossActive && !window.bossLocked){
+    nextRound();
+  }
+}, 4000);
+
 answers.forEach(a=>{
 
 let c=document.createElement("div");
@@ -405,6 +416,8 @@ c.innerText=a.t;
 c.onclick=()=>{
 
 if(!window.bossActive || window.bossLocked) return;
+
+clearTimeout(autoNext);
 
 bossHP-=a.d;
 hp-=3;
@@ -429,7 +442,7 @@ box.appendChild(c);
 
 }
 
-/* END GAME */
+/* END */
 function endGame(){
 
 window.bossActive = false;
