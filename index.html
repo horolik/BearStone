@@ -89,7 +89,7 @@ body{
 <body>
 
 <div id="start">
-🚨 PROD УПАЛ 🚨<br><br>
+ALARMMMMMMMM 🚨 PROD УПАЛ 🚨 ТОЛЬКО SUPER ARTEM может починить<<br><br>
 КЛИКНИ ЧТОБЫ НАЧАТЬ
 </div>
 
@@ -201,7 +201,7 @@ fix+=3;
 
 if(type==="fun"){
 happy+=5;
-fix-=1;
+fix-=3;
 }
 
 /* LEVEL UP */
@@ -245,7 +245,7 @@ function renderQuestion(){
 
 b.innerHTML = "😈 ОЛЬГА БОСС<br><br>" + questions[qIndex] + "<br><br>";
 
-["ДА","НЕТ","ЭТО ФИЧА"].forEach(t=>{
+["БАО","На кальян","ЭТО ФИЧА", "Лови пиццу", "Я АРТЕМ", "ТЫ БААААААГ"].forEach(t=>{
 let btn=document.createElement("div");
 
 btn.innerText=t;
@@ -260,7 +260,7 @@ qIndex++;
 
 /* ЕСЛИ ВОПРОСЫ ЗАКОНЧИЛИСЬ */
 if(qIndex >= questions.length){
-b.innerHTML="🎉 ПОБЕДА! PROD ПОЧИНЕН 🎉";
+b.innerHTML="🎉 ПОБЕДА! PROD ПОЧИНЕН 🎉 Артем, с Днем рождения!";
 return;
 }
 
