@@ -13,6 +13,7 @@ body{
   color:#00ff9f;
 }
 
+/* INTRO */
 #intro{
   position:fixed;
   inset:0;
@@ -27,12 +28,14 @@ body{
   padding:20px;
 }
 
+/* MATRIX */
 #matrix{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
+/* TERMINAL */
 #console{
   position:fixed;
   inset:0;
@@ -67,6 +70,7 @@ body{
   font-size:16px;
 }
 
+/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -78,6 +82,7 @@ body{
   z-index:5;
 }
 
+/* LEVEL */
 #level{
   position:fixed;
   top:60px;
@@ -87,6 +92,7 @@ body{
   z-index:5;
 }
 
+/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
@@ -98,6 +104,7 @@ body{
 .anime{color:#ff4dff;font-size:70px;text-shadow:0 0 10px #ff4dff;}
 .kalyan{color:#00ffaa;font-size:75px;text-shadow:0 0 10px #00ffaa;}
 
+/* STATS */
 #stats{
   position:fixed;
   top:140px;
@@ -106,6 +113,7 @@ body{
   font-size:14px;
 }
 
+/* HAND */
 #hand{
   position:fixed;
   bottom:0;
@@ -130,6 +138,7 @@ body{
   margin:5px;
 }
 
+/* BOSS */
 #bossModal{
   position:fixed;
   inset:0;
@@ -159,10 +168,18 @@ body{
 
 <body>
 
+<!-- INTRO -->
 <div id="intro">
 🚨 PROD УПАЛ 🚨<br><br>
-🐀 БАГИ — кликай<br>
-🐻 ФИЧИ — кликай<br><br>
+
+🐀 БАГИ — кликай (плохо если много)<br>
+🐻 ФИЧИ — кликай (это хорошо)<br><br>
+
+🃏 КАРТЫ:<br>
+DEV / BUG / ANIME / KALYAN<br><br>
+
+🎯 JUNIOR → MIDDLE → SENIOR<br><br>
+
 👉 нажми любую клавишу
 </div>
 
@@ -200,15 +217,12 @@ HAPPY: <span id="happy">0</span>
 
 <script>
 
-/* ================= ORIGINAL STATE ================= */
+/* INTRO */
+document.addEventListener("keydown",()=>{
+  document.getElementById("intro").style.display="none";
+});
 
-let f=0,b=0,lvl=0,run=false;
-let hp=100;
-let happy=0;
-let bossHP=100;
-
-/* ================= MATRIX ================= */
-
+/* MATRIX */
 const c=document.getElementById("matrix");
 const ctx=c.getContext("2d");
 c.width=innerWidth;
@@ -221,38 +235,23 @@ setInterval(()=>{
   ctx.fillText(Math.random()>0.5?0:1,Math.random()*c.width,Math.random()*c.height);
 },50);
 
-/* ================= LEVELS ================= */
+/* STATE */
+let f=0,b=0,lvl=0,run=false;
+let hp=100;
+let happy=0;
+let bossHP=100;
+let olgaMood="neutral";
 
+/* LEVELS */
 const levels=[
   {name:"JUNIOR",goal:4},
   {name:"MIDDLE",goal:6},
   {name:"SENIOR",goal:8}
 ];
 
-/* ================= OLGA SYSTEM (NEW) ================= */
-
-const olgaQuestions = [
-  "Ты тестировал это вообще?",
-  "Почему это опять упало?",
-  "Это баг или фича?",
-  "Кто это задеплоил?",
-  "Почему прод горит?"
-];
-
-function getOlgaQuestion(){
-  return olgaQuestions[Math.floor(Math.random()*olgaQuestions.length)];
-}
-
-function applyOlgaAnswer(a){
-  bossHP -= a.d;
-  hp -= Math.floor(Math.random()*8);
-  happy += (a.h||0);
-  update();
-}
-
-/* ================= CMD ================= */
-
+/* CMD */
 const cmd=document.getElementById("cmd");
+const log=document.getElementById("terminalLog");
 
 cmd.onkeydown=(e)=>{
 if(e.key!=="Enter") return;
@@ -267,8 +266,7 @@ if(cmd.value==="start"){
 cmd.value="";
 };
 
-/* ================= GAME ================= */
-
+/* GAME */
 function next(){
 
 if(lvl>=levels.length){
@@ -329,8 +327,7 @@ document.getElementById("hp").innerText=hp;
 document.getElementById("happy").innerText=happy;
 }
 
-/* ================= CARDS ================= */
-
+/* CARDS */
 const answers=[
 {t:"Это фича",d:10,h:0},
 {t:"Я проверил локально",d:7,h:5},
@@ -339,11 +336,13 @@ const answers=[
 {t:"аниме объясняет баг",d:5,h:25}
 ];
 
-/* ================= BOSS ================= */
-
+/* BOSS */
 function boss(){
+
 document.getElementById("bossModal").style.display="flex";
+
 nextRound();
+
 }
 
 function nextRound(){
@@ -353,8 +352,10 @@ if(hp<=0 || bossHP<=0){
   return;
 }
 
-document.getElementById("olgaQ").innerText =
-"🐀 Ольга: " + getOlgaQuestion();
+setOlgaMood();
+
+document.getElementById("olgaQ").innerText=
+"🐀 Ольга: "+["Ты меня любишь?","Почему всё ломается?","Это баг или фича?"][Math.floor(Math.random()*3)];
 
 let box=document.getElementById("answers");
 box.innerHTML="";
@@ -367,7 +368,11 @@ c.innerText=a.t;
 
 c.onclick=()=>{
 
-applyOlgaAnswer(a);
+bossHP -= a.d;
+hp -= Math.floor(Math.random()*8);
+happy += (a.h||0);
+
+update();
 nextRound();
 
 };
@@ -378,23 +383,40 @@ box.appendChild(c);
 
 }
 
-/* ================= EMOTION ================= */
-
+/* EMOTION */
 function setOlgaMood(){
 
 let e=document.getElementById("olgaEmotion");
 
-if(bossHP<30) e.innerText="😱 Ольга паникует!";
-else if(hp<40) e.innerText="😡 Ольга злится!";
-else if(bossHP>80) e.innerText="😊 Ольга радуется!";
-else e.innerText="😐 Ольга смотрит...";
+if(bossHP<30){
+  e.innerText="😱 Ольга паникует!";
+}
+else if(hp<40){
+  e.innerText="😡 Ольга злится!";
+}
+else if(bossHP>80){
+  e.innerText="😊 Ольга радуется!";
+}
+else{
+  e.innerText="😐 Ольга смотрит...";
+}
 
 }
 
-/* ================= END ================= */
-
+/* END */
 function end(){
+
 document.getElementById("bossBox").innerHTML="🎉 ПОБЕДА 🎉";
+
+for(let i=0;i<30;i++){
+let c=document.createElement("div");
+c.innerText="🍰";
+c.style.position="absolute";
+c.style.left=Math.random()*100+"%";
+c.style.top=Math.random()*100+"%";
+document.body.appendChild(c);
+}
+
 }
 
 </script>
