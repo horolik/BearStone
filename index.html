@@ -279,8 +279,8 @@ canvas{
 
 <!-- 🔥 ДОБАВЛЕНО -->
 <div id="battleIntro">
-  <div>ты починил прод, но появился босс Олга.</div>
-  <div style="margin-top:10px">Тебе надо сразиться с ней.</div>
+  <div>🔥 🔥 🔥 ты починил прод, но появился босс Олга👿👿👿.</div>
+  <div style="margin-top:10px">Тебе надо сразиться с ней⚔️.</div>
   <div id="battleBtn">поля сражений</div>
 </div>
 
@@ -553,7 +553,7 @@ function showBoss(){
     answers.innerHTML="";
     ui.innerText="😈 ОЛЬГА: "+questions[q];
 
-    let opts=["ДА","ФИЧА","ЛЮБЛЮ","OK","Я АРТЕМ"];
+    let opts=["БАААО","ФИЧА","БОЕВОЙ КЛИЧ","OK","Я АРТЕМ", "СКИИИИИИП"];
 
     opts.forEach(t=>{
       let btn=document.createElement("div");
@@ -563,7 +563,7 @@ function showBoss(){
       btn.onclick=()=>{
         q++;
         if(q>=questions.length){
-          ui.innerText="🎉 БОСС ОЛЬГА ПОБЕЖДЕНА 🎉";
+          ui.innerText="🎉 ВОПРОСИКИ БОССА ОЛГИ ИЗДАЛИ ПРЕДСМЕРТНЫЙ ХРИП, И ЗАКОНЧИЛИСЬ НА СЕГОДНЯ. УРА! ТЫ ПОБЕДИЛ 🎉";
           answers.innerHTML="";
 
           setTimeout(()=>{
