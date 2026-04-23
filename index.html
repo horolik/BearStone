@@ -13,14 +13,12 @@ body{
   color:#00ff9f;
 }
 
-/* MATRIX */
 canvas{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* START */
 #start{
   position:fixed;
   inset:0;
@@ -49,7 +47,6 @@ canvas{
   font-family:monospace;
 }
 
-/* HUD */
 #hud{
   position:fixed;
   top:10px;
@@ -87,7 +84,6 @@ canvas{
   z-index:2;
 }
 
-/* ENTITIES */
 .entity{
   position:absolute;
   font-size:60px;
@@ -104,7 +100,6 @@ canvas{
   object-fit:contain;
 }
 
-/* BOSS */
 #boss{
   position:fixed;
   inset:0;
@@ -124,7 +119,6 @@ canvas{
   min-height:40px;
 }
 
-/* ANSWERS */
 #answers{
   display:flex;
   flex-wrap:wrap;
@@ -241,6 +235,18 @@ function update(){
   document.getElementById("r").innerText="🐀 "+r;
   document.getElementById("fix").innerText=fix;
   document.getElementById("happy").innerText=happy;
+
+  /* 👇 ТОЛЬКО ЭТА ЧАСТЬ ИЗМЕНЕНА */
+  if(fix > 50){
+    lvl = 2; // SENIOR
+  } 
+  else if(fix > 30){
+    lvl = 1; // MIDDLE
+  } 
+  else {
+    lvl = 0; // JUNIOR
+  }
+
   document.getElementById("level").innerText="LEVEL: "+levels[lvl];
 
   document.getElementById("guide").innerHTML=
