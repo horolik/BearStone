@@ -100,7 +100,6 @@ canvas{
   object-fit:contain;
 }
 
-/* BOSS */
 #boss{
   position:fixed;
   inset:0;
@@ -146,6 +145,57 @@ canvas{
   color:black;
   transform:scale(1.2);
 }
+
+/* NEW OVERLAY */
+#preboss{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:black;
+  z-index:9999;
+  text-align:center;
+  color:#00ff9f;
+  font-size:26px;
+}
+
+.flame{
+  font-size:80px;
+  animation:burn 0.3s infinite alternate;
+}
+
+@keyframes burn{
+  from{transform:scale(1);filter:brightness(1)}
+  to{transform:scale(1.2);filter:brightness(2)}
+}
+
+#final{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:black;
+  z-index:10000;
+  color:#ff4dff;
+  font-size:30px;
+  text-align:center;
+}
+
+.heart{
+  font-size:120px;
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.3)}
+  100%{transform:scale(1)}
+}
+
 </style>
 </head>
 
@@ -175,9 +225,22 @@ canvas{
   <div id="answers"></div>
 </div>
 
+<!-- PRE BOSS -->
+<div id="preboss">
+  <div>🎉 УРА! ТЫ ПОЧИНИЛ PROD</div>
+  <div style="margin-top:10px">НО ТЕПЕРЬ ТЕБЕ НАДО ПРОЙТИ БОССА ОЛЬГУ</div>
+  <div class="flame">🔥🔥🔥🔥🔥</div>
+</div>
+
+<!-- FINAL -->
+<div id="final">
+  <div class="heart">❤️</div>
+  <div>С ДНЁМ РОЖДЕНИЯ!</div>
+  <div style="margin-top:10px">PROD СТАБИЛЬНО РАБОТАЕТ 🎉</div>
+</div>
+
 <script>
 
-/* MATRIX */
 let c=document.getElementById("matrix");
 let ctx=c.getContext("2d");
 c.width=window.innerWidth;
@@ -188,8 +251,6 @@ let fontSize=14;
 let columns=c.width/fontSize;
 let drops=[];
 for(let i=0;i<columns;i++) drops[i]=1;
-
-let matrixInterval=setInterval(drawMatrix,33);
 
 function drawMatrix(){
   ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -208,8 +269,8 @@ function drawMatrix(){
     drops[i]++;
   }
 }
+setInterval(drawMatrix,33);
 
-/* STATE */
 let run=false;
 let f=0,r=0;
 let fix=30;
@@ -219,17 +280,6 @@ let seniorMode=false;
 
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
-/* START */
-document.getElementById("input").addEventListener("keydown",(e)=>{
-  if(e.key==="Enter" && e.target.value.toLowerCase()==="start"){
-    document.getElementById("start").style.display="none";
-    document.getElementById("hud").style.display="flex";
-    run=true;
-    loop();
-  }
-});
-
-/* UI */
 function update(){
   document.getElementById("f").innerText="🐻 "+f;
   document.getElementById("r").innerText="🐀 "+r;
@@ -251,7 +301,6 @@ function update(){
     "🐀 баги | 🐻 фичи | 💨 кальян | 🎯 50% → БОСС";
 }
 
-/* LOOP */
 function loop(){
   setInterval(()=>{
 
@@ -305,7 +354,7 @@ function loop(){
   },500);
 }
 
-/* SENIOR DEV MODE */
+/* PRE BOSS + FLAME + BOSS */
 function startSeniorMode(){
   document.body.style.filter="hue-rotate(120deg) saturate(2)";
 
@@ -322,14 +371,20 @@ function startSeniorMode(){
 
   setTimeout(()=>{
     clearInterval(chaos);
-
     document.body.style.filter="none";
 
-    showBoss();
+    // PRE BOSS SCREEN
+    let pb=document.getElementById("preboss");
+    pb.style.display="flex";
+
+    setTimeout(()=>{
+      pb.style.display="none";
+      showBoss();
+    },4000);
+
   },10000);
 }
 
-/* BOSS */
 function showBoss(){
   let b=document.getElementById("boss");
   let ui=document.getElementById("boss-ui");
@@ -339,9 +394,10 @@ function showBoss(){
 
   let questions=[
     "Ты меня любишь?",
+    "Ты будешь меня любить, если я буду червем?",
     "А если я баг?",
     "А если я удалю прод?",
-    "Ты со мной?"
+    "Кто лучшая Мишка в мире?"
   ];
 
   let q=0;
@@ -360,8 +416,14 @@ function showBoss(){
       btn.onclick=()=>{
         q++;
         if(q>=questions.length){
-          ui.innerText="🎉 PROD СТАБИЛИЗИРОВАН 🎉";
+          ui.innerText="🎉 ОЛЬГА ПОБЕЖДЕНА 🎉";
           answers.innerHTML="";
+
+          setTimeout(()=>{
+            document.getElementById("boss").style.display="none";
+            document.getElementById("final").style.display="flex";
+          },1500);
+
           return;
         }
         next();
@@ -375,6 +437,15 @@ function showBoss(){
 }
 
 update();
+
+document.getElementById("input").addEventListener("keydown",(e)=>{
+  if(e.key==="Enter" && e.target.value.toLowerCase()==="start"){
+    document.getElementById("start").style.display="none";
+    document.getElementById("hud").style.display="flex";
+    run=true;
+    loop();
+  }
+});
 
 </script>
 
