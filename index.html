@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEM ULTRA HC++</title>
+<title>SUPER ARTEM BALANCED</title>
 <style>
 body{margin:0;background:black;font-family:monospace;overflow:hidden;color:#00ff9f;}
 canvas{position:fixed;inset:0;z-index:0;}
@@ -13,7 +13,7 @@ canvas{position:fixed;inset:0;z-index:0;}
 #level{position:fixed;top:40px;width:100%;text-align:center;z-index:2;}
 #stats{position:fixed;top:80px;left:20px;color:white;z-index:2;}
 #guide{position:fixed;bottom:20px;left:20px;right:20px;border:1px solid #00ff9f;padding:10px;background:rgba(0,0,0,0.5);z-index:2;}
-.entity{position:absolute;font-size:60px;cursor:pointer;z-index:2;transition:.15s;}
+.entity{position:absolute;font-size:60px;cursor:pointer;z-index:2;transition:.2s;}
 .rat{color:red;} .feature{color:#00ff9f;}
 .kalyan{width:120px;}
 #boss{position:fixed;inset:0;background:black;display:none;flex-direction:column;align-items:center;justify-content:center;color:white;z-index:3;}
@@ -57,7 +57,8 @@ drops[i]=y*14>c.height?0:y+1;
 },33);
 
 let run=false,f=0,r=0,fix=30,happy=0,lvl=0,combo=0,timer;
-let bossHP=120,bossTime=15;
+const levels=["JUNIOR","MIDDLE","SENIOR"];
+let bossHP=80,bossTime=25;
 let speedMultiplier=1;
 
 let input=document.getElementById("input");
@@ -90,7 +91,14 @@ fEl.innerText="🐻 "+f;
 rEl.innerText="🐀 "+r;
 fixEl.innerText=fix;
 happyEl.innerText=happy;
-levelEl.innerText="LEVEL "+lvl;
+levelEl.innerText="LEVEL: "+levels[lvl];
+
+document.getElementById("guide").innerHTML=
+"🐀 Лови баги (иначе -FIX)<br>"+
+"🐻 Фичи дают +FIX<br>"+
+"💨 Кальяны дают happiness<br>"+
+"⚡ Shift +FIX | Ctrl очистка<br>"+
+"🎯 99% happiness → БОСС";
 }
 
 function loop(){
@@ -98,41 +106,96 @@ timer=setInterval(()=>{
 if(happy>=99){clearInterval(timer);bossFight();return;}
 if(fix<=0){document.body.innerHTML="<h1 style='color:red'>PROD DEAD</h1>";return;}
 
-// difficulty scaling
-speedMultiplier+=0.02;
+// level-based difficulty
+speedMultiplier+=0.008;
 let spawnChance=Math.random();
-let type=spawnChance<0.6?"rat":(spawnChance>0.85?"fun":"feature");
+let type="feature";
+
+if(lvl===0){ // JUNIOR
+  type=spawnChance<0.35?"rat":(spawnChance>0.9?"fun":"feature");
+}
+else if(lvl===1){ // MIDDLE
+  type=spawnChance<0.5?"rat":(spawnChance>0.85?"fun":"feature");
+}
+else{ // SENIOR
+  type=spawnChance<0.6?"rat":(spawnChance>0.8?"fun":"feature");
+}
 
 let e=document.createElement(type==="fun"?"img":"div");
 e.className="entity "+type;
-if(type==="rat")e.innerText="🐀";
+
+// special fast rats (MIDDLE+)
+let isFast=false;
+if(type==="rat" && lvl>=1 && Math.random()>0.6){
+  isFast=true;
+  e.innerText="💀";
+}else{
+  if(type==="rat")e.innerText="🐀";
+}
+
 if(type==="feature")e.innerText="🐻";
 if(type==="fun"){e.src="Kalyan.PNG";e.classList.add("kalyan");}
+
+// mini boss (SENIOR)
+if(lvl===2 && Math.random()>0.92){
+  e.innerText="👾";
+  e.style.fontSize="80px";
+  e.dataset.miniboss="1";
+}
 
 e.style.left=Math.random()*innerWidth+"px";
 e.style.top=Math.random()*innerHeight+"px";
 
-let dx=(Math.random()-0.5)*8*speedMultiplier;
-let dy=(Math.random()-0.5)*8*speedMultiplier;
+let speedBase = lvl===0?3:(lvl===1?5:7);
+if(isFast) speedBase*=1.8;
+
+let dx=(Math.random()-0.5)*speedBase*speedMultiplier;
+let dy=(Math.random()-0.5)*speedBase*speedMultiplier;
+
 let move=setInterval(()=>{
 e.style.left=e.offsetLeft+dx+"px";
 e.style.top=e.offsetTop+dy+"px";
-},20);
+},30);
 
  e.onclick=()=>{
 combo++;
-e.style.transform="scale(1.6)";
-if(type==="rat"){r++;fix+=2+combo;hit.play();}
-if(type==="feature"){f++;fix+=3+combo;good.play();}
-if(type==="fun"){happy+=5;fix-=4;bad.play();}
+e.style.transform="scale(1.4)";
+
+if(e.dataset.miniboss){
+  fix+=15;
+  happy+=10;
+  good.play();
+}
+else if(type==="rat"){
+  r++;
+  fix+=2+combo;
+  hit.play();
+}
+else if(type==="feature"){
+  f++;
+  fix+=3+combo;
+  good.play();
+  if(f>=5 && lvl<2){lvl++;f=0;}
+}
+else if(type==="fun"){
+  happy+=5;
+  fix-=2;
+  bad.play();
+}
+
 update();
 e.remove();
  };
 
  document.body.appendChild(e);
- setTimeout(()=>{clearInterval(move);e.remove();combo=0;},1000);
 
-},Math.max(100,400-speedMultiplier*50));
+let lifeTime = lvl===0?1600:(lvl===1?1300:1000);
+if(isFast) lifeTime*=0.7;
+if(e.dataset.miniboss) lifeTime=2000;
+
+setTimeout(()=>{clearInterval(move);e.remove();combo=0;},lifeTime);
+
+},Math.max(200,500-speedMultiplier*35));
 }
 
 function bossFight(){
@@ -149,16 +212,16 @@ function render(){
 b.innerHTML=`😈 ОЛЬГА БОСС<br>HP: ${bossHP}<br>TIME: ${bossTime}<br>`;
 
 let correct="ДА";
-["ДА","НЕТ","НЕ ЗНАЮ","ЭТО БАГ","ПОЗЖЕ"].sort(()=>Math.random()-0.5).forEach(ans=>{
+["ДА","НЕТ","НЕ ЗНАЮ","ЭТО БАГ"].sort(()=>Math.random()-0.5).forEach(ans=>{
 let btn=document.createElement("div");
 btn.innerText=ans;
 btn.style.border="1px solid white";
 btn.style.margin="5px";
 btn.style.padding="10px";
 btn.onclick=()=>{
-if(ans===correct){bossHP-=25;good.play();}
-else{bossHP+=15;fix-=10;bad.play();}
-if(bossHP<=0){b.innerHTML="🔥 LEGENDARY VICTORY 🔥";clearInterval(interval);} 
+if(ans===correct){bossHP-=20;good.play();}
+else{bossHP+=5;fix-=3;bad.play();}
+if(bossHP<=0){b.innerHTML="🎉 VICTORY";clearInterval(interval);} 
 render();
 };
 b.appendChild(btn);
