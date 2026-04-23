@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEM</title>
+<title>SUPER ARTEM - HARD MODE</title>
 <style>
 body{
 margin:0;
@@ -11,11 +11,13 @@ font-family:monospace;
 overflow:hidden;
 color:#00ff9f;
 }
+
 canvas{
 position:fixed;
 inset:0;
 z-index:0;
 }
+
 #start{
 position:fixed;
 inset:0;
@@ -27,12 +29,14 @@ font-size:22px;
 background:black;
 z-index:1000;
 }
+
 #terminal{
 background:black;
 border:1px solid #00ff9f;
 padding:20px;
 width:300px;
 }
+
 #input{
 background:black;
 border:none;
@@ -41,6 +45,7 @@ outline:none;
 width:100%;
 font-family:monospace;
 }
+
 #hud{
 position:fixed;
 top:10px;
@@ -50,6 +55,7 @@ display:none;
 justify-content:space-between;
 z-index:2;
 }
+
 #level{
 position:fixed;
 top:40px;
@@ -57,6 +63,7 @@ width:100%;
 text-align:center;
 z-index:2;
 }
+
 #stats{
 position:fixed;
 top:80px;
@@ -64,6 +71,7 @@ left:20px;
 color:white;
 z-index:2;
 }
+
 #guide{
 position:fixed;
 bottom:20px;
@@ -74,20 +82,23 @@ padding:10px;
 background:rgba(0,0,0,0.5);
 z-index:2;
 }
+
 .entity{
 position:absolute;
 font-size:60px;
 cursor:pointer;
 z-index:2;
 }
+
 .rat{color:red;}
 .feature{color:#00ff9f;}
+
 .kalyan{
 width:120px;
 height:120px;
 object-fit:contain;
 }
-.kalyan:hover{transform:scale(1.2);}
+
 #boss{
 position:fixed;
 inset:0;
@@ -100,6 +111,7 @@ color:white;
 font-size:20px;
 z-index:3;
 }
+
 #boss img{
 width:200px;
 border-radius:12px;
@@ -136,7 +148,7 @@ FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">0</span>
 
 <script>
 
-/* MATRIX */
+/* MATRIX (ускорен + плотнее поток) */
 let c=document.getElementById("matrix");
 let ctx=c.getContext("2d");
 c.width=window.innerWidth;
@@ -146,13 +158,11 @@ let letters="01".split("");
 let fontSize=14;
 let columns=c.width/fontSize;
 let drops=[];
+
 for(let i=0;i<columns;i++) drops[i]=1;
 
-let matrixSpeed=33;
-let matrixInterval=setInterval(drawMatrix,matrixSpeed);
-
-function drawMatrix(){
-ctx.fillStyle="rgba(0,0,0,0.05)";
+setInterval(()=>{
+ctx.fillStyle="rgba(0,0,0,0.08)";
 ctx.fillRect(0,0,c.width,c.height);
 ctx.fillStyle="#00ff9f";
 ctx.font=fontSize+"px monospace";
@@ -160,10 +170,12 @@ ctx.font=fontSize+"px monospace";
 for(let i=0;i<drops.length;i++){
 let text=letters[Math.floor(Math.random()*letters.length)];
 ctx.fillText(text,i*fontSize,drops[i]*fontSize);
-if(drops[i]*fontSize>c.height && Math.random()>0.975) drops[i]=0;
-drops[i]++;
+
+if(drops[i]*fontSize>c.height && Math.random()>0.95) drops[i]=0;
+
+drops[i]+=1.4; // 🔥 быстрее падение
 }
-}
+},25); // 🔥 быстрее матрица
 
 /* STATE */
 let run=false;
@@ -196,54 +208,42 @@ document.getElementById("happy").innerText=happy;
 document.getElementById("level").innerText="LEVEL: "+levels[lvl];
 
 document.getElementById("guide").innerHTML=
-"🐛 баги дают FIX<br>"+
-"🐀 фичи дают FIX<br>"+
-"💨 кальяны дают happiness<br>"+
-"🎯 100% FIX → WIN";
+"🐛 баги +FIX<br>🐀 фичи +FIX<br>💨 кальян +HAPPY<br>🎯 100% FIX → WIN";
 }
 
-/* INCIDENTS */
+/* INCIDENTS (чаще) */
 function startIncidents(){
 setInterval(()=>{
 let event=Math.random();
-if(event>0.7){
+
+if(event>0.6){ // 🔥 чаще события
 happy+=10;
-document.getElementById("guide").innerHTML+="<br>😴 ПЕРЕРЫВ НА СОН +HAPPINESS";
+fix-=1; // 🔥 давление выше
 }
 update();
-},12000);
+},8000);
 }
 
-/* AUTO FIX SENIOR */
+/* AUTO FIX (сильнее влияние senior) */
 function startAutoFix(){
 setInterval(()=>{
-if(lvl===2) fix++;
+if(lvl===2) fix+=2;
 update();
-},1000);
+},700);
 }
 
-/* BOSS OLGA */
+/* BOSS */
 function showBoss(){
 let b=document.getElementById("boss");
 b.style.display="flex";
 
-let q=[
-"Ты меня любишь?",
-"А если я баг?",
-"А если я удалю прод?",
-"А если я просто console.log?",
-"А если я никогда не закрою тикет?"
-];
-
+let q=["Ты меня любишь?","А если я баг?","А если я удалю прод?","А если я console.log?","А если я никогда не закрою тикет?"];
 let i=0;
 
 function render(){
-b.innerHTML=
-"😈 ОЛЬГА БОСС<br><br>"+
-"<img src='Olga.JPG'><br>"+
-q[i]+"<br><br>";
+b.innerHTML="😈 ОЛЬГА БОСС<br><br><img src='Olga.JPG'><br>"+q[i]+"<br><br>";
 
-["ДА","НЕТ","ЭТО ФИЧА","Я АРТЕМ","ЛОГИКА","ПЕРЕЗАГРУЗКА"].forEach(t=>{
+["ДА","НЕТ","ФИЧА","Я АРТЕМ","ЛОГИКА","РЕСТАРТ"].forEach(t=>{
 let btn=document.createElement("div");
 btn.innerText=t;
 btn.style.border="1px solid white";
@@ -254,8 +254,8 @@ btn.style.cursor="pointer";
 btn.onclick=()=>{
 i++;
 if(i>=q.length){
-b.innerHTML="💜 ОЛЬГА УСПОКОИЛАСЬ → DEPLOY ДОПУЩЕН";
-setTimeout(()=>win(),1500);
+b.innerHTML="💜 DEPLOY OK";
+setTimeout(()=>win(),1200);
 return;
 }
 render();
@@ -271,22 +271,15 @@ render();
 /* WIN */
 function win(){
 clearInterval(timer);
-clearInterval(matrixInterval);
-matrixInterval=setInterval(drawMatrix,10);
-
-document.querySelectorAll(".entity").forEach(e=>e.remove());
-
-document.body.innerHTML=
-"<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 PROD STABLE - ARTEM WIN 🎉</h1>";
+document.body.innerHTML="<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>ARTEM WIN 🚀</h1>";
 }
 
-/* LOOP */
+/* LOOP (🔥 усилен спавн) */
 function loop(){
 timer=setInterval(()=>{
 
 if(!run) return;
 
-/* TRIGGER BOSS BEFORE WIN */
 if(fix>=100 && !bossStarted){
 bossStarted=true;
 clearInterval(timer);
@@ -294,11 +287,10 @@ showBoss();
 return;
 }
 
-/* SPAWN */
 let rand=Math.random();
 
-/* BUGS */
-if(rand< (lvl===0?0.5:0.4)){
+/* BUGS — чаще */
+if(rand<0.55){
 let e=document.createElement("div");
 e.className="entity rat";
 e.innerText="🐀";
@@ -313,11 +305,11 @@ e.remove();
 };
 
 document.body.appendChild(e);
-setTimeout(()=>e.remove(),1500);
+setTimeout(()=>e.remove(),900);
 }
 
 /* FEATURES */
-else if(rand<0.75){
+else if(rand<0.8){
 let e=document.createElement("div");
 e.className="entity feature";
 e.innerText="🐻";
@@ -333,10 +325,10 @@ e.remove();
 };
 
 document.body.appendChild(e);
-setTimeout(()=>e.remove(),1500);
+setTimeout(()=>e.remove(),900);
 }
 
-/* KALYAN */
+/* KALYAN (реже, но мощнее) */
 else{
 let img=document.createElement("img");
 img.src="Kalyan.PNG";
@@ -345,17 +337,17 @@ img.style.left=Math.random()*window.innerWidth+"px";
 img.style.top=Math.random()*window.innerHeight+"px";
 
 img.onclick=()=>{
-happy+= (lvl===0?5:lvl===1?10:15);
-fix-=3;
+happy+= (lvl===0?6:lvl===1?12:18);
+fix-=2;
 update();
 img.remove();
 };
 
 document.body.appendChild(img);
-setTimeout(()=>img.remove(),1500);
+setTimeout(()=>img.remove(),1000);
 }
 
-},500);
+},350); // 🔥 быстрее спавн
 }
 
 update();
