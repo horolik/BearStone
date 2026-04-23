@@ -100,6 +100,7 @@ canvas{
   object-fit:contain;
 }
 
+/* BOSS */
 #boss{
   position:fixed;
   inset:0;
@@ -110,7 +111,6 @@ canvas{
   flex-direction:column;
   z-index:3;
   color:#00ff9f;
-  font-size:18px;
 }
 
 #boss-ui{
@@ -144,7 +144,6 @@ canvas{
 .answer.good{
   background:#00ff9f;
   color:black;
-  box-shadow:0 0 25px #00ff9f;
   transform:scale(1.2);
 }
 </style>
@@ -156,8 +155,8 @@ canvas{
 
 <div id="start">
   <div id="terminal">
-    > 🐀🐀🐀ALARM! PROD сломался. Введите команду:<br><br>
-    > <input id="input" autofocus placeholder="start">
+    > 🐀 ALARM! PROD сломался<br><br>
+    > <input id="input" placeholder="start">
   </div>
 </div>
 
@@ -188,8 +187,9 @@ let letters="01".split("");
 let fontSize=14;
 let columns=c.width/fontSize;
 let drops=[];
-
 for(let i=0;i<columns;i++) drops[i]=1;
+
+let matrixInterval=setInterval(drawMatrix,33);
 
 function drawMatrix(){
   ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -208,7 +208,6 @@ function drawMatrix(){
     drops[i]++;
   }
 }
-setInterval(drawMatrix,33);
 
 /* STATE */
 let run=false;
@@ -216,6 +215,7 @@ let f=0,r=0;
 let fix=30;
 let happy=0;
 let lvl=0;
+let seniorMode=false;
 
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
@@ -236,21 +236,19 @@ function update(){
   document.getElementById("fix").innerText=fix;
   document.getElementById("happy").innerText=happy;
 
-  /* 👇 ТОЛЬКО ЭТА ЧАСТЬ ИЗМЕНЕНА */
-  if(fix > 50){
-    lvl = 2; // SENIOR
-  } 
-  else if(fix > 30){
-    lvl = 1; // MIDDLE
-  } 
-  else {
-    lvl = 0; // JUNIOR
-  }
+  if(fix > 50) lvl = 2;
+  else if(fix > 30) lvl = 1;
+  else lvl = 0;
 
   document.getElementById("level").innerText="LEVEL: "+levels[lvl];
 
+  if(lvl===2 && !seniorMode){
+    seniorMode=true;
+    startSeniorMode();
+  }
+
   document.getElementById("guide").innerHTML=
-    "🐀 Лови баги<br>🐻 Фичи дают FIX<br>💨 Кальяны дают happiness<br>🎯 50% → БОСС";
+    "🐀 баги | 🐻 фичи | 💨 кальян | 🎯 50% → БОСС";
 }
 
 /* LOOP */
@@ -271,7 +269,6 @@ function loop(){
       let e=document.createElement("div");
       e.className="entity "+type;
       e.innerText=type==="rat"?"🐀":"🐻";
-
       e.style.left=Math.random()*window.innerWidth+"px";
       e.style.top=Math.random()*window.innerHeight+"px";
 
@@ -289,7 +286,6 @@ function loop(){
       let img=document.createElement("img");
       img.src="Kalyan.PNG";
       img.className="entity kalyan";
-
       img.style.left=Math.random()*window.innerWidth+"px";
       img.style.top=Math.random()*window.innerHeight+"px";
 
@@ -304,25 +300,33 @@ function loop(){
       setTimeout(()=>img.remove(),1500);
     }
 
-    if(happy>=50){
-      showBoss();
-      happy=0;
-    }
-
     update();
 
   },500);
 }
 
-/* TYPE TEXT */
-function typeText(el,text,speed=25){
-  el.innerHTML="";
-  let i=0;
-  let t=setInterval(()=>{
-    el.innerHTML+=text[i];
-    i++;
-    if(i>=text.length) clearInterval(t);
-  },speed);
+/* SENIOR DEV MODE */
+function startSeniorMode(){
+  document.body.style.filter="hue-rotate(120deg) saturate(2)";
+
+  let chaos=setInterval(()=>{
+    let d=document.createElement("div");
+    d.innerText=["💥 BUG","🔥 HOTFIX","💣 PROD"][Math.floor(Math.random()*3)];
+    d.style.position="absolute";
+    d.style.left=Math.random()*window.innerWidth+"px";
+    d.style.top=Math.random()*window.innerHeight+"px";
+    d.style.color="red";
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),1200);
+  },300);
+
+  setTimeout(()=>{
+    clearInterval(chaos);
+
+    document.body.style.filter="none";
+
+    showBoss();
+  },10000);
 }
 
 /* BOSS */
@@ -337,48 +341,30 @@ function showBoss(){
     "Ты меня любишь?",
     "А если я баг?",
     "А если я удалю прод?",
-    "А если я console.log?",
-    "Ты вообще со мной?"
+    "Ты со мной?"
   ];
 
   let q=0;
 
   function next(){
     answers.innerHTML="";
-    typeText(ui,"😈 ОЛЬГА: "+questions[q]);
+    ui.innerText="😈 ОЛЬГА: "+questions[q];
 
-    setTimeout(renderAnswers,800);
-  }
+    let opts=["ДА","ФИЧА","ЛЮБЛЮ","OK","Я АРТЕМ"];
 
-  function renderAnswers(){
-    let opts=["ДА","КОНЕЧНО","ФИЧА","ЛЮБЛЮ","OK","Я АРТЕМ"];
-
-    opts.forEach((t,i)=>{
+    opts.forEach(t=>{
       let btn=document.createElement("div");
       btn.className="answer";
       btn.innerText=t;
 
-      btn.style.opacity=0;
-      btn.style.transform="translateY(20px)";
-
-      setTimeout(()=>{
-        btn.style.transition="0.3s";
-        btn.style.opacity=1;
-        btn.style.transform="translateY(0)";
-      },i*80);
-
       btn.onclick=()=>{
-
-        btn.classList.add("good");
-
         q++;
         if(q>=questions.length){
-          ui.innerHTML="🎉 PROD ПОЧИНЕН 🎉";
+          ui.innerText="🎉 PROD СТАБИЛИЗИРОВАН 🎉";
           answers.innerHTML="";
           return;
         }
-
-        setTimeout(next,300);
+        next();
       };
 
       answers.appendChild(btn);
