@@ -206,7 +206,6 @@ document.getElementById("guide").innerHTML=
 function startIncidents(){
 setInterval(()=>{
 let event=Math.random();
-
 if(event>0.7){
 happy+=10;
 document.getElementById("guide").innerHTML+="<br>😴 ПЕРЕРЫВ НА СОН +HAPPINESS";
@@ -223,26 +222,75 @@ update();
 },1000);
 }
 
+/* BOSS OLGA */
+function showBoss(){
+let b=document.getElementById("boss");
+b.style.display="flex";
+
+let q=[
+"Ты меня любишь?",
+"А если я баг?",
+"А если я удалю прод?",
+"А если я просто console.log?",
+"А если я никогда не закрою тикет?"
+];
+
+let i=0;
+
+function render(){
+b.innerHTML=
+"😈 ОЛЬГА БОСС<br><br>"+
+"<img src='Olga.JPG'><br>"+
+q[i]+"<br><br>";
+
+["ДА","НЕТ","ЭТО ФИЧА","Я АРТЕМ","ЛОГИКА","ПЕРЕЗАГРУЗКА"].forEach(t=>{
+let btn=document.createElement("div");
+btn.innerText=t;
+btn.style.border="1px solid white";
+btn.style.padding="10px";
+btn.style.margin="5px";
+btn.style.cursor="pointer";
+
+btn.onclick=()=>{
+i++;
+if(i>=q.length){
+b.innerHTML="💜 ОЛЬГА УСПОКОИЛАСЬ → DEPLOY ДОПУЩЕН";
+setTimeout(()=>win(),1500);
+return;
+}
+render();
+};
+
+b.appendChild(btn);
+});
+}
+
+render();
+}
+
+/* WIN */
+function win(){
+clearInterval(timer);
+clearInterval(matrixInterval);
+matrixInterval=setInterval(drawMatrix,10);
+
+document.querySelectorAll(".entity").forEach(e=>e.remove());
+
+document.body.innerHTML=
+"<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 PROD STABLE - ARTEM WIN 🎉</h1>";
+}
+
 /* LOOP */
 function loop(){
 timer=setInterval(()=>{
 
 if(!run) return;
 
-/* WIN */
-if(fix>=100){
+/* TRIGGER BOSS BEFORE WIN */
+if(fix>=100 && !bossStarted){
+bossStarted=true;
 clearInterval(timer);
-
-/* MATRIX BOOST */
-clearInterval(matrixInterval);
-matrixInterval=setInterval(drawMatrix,10);
-
-/* CLEAN WORLD */
-document.querySelectorAll(".entity").forEach(e=>e.remove());
-
-document.body.innerHTML=
-"<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 PROD STABLE - ARTEM WIN 🎉</h1>";
-
+showBoss();
 return;
 }
 
@@ -251,34 +299,21 @@ let rand=Math.random();
 
 /* BUGS */
 if(rand< (lvl===0?0.5:0.4)){
-let types=[
-{emoji:"🐛",type:"small",fix:2,speed:1500},
-{emoji:"💀🐛",type:"critical",fix:10,speed:800},
-{emoji:"🐞∞",type:"loop",fix:5,speed:1500}
-];
-
-let b=types[Math.floor(Math.random()*types.length)];
-
 let e=document.createElement("div");
 e.className="entity rat";
-e.innerText=b.emoji;
+e.innerText="🐛";
 e.style.left=Math.random()*window.innerWidth+"px";
 e.style.top=Math.random()*window.innerHeight+"px";
 
 e.onclick=()=>{
-fix+=b.fix;
+fix+=2;
 r++;
-
-if(b.type==="loop"){
-setTimeout(()=>document.body.appendChild(e.cloneNode(true)),300);
-}
-
 update();
 e.remove();
 };
 
 document.body.appendChild(e);
-setTimeout(()=>e.remove(),b.speed);
+setTimeout(()=>e.remove(),1500);
 }
 
 /* FEATURES */
@@ -291,12 +326,8 @@ e.style.top=Math.random()*window.innerHeight+"px";
 
 e.onclick=()=>{
 f++;
-
-if(lvl===0) fix+=2;
-else fix+=3;
-
+fix+=3;
 if(f>=5 && lvl<2){lvl++;f=0;}
-
 update();
 e.remove();
 };
@@ -314,15 +345,7 @@ img.style.left=Math.random()*window.innerWidth+"px";
 img.style.top=Math.random()*window.innerHeight+"px";
 
 img.onclick=()=>{
-
-if(lvl===0) happy+=5;
-if(lvl===1) happy+=10;
-if(lvl===2){
-happy+=15;
-document.body.style.filter="blur(2px)";
-setTimeout(()=>document.body.style.filter="none",1500);
-}
-
+happy+= (lvl===0?5:lvl===1?10:15);
 fix-=3;
 update();
 img.remove();
@@ -335,7 +358,6 @@ setTimeout(()=>img.remove(),1500);
 },500);
 }
 
-/* INIT */
 update();
 
 </script>
