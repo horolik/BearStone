@@ -91,6 +91,11 @@ canvas{
   font-size:60px;
   cursor:pointer;
   z-index:2;
+
+  /* ДОБАВЛЕНО ДЛЯ МОБИЛОК */
+  padding:20px;
+  transform:translate(-20px, -20px);
+  touch-action:manipulation;
 }
 
 .rat{color:red;}
@@ -287,7 +292,6 @@ canvas{
   </div>
 </div>
 
-<!-- НОВЫЙ ЭКРАН ПОДАРКА -->
 <div id="gift" style="
   position:fixed;
   inset:0;
@@ -411,8 +415,30 @@ function loop(){
       e.style.top=Math.random()*window.innerHeight+"px";
 
       e.onclick=()=>{
-        if(type==="rat"){r++;fix+=2;happy-=1;}
-        if(type==="feature"){f++;fix+=3;happy+=1;}
+        if(type==="rat"){
+          r++;
+
+          if(Math.random()<0.2){
+            fix-=2;
+          }else{
+            fix+=2;
+          }
+
+          happy-=1;
+        }
+
+        if(type==="feature"){
+          f++;
+
+          if(Math.random()<0.15){
+            fix-=5;
+            happy-=2;
+          }else{
+            fix+=3;
+            happy+=1;
+          }
+        }
+
         update();
       };
 
@@ -488,7 +514,7 @@ function showBoss(){
     answers.innerHTML="";
     ui.innerText="😈 ОЛЬГА: "+questions[q];
 
-    let opts=["ДА","ФИЧА","ЛЮБЛЮ","OK","Я АРТЕМ"];
+    let opts=["БААААААААААААО","ФИЧА","ЛЮБЛЮ","OK","Я АРТЕМ", "СКИИИИИИИП"];
 
     opts.forEach(t=>{
       let btn=document.createElement("div");
@@ -529,7 +555,6 @@ document.getElementById("input").addEventListener("keydown",(e)=>{
   }
 });
 
-// ОБРАБОТКА КНОПКИ ПОДАРКА
 document.addEventListener("click",(e)=>{
   if(e.target && e.target.id==="giftBtn"){
     document.getElementById("final").style.display="none";
