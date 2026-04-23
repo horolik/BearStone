@@ -73,7 +73,6 @@ canvas{
   z-index:2;
 }
 
-/* BIG GUIDE BOTTOM LEFT */
 #guide{
   position:fixed;
   bottom:20px;
@@ -143,7 +142,6 @@ canvas{
   box-shadow:0 0 15px #00ff9f;
 }
 
-/* LEVEL OVERLAY */
 #levelTable{
   position:fixed;
   inset:0;
@@ -158,7 +156,6 @@ canvas{
   text-align:center;
 }
 
-/* PRE SUPER MESSAGE */
 #supermsg{
   position:fixed;
   inset:0;
@@ -196,6 +193,20 @@ canvas{
   text-align:center;
 }
 
+#gameover{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:black;
+  z-index:10001;
+  color:red;
+  font-size:30px;
+  text-align:center;
+}
+
 .heart{
   font-size:120px;
   animation:pulse 1s infinite;
@@ -227,13 +238,16 @@ canvas{
 </div>
 
 <div id="level"></div>
-<div id="stats">FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">0</span></div>
+<div id="stats">FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">50</span></div>
 
 <div id="guide">
 🐀 баги: +2 FIX, -1 HAPPY<br>
 🐻 фичи: +3 FIX, +1 HAPPY<br>
-💨 кальян: -3 FIX, +5 HAPPY<br>
-🎯 50% → БОСС ОЛЬГА
+💨 кальян: -3 FIX, +5 HAPPY<br><br>
+⚠️ УСЛОВИЯ:<br>
+- 50% HAPPY в начале<br>
+- HAPPY < 20% = GAME OVER<br>
+- FIX 66.6% = БОСС ОЛЬГА<br>
 </div>
 
 <div id="boss">
@@ -245,9 +259,14 @@ canvas{
 <div id="levelTable"></div>
 
 <div id="supermsg">
-  <div>🔥 PROD ПОЧИНЕН</div>
+  <div>🔥 PROD ПОЧИНЕН на 66,6%</div>
   <div style="margin-top:10px">НО СНОВА ЧТО-ТО СЛОМАЛОСЬ...</div>
   <div class="flame">🔥🔥🔥🔥🔥</div>
+</div>
+
+<div id="gameover">
+  <div>💀 ПОПРОБУЙ ЕЩЕ РАЗ</div>
+  <div style="margin-top:10px"><a href="#" onclick="location.reload()" style="color:#00ff9f">вернуться к началу</a></div>
 </div>
 
 <div id="final">
@@ -272,17 +291,13 @@ for(let i=0;i<columns;i++) drops[i]=1;
 function drawMatrix(){
   ctx.fillStyle="rgba(0,0,0,0.05)";
   ctx.fillRect(0,0,c.width,c.height);
-
   ctx.fillStyle="#00ff9f";
   ctx.font=fontSize+"px monospace";
 
   for(let i=0;i<drops.length;i++){
     let text=letters[Math.floor(Math.random()*letters.length)];
     ctx.fillText(text,i*fontSize,drops[i]*fontSize);
-
-    if(drops[i]*fontSize>c.height && Math.random()>0.975)
-      drops[i]=0;
-
+    if(drops[i]*fontSize>c.height && Math.random()>0.975) drops[i]=0;
     drops[i]++;
   }
 }
@@ -291,11 +306,12 @@ setInterval(drawMatrix,33);
 let run=false;
 let f=0,r=0;
 let fix=30;
-let happy=0;
+let happy=50;
 let lvl=0;
 let seniorMode=false;
 let prevLvl=0;
 let superShown=false;
+let gameInterval;
 
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
@@ -306,11 +322,21 @@ function showLevelTable(l){
   setTimeout(()=>t.style.display="none",1500);
 }
 
+function gameOver(){
+  clearInterval(gameInterval);
+  document.getElementById("gameover").style.display="flex";
+}
+
 function update(){
   document.getElementById("f").innerText="🐻 "+f;
   document.getElementById("r").innerText="🐀 "+r;
   document.getElementById("fix").innerText=fix;
   document.getElementById("happy").innerText=happy;
+
+  if(happy < 20){
+    gameOver();
+    return;
+  }
 
   if(fix > 50) lvl = 2;
   else if(fix > 30) lvl = 1;
@@ -323,7 +349,7 @@ function update(){
 
   document.getElementById("level").innerText="LEVEL: "+levels[lvl];
 
-  if(fix > 50 && !superShown){
+  if(fix >= 66.6 && !superShown){
     superShown = true;
     document.getElementById("supermsg").style.display="flex";
 
@@ -332,11 +358,10 @@ function update(){
       startSeniorMode();
     },3000);
   }
-
 }
 
 function loop(){
-  setInterval(()=>{
+  gameInterval=setInterval(()=>{
 
     if(fix<=0){
       document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
@@ -406,9 +431,7 @@ function startSeniorMode(){
     clearInterval(chaos);
     document.body.style.filter="none";
 
-    let pb=document.getElementById("preboss");
-    if(pb){ pb.remove(); }
-
+    document.getElementById("supermsg").style.display="none";
     showBoss();
 
   },8000);
