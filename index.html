@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEM: PROD EDITION</title>
+<title>SUPER ARTEM</title>
 
 <style>
 body{
@@ -13,6 +13,7 @@ body{
   color:#00ff9f;
 }
 
+/* MATRIX */
 canvas{
   position:fixed;
   inset:0;
@@ -26,14 +27,26 @@ canvas{
   display:flex;
   align-items:center;
   justify-content:center;
+  flex-direction:column;
+  font-size:22px;
   background:black;
   z-index:1000;
 }
 
 #terminal{
+  background:black;
   border:1px solid #00ff9f;
   padding:20px;
-  width:320px;
+  width:300px;
+}
+
+#input{
+  background:black;
+  border:none;
+  color:#00ff9f;
+  outline:none;
+  width:100%;
+  font-family:monospace;
 }
 
 /* HUD */
@@ -52,12 +65,15 @@ canvas{
   top:40px;
   width:100%;
   text-align:center;
+  z-index:2;
 }
 
 #stats{
   position:fixed;
   top:80px;
   left:20px;
+  color:white;
+  z-index:2;
 }
 
 #guide{
@@ -68,35 +84,24 @@ canvas{
   border:1px solid #00ff9f;
   padding:10px;
   background:rgba(0,0,0,0.5);
+  z-index:2;
 }
 
 /* ENTITIES */
 .entity{
   position:absolute;
-  font-size:50px;
+  font-size:60px;
   cursor:pointer;
-  transition:0.2s;
   z-index:2;
 }
 
-.entity:hover{
-  transform:scale(1.3);
-  text-shadow:0 0 10px #00ff9f;
-}
+.rat{color:red;}
+.feature{color:#00ff9f;}
 
 .kalyan{
-  width:100px;
-}
-
-/* SHAKE */
-.shake{
-  animation:shake 0.2s;
-}
-@keyframes shake{
-  0%{transform:translate(0)}
-  25%{transform:translate(-5px)}
-  50%{transform:translate(5px)}
-  100%{transform:translate(0)}
+  width:120px;
+  height:120px;
+  object-fit:contain;
 }
 
 /* BOSS */
@@ -109,19 +114,44 @@ canvas{
   justify-content:center;
   flex-direction:column;
   z-index:3;
+  color:#00ff9f;
+  font-size:18px;
 }
 
-#boss img{
-  width:180px;
-  border-radius:10px;
-  box-shadow:0 0 20px magenta;
+#boss-ui{
+  margin-bottom:20px;
+  text-align:center;
+  min-height:40px;
 }
 
-.btn{
-  border:1px solid white;
-  padding:10px;
-  margin:5px;
+/* ANSWERS */
+#answers{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  max-width:600px;
+}
+
+.answer{
+  border:1px solid #00ff9f;
+  padding:10px 15px;
   cursor:pointer;
+  background:rgba(0,0,0,0.4);
+  color:#00ff9f;
+  transition:0.2s;
+}
+
+.answer:hover{
+  transform:scale(1.1);
+  box-shadow:0 0 15px #00ff9f;
+}
+
+.answer.good{
+  background:#00ff9f;
+  color:black;
+  box-shadow:0 0 25px #00ff9f;
+  transform:scale(1.2);
 }
 </style>
 </head>
@@ -131,51 +161,59 @@ canvas{
 <canvas id="matrix"></canvas>
 
 <div id="start">
-<div id="terminal">
-> PROD сломан. Введите start<br><br>
-<input id="input">
-</div>
+  <div id="terminal">
+    > 🐀🐀🐀ALARM! PROD сломался. Введите команду:<br><br>
+    > <input id="input" autofocus placeholder="start">
+  </div>
 </div>
 
 <div id="hud">
-<div id="f">🐻 0</div>
-<div id="r">🐀 0</div>
+  <div id="f">🐻 0</div>
+  <div id="r">🐀 0</div>
 </div>
 
 <div id="level"></div>
-
-<div id="stats">
-FIX: <span id="fix">30</span>% |
-HAPPY: <span id="happy">0</span>
-</div>
-
+<div id="stats">FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">0</span></div>
 <div id="guide"></div>
 
-<div id="boss"></div>
+<div id="boss">
+  <div id="boss-ui"></div>
+  <div id="answers"></div>
+</div>
 
 <script>
 
 /* MATRIX */
 let c=document.getElementById("matrix");
 let ctx=c.getContext("2d");
-c.width=innerWidth;
-c.height=innerHeight;
+c.width=window.innerWidth;
+c.height=window.innerHeight;
 
+let letters="01".split("");
+let fontSize=14;
+let columns=c.width/fontSize;
 let drops=[];
-for(let i=0;i<100;i++) drops[i]=1;
 
-function matrix(){
-ctx.fillStyle="rgba(0,0,0,0.05)";
-ctx.fillRect(0,0,c.width,c.height);
-ctx.fillStyle="#00ff9f";
+for(let i=0;i<columns;i++) drops[i]=1;
 
-drops.forEach((d,i)=>{
-ctx.fillText(Math.random()>0.5?"0":"1",i*15,d*15);
-drops[i]++;
-if(d*15>c.height) drops[i]=0;
-});
+function drawMatrix(){
+  ctx.fillStyle="rgba(0,0,0,0.05)";
+  ctx.fillRect(0,0,c.width,c.height);
+
+  ctx.fillStyle="#00ff9f";
+  ctx.font=fontSize+"px monospace";
+
+  for(let i=0;i<drops.length;i++){
+    let text=letters[Math.floor(Math.random()*letters.length)];
+    ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+
+    if(drops[i]*fontSize>c.height && Math.random()>0.975)
+      drops[i]=0;
+
+    drops[i]++;
+  }
 }
-setInterval(matrix,40);
+setInterval(drawMatrix,33);
 
 /* STATE */
 let run=false;
@@ -183,166 +221,168 @@ let f=0,r=0;
 let fix=30;
 let happy=0;
 let lvl=0;
-let bossHP=100;
-
-let spawnRate=600;
-let maxEntities=25;
 
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
 /* START */
-input.onkeydown=(e)=>{
-if(e.key==="Enter" && input.value==="start"){
-document.getElementById("start").style.display="none";
-hud.style.display="flex";
-run=true;
-game();
-}
-};
-
-/* CLEANUP */
-function cleanup(){
-let all=document.querySelectorAll(".entity");
-if(all.length>maxEntities) all[0].remove();
-}
+document.getElementById("input").addEventListener("keydown",(e)=>{
+  if(e.key==="Enter" && e.target.value.toLowerCase()==="start"){
+    document.getElementById("start").style.display="none";
+    document.getElementById("hud").style.display="flex";
+    run=true;
+    loop();
+  }
+});
 
 /* UI */
 function update(){
-document.getElementById("f").innerText="🐻 "+f;
-document.getElementById("r").innerText="🐀 "+r;
-document.getElementById("fix").innerText=fix;
-document.getElementById("happy").innerText=happy;
-document.getElementById("level").innerText=levels[lvl];
+  document.getElementById("f").innerText="🐻 "+f;
+  document.getElementById("r").innerText="🐀 "+r;
+  document.getElementById("fix").innerText=fix;
+  document.getElementById("happy").innerText=happy;
+  document.getElementById("level").innerText="LEVEL: "+levels[lvl];
+
+  document.getElementById("guide").innerHTML=
+    "🐀 Лови баги<br>🐻 Фичи дают FIX<br>💨 Кальяны дают happiness<br>🎯 50% → БОСС";
 }
 
-/* SHAKE */
-function shake(){
-document.body.classList.add("shake");
-setTimeout(()=>document.body.classList.remove("shake"),200);
+/* LOOP */
+function loop(){
+  setInterval(()=>{
+
+    if(fix<=0){
+      document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
+      return;
+    }
+
+    let rand=Math.random();
+    let type="feature";
+    if(rand<0.4) type="rat";
+    if(rand>0.75) type="fun";
+
+    if(type!=="fun"){
+      let e=document.createElement("div");
+      e.className="entity "+type;
+      e.innerText=type==="rat"?"🐀":"🐻";
+
+      e.style.left=Math.random()*window.innerWidth+"px";
+      e.style.top=Math.random()*window.innerHeight+"px";
+
+      e.onclick=()=>{
+        if(type==="rat"){r++;fix+=2;}
+        if(type==="feature"){f++;fix+=3;}
+        update();
+      };
+
+      document.body.appendChild(e);
+      setTimeout(()=>e.remove(),1500);
+    }
+
+    if(type==="fun"){
+      let img=document.createElement("img");
+      img.src="Kalyan.PNG";
+      img.className="entity kalyan";
+
+      img.style.left=Math.random()*window.innerWidth+"px";
+      img.style.top=Math.random()*window.innerHeight+"px";
+
+      img.onclick=()=>{
+        happy+=5;
+        fix-=3;
+        update();
+        img.remove();
+      };
+
+      document.body.appendChild(img);
+      setTimeout(()=>img.remove(),1500);
+    }
+
+    if(happy>=50){
+      showBoss();
+      happy=0;
+    }
+
+    update();
+
+  },500);
 }
 
-/* GAME LOOP */
-function game(){
-
-setInterval(()=>{
-
-if(!run) return;
-
-cleanup();
-
-if(fix<=0){
-document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
-return;
-}
-
-if(happy>=50){
-boss();
-return;
-}
-
-/* SPAWN */
-let type=Math.random();
-
-if(type<0.4) spawn("rat");
-else if(type<0.7) spawn("feature");
-else spawn("kalyan");
-
-spawnRate=Math.max(200,spawnRate-1);
-
-},spawnRate);
-}
-
-/* SPAWN */
-function spawn(type){
-
-let e=document.createElement("div");
-e.className="entity";
-
-e.style.left=Math.random()*innerWidth+"px";
-e.style.top=Math.random()*innerHeight+"px";
-
-if(type==="rat"){
-e.innerText="🐀";
-e.onclick=()=>{
-r++;fix-=2;shake();update();
-};
-}
-
-if(type==="feature"){
-e.innerText="🐻";
-e.onclick=()=>{
-f++;fix+=3;
-if(Math.random()<0.2) fix-=5;
-if(f>=5) lvl=2;
-update();
-};
-}
-
-if(type==="kalyan"){
-let img=document.createElement("img");
-img.src="Kalyan.PNG";
-img.className="entity kalyan";
-img.style.left=Math.random()*innerWidth+"px";
-img.style.top=Math.random()*innerHeight+"px";
-
-img.onclick=()=>{
-happy+=5;
-fix-=3;
-update();
-img.remove();
-};
-
-document.body.appendChild(img);
-setTimeout(()=>img.remove(),1500);
-return;
-}
-
-document.body.appendChild(e);
-setTimeout(()=>e.remove(),2000);
+/* TYPE TEXT */
+function typeText(el,text,speed=25){
+  el.innerHTML="";
+  let i=0;
+  let t=setInterval(()=>{
+    el.innerHTML+=text[i];
+    i++;
+    if(i>=text.length) clearInterval(t);
+  },speed);
 }
 
 /* BOSS */
-function boss(){
+function showBoss(){
+  let b=document.getElementById("boss");
+  let ui=document.getElementById("boss-ui");
+  let answers=document.getElementById("answers");
 
-run=false;
+  b.style.display="flex";
 
-let b=document.getElementById("boss");
-b.style.display="flex";
+  let questions=[
+    "Ты меня любишь?",
+    "А если я баг?",
+    "А если я удалю прод?",
+    "А если я console.log?",
+    "Ты вообще со мной?"
+  ];
 
-function render(){
-b.innerHTML=`
-<h2>😈 ОЛЬГА БОСС</h2>
-<img src="Olga.JPG">
-<p>HP: ${bossHP}</p>
-`;
+  let q=0;
 
-["Я АРТЕМ","ФИЧА","БАГ","console.log","DELETE PROD"].forEach(t=>{
-let d=document.createElement("div");
-d.className="btn";
-d.innerText=t;
+  function next(){
+    answers.innerHTML="";
+    typeText(ui,"😈 ОЛЬГА: "+questions[q]);
 
-d.onclick=()=>{
+    setTimeout(renderAnswers,800);
+  }
 
-if(t==="Я АРТЕМ") bossHP-=20;
-else bossHP+=10;
+  function renderAnswers(){
+    let opts=["ДА","КОНЕЧНО","ФИЧА","ЛЮБЛЮ","OK","Я АРТЕМ"];
 
-if(bossHP<=0){
-b.innerHTML="🏆 PROD ПОЧИНЕН! GG";
-return;
-}
+    opts.forEach((t,i)=>{
+      let btn=document.createElement("div");
+      btn.className="answer";
+      btn.innerText=t;
 
-render();
-};
+      btn.style.opacity=0;
+      btn.style.transform="translateY(20px)";
 
-b.appendChild(d);
-});
-}
+      setTimeout(()=>{
+        btn.style.transition="0.3s";
+        btn.style.opacity=1;
+        btn.style.transform="translateY(0)";
+      },i*80);
 
-render();
+      btn.onclick=()=>{
+        btn.classList.add("good");
+
+        q++;
+        if(q>=questions.length){
+          ui.innerHTML="🎉 PROD ПОЧИНЕН 🎉";
+          answers.innerHTML="";
+          return;
+        }
+
+        setTimeout(next,300);
+      };
+
+      answers.appendChild(btn);
+    });
+  }
+
+  next();
 }
 
 update();
 
 </script>
+
 </body>
 </html>
