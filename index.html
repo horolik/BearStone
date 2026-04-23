@@ -2,21 +2,112 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEM BALANCED</title>
+<title>SUPER ARTEM</title>
 <style>
-body{margin:0;background:black;font-family:monospace;overflow:hidden;color:#00ff9f;}
-canvas{position:fixed;inset:0;z-index:0;}
-#start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:black;z-index:1000;}
-#terminal{border:1px solid #00ff9f;padding:20px;width:320px;}
-#input{background:black;border:none;color:#00ff9f;outline:none;width:100%;}
-#hud{position:fixed;top:10px;left:20px;right:20px;display:none;justify-content:space-between;z-index:2;}
-#level{position:fixed;top:40px;width:100%;text-align:center;z-index:2;}
-#stats{position:fixed;top:80px;left:20px;color:white;z-index:2;}
-#guide{position:fixed;bottom:20px;left:20px;right:20px;border:1px solid #00ff9f;padding:10px;background:rgba(0,0,0,0.5);z-index:2;}
-.entity{position:absolute;font-size:60px;cursor:pointer;z-index:2;transition:.2s;}
-.rat{color:red;} .feature{color:#00ff9f;}
-.kalyan{width:120px;}
-#boss{position:fixed;inset:0;background:black;display:none;flex-direction:column;align-items:center;justify-content:center;color:white;z-index:3;}
+body{
+margin:0;
+background:black;
+font-family:monospace;
+overflow:hidden;
+color:#00ff9f;
+}
+canvas{
+position:fixed;
+inset:0;
+z-index:0;
+}
+#start{
+position:fixed;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+font-size:22px;
+background:black;
+z-index:1000;
+}
+#terminal{
+background:black;
+border:1px solid #00ff9f;
+padding:20px;
+width:300px;
+}
+#input{
+background:black;
+border:none;
+color:#00ff9f;
+outline:none;
+width:100%;
+font-family:monospace;
+}
+#hud{
+position:fixed;
+top:10px;
+left:20px;
+right:20px;
+display:none;
+justify-content:space-between;
+z-index:2;
+}
+#level{
+position:fixed;
+top:40px;
+width:100%;
+text-align:center;
+z-index:2;
+}
+#stats{
+position:fixed;
+top:80px;
+left:20px;
+color:white;
+z-index:2;
+}
+#guide{
+position:fixed;
+bottom:20px;
+left:20px;
+right:20px;
+border:1px solid #00ff9f;
+padding:10px;
+background:rgba(0,0,0,0.5);
+z-index:2;
+}
+.entity{
+position:absolute;
+font-size:60px;
+cursor:pointer;
+z-index:2;
+}
+.rat{color:red;}
+.feature{color:#00ff9f;}
+.kalyan{
+width:120px;
+height:120px;
+object-fit:contain;
+}
+.kalyan:hover{
+transform:scale(1.2);
+}
+#boss{
+position:fixed;
+inset:0;
+background:black;
+display:none;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+color:white;
+font-size:20px;
+z-index:3;
+}
+#boss img{
+width:200px;
+border-radius:12px;
+margin-bottom:15px;
+box-shadow:0 0 20px #ff4dff;
+}
 </style>
 </head>
 <body>
@@ -25,215 +116,201 @@ canvas{position:fixed;inset:0;z-index:0;}
 
 <div id="start">
 <div id="terminal">
-> PROD DOWN. ONLY ARTEM CAN FIX.<br>
-> type command...<br><br>
-> <input id="input" autofocus>
+> 🐀🐀🐀ALARM! PROD сломался. Его сможет починить только SUPER ARTEM! Введите команду для запуска:<br><br>
+> <input id="input" autofocus placeholder="start">
 </div>
 </div>
 
-<div id="hud"><div id="f">🐻 0</div><div id="r">🐀 0</div></div>
+<div id="hud">
+<div id="f">🐻 0</div>
+<div id="r">🐀 0</div>
+</div>
+
 <div id="level"></div>
-<div id="stats">FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">0</span></div>
+
+<div id="stats">
+FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">0</span>
+</div>
+
 <div id="guide"></div>
+
 <div id="boss"></div>
 
-<audio id="bg" loop src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8e4c1.mp3"></audio>
-<audio id="hit" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
-<audio id="good" src="https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3"></audio>
-<audio id="bad" src="https://assets.mixkit.co/active_storage/sfx/1559/1559-preview.mp3"></audio>
-
 <script>
-let c=document.getElementById("matrix"),ctx=c.getContext("2d");
-c.width=innerWidth;c.height=innerHeight;
 
-let drops=Array(Math.floor(c.width/14)).fill(1);
-setInterval(()=>{
+/* MATRIX */
+let c=document.getElementById("matrix");
+let ctx=c.getContext("2d");
+c.width=window.innerWidth;
+c.height=window.innerHeight;
+
+let letters="01".split("");
+let fontSize=14;
+let columns=c.width/fontSize;
+let drops=[];
+for(let i=0;i<columns;i++) drops[i]=1;
+
+function drawMatrix(){
 ctx.fillStyle="rgba(0,0,0,0.05)";
 ctx.fillRect(0,0,c.width,c.height);
 ctx.fillStyle="#00ff9f";
-ctx.font="14px monospace";
-drops.forEach((y,i)=>{
-ctx.fillText(Math.random()>0.5?"0":"1",i*14,y*14);
-drops[i]=y*14>c.height?0:y+1;
-});
-},33);
+ctx.font=fontSize+"px monospace";
 
-let run=false,f=0,r=0,fix=30,happy=0,lvl=0,combo=0,timer;
+for(let i=0;i<drops.length;i++){
+let text=letters[Math.floor(Math.random()*letters.length)];
+ctx.fillText(text,i*fontSize,drops[i]*fontSize);
+if(drops[i]*fontSize>c.height && Math.random()>0.975) drops[i]=0;
+drops[i]++;
+}
+}
+setInterval(drawMatrix,33);
+
+/* STATE */
+let run=false;
+let f=0,r=0;
+let fix=30;
+let happy=0;
+let lvl=0;
+let bossStarted=false;
+let timer;
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
-let bossHP=80,bossTime=25;
-let speedMultiplier=1;
-
-let input=document.getElementById("input");
-
-input.addEventListener("keydown",e=>{
-if(e.key!="Enter")return;
-let v=input.value.toLowerCase();
-
-if(v==="start") start();
-else if(v==="help") alert("start | fix | debug | artem");
-else if(v==="fix"){fix+=10;update();}
-else if(v==="debug"){document.querySelectorAll('.rat').forEach(x=>x.remove());}
-else if(v==="artem"){fix=999;happy=999;}
-else alert("unknown command");
-
-input.value="";
-});
-
-function start(){
+/* START */
+document.getElementById("input").addEventListener("keydown",(e)=>{
+if(e.key==="Enter" && e.target.value.toLowerCase()==="start"){
 document.getElementById("start").style.display="none";
 document.getElementById("hud").style.display="flex";
-document.getElementById("bg").play();
-run=true;loop();
+run=true;
+loop();
 }
+});
 
-let fEl=document.getElementById("f"),
-rEl=document.getElementById("r"),
-fixEl=document.getElementById("fix"),
-happyEl=document.getElementById("happy"),
-levelEl=document.getElementById("level");
-
+/* UI */
 function update(){
-fEl.innerText="🐻 "+f;
-rEl.innerText="🐀 "+r;
-fixEl.innerText=fix;
-happyEl.innerText=happy;
-levelEl.innerText="LEVEL: "+levels[lvl];
-
+document.getElementById("f").innerText="🐻 "+f;
+document.getElementById("r").innerText="🐀 "+r;
+document.getElementById("fix").innerText=fix;
+document.getElementById("happy").innerText=happy;
+document.getElementById("level").innerText="LEVEL: "+levels[lvl];
 document.getElementById("guide").innerHTML=
 "🐀 Лови баги (иначе -FIX)<br>"+
 "🐻 Фичи дают +FIX<br>"+
 "💨 Кальяны дают happiness<br>"+
-"⚡ Shift +FIX | Ctrl очистка<br>"+
-"🎯 99% happiness → БОСС";
+"🎯 100% FIX → ПОБЕДА";
 }
 
+/* LOOP */
 function loop(){
 timer=setInterval(()=>{
-if(happy>=99){clearInterval(timer);bossFight();return;}
-if(fix<=0){document.body.innerHTML="<h1 style='color:red'>PROD DEAD</h1>";return;}
 
-// difficulty per level
-speedMultiplier+=0.008;
-let spawnChance=Math.random();
+if(!run) return;
+
+/* WIN CONDITION */
+if(fix>=100){
+clearInterval(timer);
+document.body.innerHTML="<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 PROD ПОЧИНЕН! ARTEM WIN 🎉</h1>";
+return;
+}
+
+if(!bossStarted && happy>=50){
+bossStarted=true;
+clearInterval(timer);
+showBoss();
+return;
+}
+
+if(fix<=0){
+document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
+return;
+}
+
+/* SPAWN */
+let rand=Math.random();
 let type="feature";
+if(rand<0.4) type="rat";
+if(rand>0.75) type="fun";
 
-if(lvl===0){
-type=spawnChance<0.35?"rat":(spawnChance>0.9?"fun":"feature");
-}
-else if(lvl===1){
-type=spawnChance<0.5?"rat":(spawnChance>0.85?"fun":"feature");
-}
-else{
-type=spawnChance<0.6?"rat":(spawnChance>0.8?"fun":"feature");
-}
-
-let e=document.createElement(type==="fun"?"img":"div");
+/* RAT / FEATURE */
+if(type!=="fun"){
+let e=document.createElement("div");
 e.className="entity "+type;
-
-let isFast=false;
-if(type==="rat" && lvl>=1 && Math.random()>0.6){
-isFast=true;
-e.innerText="💀";
-}else{
-if(type==="rat")e.innerText="🐀";
-}
-
-if(type==="feature")e.innerText="🐻";
-if(type==="fun"){e.src="Kalyan.PNG";e.classList.add("kalyan");}
-
-if(lvl===2 && Math.random()>0.92){
-e.innerText="👾";
-e.style.fontSize="80px";
-e.dataset.miniboss="1";
-}
-
-e.style.left=Math.random()*innerWidth+"px";
-e.style.top=Math.random()*innerHeight+"px";
-
-let speedBase = lvl===0?3:(lvl===1?5:7);
-if(isFast) speedBase*=1.8;
-
-let dx=(Math.random()-0.5)*speedBase*speedMultiplier;
-let dy=(Math.random()-0.5)*speedBase*speedMultiplier;
-
-let move=setInterval(()=>{
-e.style.left=e.offsetLeft+dx+"px";
-e.style.top=e.offsetTop+dy+"px";
-},30);
+e.innerText=type==="rat"?"🐀":"🐻";
+e.style.left=Math.random()*window.innerWidth+"px";
+e.style.top=Math.random()*window.innerHeight+"px";
 
 e.onclick=()=>{
-combo++;
-e.style.transform="scale(1.4)";
-
-if(e.dataset.miniboss){
-fix+=15;
-happy+=10;
-good.play();
+if(type==="rat"){r++;fix+=2;}
+if(type==="feature"){f++;fix+=3;}
+if(f>=5 && lvl<2){
+lvl++;
+f=0;
 }
-else if(type==="rat"){
-r++;
-fix+=2+combo;
-hit.play();
-}
-else if(type==="feature"){
-f++;
-fix+=3+combo;
-good.play();
-if(f>=5 && lvl<2){lvl++;f=0;}
-}
-else if(type==="fun"){
-happy+=5;
-fix-=2;
-bad.play();
-}
-
 update();
-e.remove();
 };
 
 document.body.appendChild(e);
-
-let lifeTime = lvl===0?1600:(lvl===1?1300:1000);
-if(isFast) lifeTime*=0.7;
-if(e.dataset.miniboss) lifeTime=2000;
-
-setTimeout(()=>{clearInterval(move);e.remove();combo=0;},lifeTime);
-
-},Math.max(200,500-speedMultiplier*35));
+setTimeout(()=>e.remove(),1500);
 }
 
-function bossFight(){
+/* KALYAN (LEVEL DEPENDENT) */
+if(type==="fun"){
+let img=document.createElement("img");
+img.src="Kalyan.PNG";
+img.className="entity kalyan fun";
+img.style.left=Math.random()*window.innerWidth+"px";
+img.style.top=Math.random()*window.innerHeight+"px";
+
+img.onclick=()=>{
+let mult = (lvl===0)?1:(lvl===1)?2:3;
+happy += 5 * mult;
+fix -= 3;
+update();
+img.remove();
+};
+
+document.body.appendChild(img);
+setTimeout(()=>img.remove(),1500);
+}
+
+},500);
+}
+
+/* BOSS */
+function showBoss(){
 let b=document.getElementById("boss");
 b.style.display="flex";
 
-let interval=setInterval(()=>{
-bossTime--;
-render();
-if(bossTime<=0){
-b.innerHTML="💀 YOU LOST";
-clearInterval(interval);
-}
-},1000);
+let questions=[
+"Ты меня любишь?",
+"Ты будешь меня любить, если я буду рыбой?",
+"А если я превращусь в баг?",
+"А если я удалю прод?",
+"А если я буду просто console.log?",
+"А если я никогда не закрою тикет?"
+];
+
+let qIndex=0;
 
 function render(){
-b.innerHTML=`😈 ОЛЬГА БОСС<br>HP: ${bossHP}<br>TIME: ${bossTime}<br>`;
+b.innerHTML=
+"😈 ОЛЬГА БОСС<br><br>"+
+"<img src='Olga.JPG'><br>"+
+questions[qIndex]+"<br><br>";
 
-let correct="ДА";
-["ДА","НЕТ","НЕ ЗНАЮ","ЭТО БАГ"].sort(()=>Math.random()-0.5).forEach(ans=>{
+["БАО","На кальян","ЭТО ФИЧА","Лови пиццу","Я АРТЕМ","ТЫ БААААААГ"]
+.forEach(t=>{
 let btn=document.createElement("div");
-btn.innerText=ans;
+btn.innerText=t;
 btn.style.border="1px solid white";
-btn.style.margin="5px";
 btn.style.padding="10px";
+btn.style.margin="5px";
+btn.style.cursor="pointer";
 
 btn.onclick=()=>{
-if(ans===correct){bossHP-=20;good.play();}
-else{bossHP+=5;fix-=3;bad.play();}
-
-if(bossHP<=0){
-b.innerHTML="🎉 VICTORY";
-clearInterval(interval);
+qIndex++;
+if(qIndex>=questions.length){
+b.innerHTML="🎉 ПОБЕДА! PROD ПОЧИНЕН 🎉 Артем, с Днем рождения!";
+return;
 }
 render();
 };
@@ -241,7 +318,12 @@ render();
 b.appendChild(btn);
 });
 }
+
+render();
 }
+
+update();
+
 </script>
 
 </body>
