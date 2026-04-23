@@ -92,7 +92,6 @@ canvas{
   cursor:pointer;
   z-index:2;
 
-  /* ДОБАВЛЕНО ДЛЯ МОБИЛОК */
   padding:20px;
   transform:translate(-20px, -20px);
   touch-action:manipulation;
@@ -145,6 +144,63 @@ canvas{
 .answer:hover{
   transform:scale(1.1);
   box-shadow:0 0 15px #00ff9f;
+}
+
+/* 🔥 15 КНОПОК (МОБИЛЬНО ДРУЖЕЛЮБНЫЕ) */
+#olgaChoice{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:black;
+  z-index:10005;
+  color:#00ff9f;
+  text-align:center;
+  padding:20px;
+}
+
+#olgaGrid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+  margin-top:20px;
+  width:100%;
+  max-width:500px;
+}
+
+.olgaBtn{
+  padding:18px 10px;
+  border:2px solid #00ff9f;
+  background:rgba(0,0,0,0.5);
+  color:#00ff9f;
+  font-size:18px;
+  cursor:pointer;
+  touch-action:manipulation;
+  user-select:none;
+}
+
+/* 🔥 экран победы над Олгой */
+#olgaWinScreen{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:black;
+  z-index:10006;
+  color:#00ff9f;
+  font-size:26px;
+  text-align:center;
+}
+
+#olgaWinScreen img{
+  width:220px;
+  border-radius:12px;
+  box-shadow:0 0 20px #00ff9f;
+  margin-bottom:15px;
 }
 
 #levelTable{
@@ -223,7 +279,6 @@ canvas{
   100%{transform:scale(1)}
 }
 
-/* 🔥 ДОБАВЛЕНО: экран перед боссом */
 #battleIntro{
   position:fixed;
   inset:0;
@@ -277,7 +332,6 @@ canvas{
 ЦЕЛЬ FIX 66.6%!<br>
 </div>
 
-<!-- 🔥 ДОБАВЛЕНО -->
 <div id="battleIntro">
   <div>🔥 🔥 🔥 ты починил прод, но появился босс Олга👿👿👿.</div>
   <div style="margin-top:10px">Тебе надо сразиться с ней⚔️.</div>
@@ -288,6 +342,18 @@ canvas{
   <img src="Olga.JPG" style="width:200px;border-radius:12px;box-shadow:0 0 20px #ff4dff;margin-bottom:10px;">
   <div id="boss-ui"></div>
   <div id="answers"></div>
+</div>
+
+<!-- 🔥 15 КНОПОК -->
+<div id="olgaChoice">
+  <div style="font-size:24px">ДА, АРТЕМ?</div>
+  <div id="olgaGrid"></div>
+</div>
+
+<!-- 🔥 ПОБЕДА НАД ОЛГОЙ -->
+<div id="olgaWinScreen">
+  <img src="Boss.JPG">
+  <div>🎉 Олгу победили</div>
 </div>
 
 <div id="levelTable"></div>
@@ -308,33 +374,12 @@ canvas{
   <div>С ДНЁМ РОЖДЕНИЯ, АРТЕМ!</div>
   <div style="margin-top:10px">PROD СТАБИЛЬНО РАБОТАЕТ 🎉</div>
 
-  <div 
-    id="giftBtn"
-    style="
-      margin-top:20px;
-      border:1px solid #00ff9f;
-      padding:12px 20px;
-      cursor:pointer;
-      transition:0.2s;
-    "
-  >
+  <div id="giftBtn" style="margin-top:20px;border:1px solid #00ff9f;padding:12px 20px;cursor:pointer;transition:0.2s;">
     🎁 ХВАТАЙ ПОДАРОК
   </div>
 </div>
 
-<div id="gift" style="
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  background:black;
-  z-index:10002;
-  color:#00ff9f;
-  font-size:24px;
-  text-align:center;
-">
+<div id="gift" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:black;z-index:10002;color:#00ff9f;font-size:24px;text-align:center;">
   <img src="Mirage.JPG" style="width:300px;border-radius:12px;box-shadow:0 0 20px #00ff9f;margin-bottom:20px;">
   <div>🎁 купон на бесплатный на кальян и облепиховый взвар с Олгой у Димы :)</div>
 </div>
@@ -453,7 +498,7 @@ function loop(){
           }else{
             fix+=2;
           }
-          happy-=5; // 🔥 ИЗМЕНЕНО: было -1
+          happy-=5;
         }
 
         if(type==="feature"){
@@ -516,12 +561,11 @@ function startSeniorMode(){
     document.body.style.filter="none";
 
     document.getElementById("supermsg").style.display="none";
-    showBattleIntro(); // 🔥 ВМЕСТО showBoss()
+    showBattleIntro();
 
   },8000);
 }
 
-/* 🔥 ДОБАВЛЕНО */
 function showBattleIntro(){
   let b=document.getElementById("battleIntro");
   b.style.display="flex";
@@ -530,6 +574,41 @@ function showBattleIntro(){
     b.style.display="none";
     showBoss();
   };
+}
+
+/* 🔥 15 кнопок */
+function showOlgaButtons(){
+  document.getElementById("boss").style.display="none";
+
+  let c=document.getElementById("olgaChoice");
+  let g=document.getElementById("olgaGrid");
+  c.style.display="flex";
+
+  g.innerHTML="";
+
+  for(let i=0;i<15;i++){
+    let btn=document.createElement("div");
+    btn.className="olgaBtn";
+    btn.innerText="ДА, АРТЕМ?";
+
+    btn.onclick=()=>{
+      c.style.display="none";
+      showOlgaWin();
+    };
+
+    g.appendChild(btn);
+  }
+}
+
+/* 🔥 экран победы над Олгой */
+function showOlgaWin(){
+  let w=document.getElementById("olgaWinScreen");
+  w.style.display="flex";
+
+  setTimeout(()=>{
+    w.style.display="none";
+    document.getElementById("final").style.display="flex";
+  },5000);
 }
 
 function showBoss(){
@@ -563,14 +642,8 @@ function showBoss(){
       btn.onclick=()=>{
         q++;
         if(q>=questions.length){
-          ui.innerText="🎉 ВОПРОСИКИ БОССА ОЛГИ ИЗДАЛИ ПРЕДСМЕРТНЫЙ ХРИП, И ЗАКОНЧИЛИСЬ НА СЕГОДНЯ. УРА! ТЫ ПОБЕДИЛ 🎉";
-          answers.innerHTML="";
-
-          setTimeout(()=>{
-            document.getElementById("boss").style.display="none";
-            document.getElementById("final").style.display="flex";
-          },1500);
-
+          /* 🔥 ВСТАВЛЕН ЭТАП 15 КНОПОК */
+          showOlgaButtons();
           return;
         }
         next();
