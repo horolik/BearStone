@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>SUPER ARTEM</title>
+<title>SUPER ARTEM: PROD EDITION</title>
 
 <style>
 body{
@@ -13,41 +13,27 @@ body{
   color:#00ff9f;
 }
 
-/* MATRIX CANVAS */
 canvas{
   position:fixed;
   inset:0;
   z-index:0;
 }
 
-/* START SCREEN */
+/* START */
 #start{
   position:fixed;
   inset:0;
   display:flex;
   align-items:center;
   justify-content:center;
-  flex-direction:column;
-  font-size:22px;
   background:black;
   z-index:1000;
 }
 
-/* TERMINAL */
 #terminal{
-  background:black;
   border:1px solid #00ff9f;
   padding:20px;
-  width:300px;
-}
-
-#input{
-  background:black;
-  border:none;
-  color:#00ff9f;
-  outline:none;
-  width:100%;
-  font-family:monospace;
+  width:320px;
 }
 
 /* HUD */
@@ -66,15 +52,12 @@ canvas{
   top:40px;
   width:100%;
   text-align:center;
-  z-index:2;
 }
 
 #stats{
   position:fixed;
   top:80px;
   left:20px;
-  color:white;
-  z-index:2;
 }
 
 #guide{
@@ -85,32 +68,38 @@ canvas{
   border:1px solid #00ff9f;
   padding:10px;
   background:rgba(0,0,0,0.5);
-  z-index:2;
 }
 
 /* ENTITIES */
 .entity{
   position:absolute;
-  font-size:60px;
+  font-size:50px;
   cursor:pointer;
+  transition:0.2s;
   z-index:2;
 }
 
-.rat{color:red;}
-.feature{color:#00ff9f;}
+.entity:hover{
+  transform:scale(1.3);
+  text-shadow:0 0 10px #00ff9f;
+}
 
-/* KALYAN */
 .kalyan{
-  width:120px;
-  height:120px;
-  object-fit:contain;
+  width:100px;
 }
 
-/* optional fun animation */
-.kalyan:hover{
-  transform:scale(1.2);
+/* SHAKE */
+.shake{
+  animation:shake 0.2s;
+}
+@keyframes shake{
+  0%{transform:translate(0)}
+  25%{transform:translate(-5px)}
+  50%{transform:translate(5px)}
+  100%{transform:translate(0)}
 }
 
+/* BOSS */
 #boss{
   position:fixed;
   inset:0;
@@ -119,17 +108,20 @@ canvas{
   align-items:center;
   justify-content:center;
   flex-direction:column;
-  color:white;
-  font-size:20px;
   z-index:3;
 }
 
-/* OLGA IMAGE */
 #boss img{
-  width:200px;
-  border-radius:12px;
-  margin-bottom:15px;
-  box-shadow:0 0 20px #ff4dff;
+  width:180px;
+  border-radius:10px;
+  box-shadow:0 0 20px magenta;
+}
+
+.btn{
+  border:1px solid white;
+  padding:10px;
+  margin:5px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -140,8 +132,8 @@ canvas{
 
 <div id="start">
 <div id="terminal">
-> 🐀🐀🐀ALARM! PROD сломался. Его сможет починить только SUPER ARTEM! Введите команду для запуска:<br><br>
-> <input id="input" autofocus placeholder="start">
+> PROD сломан. Введите start<br><br>
+<input id="input">
 </div>
 </div>
 
@@ -166,36 +158,24 @@ HAPPY: <span id="happy">0</span>
 /* MATRIX */
 let c=document.getElementById("matrix");
 let ctx=c.getContext("2d");
-
-c.width=window.innerWidth;
-c.height=window.innerHeight;
-
-let letters="01".split("");
-let fontSize=14;
-let columns=c.width/fontSize;
+c.width=innerWidth;
+c.height=innerHeight;
 
 let drops=[];
-for(let i=0;i<columns;i++) drops[i]=1;
+for(let i=0;i<100;i++) drops[i]=1;
 
-function drawMatrix(){
+function matrix(){
 ctx.fillStyle="rgba(0,0,0,0.05)";
 ctx.fillRect(0,0,c.width,c.height);
-
 ctx.fillStyle="#00ff9f";
-ctx.font=fontSize+"px monospace";
 
-for(let i=0;i<drops.length;i++){
-let text=letters[Math.floor(Math.random()*letters.length)];
-ctx.fillText(text,i*fontSize,drops[i]*fontSize);
-
-if(drops[i]*fontSize>c.height && Math.random()>0.975)
-drops[i]=0;
-
+drops.forEach((d,i)=>{
+ctx.fillText(Math.random()>0.5?"0":"1",i*15,d*15);
 drops[i]++;
+if(d*15>c.height) drops[i]=0;
+});
 }
-}
-
-setInterval(drawMatrix,33);
+setInterval(matrix,40);
 
 /* STATE */
 let run=false;
@@ -203,20 +183,28 @@ let f=0,r=0;
 let fix=30;
 let happy=0;
 let lvl=0;
-let bossStarted=false;
-let timer;
+let bossHP=100;
+
+let spawnRate=600;
+let maxEntities=25;
 
 const levels=["JUNIOR","MIDDLE","SENIOR"];
 
 /* START */
-document.getElementById("input").addEventListener("keydown",(e)=>{
-if(e.key==="Enter" && e.target.value.toLowerCase()==="start"){
+input.onkeydown=(e)=>{
+if(e.key==="Enter" && input.value==="start"){
 document.getElementById("start").style.display="none";
-document.getElementById("hud").style.display="flex";
+hud.style.display="flex";
 run=true;
-loop();
+game();
 }
-});
+};
+
+/* CLEANUP */
+function cleanup(){
+let all=document.querySelectorAll(".entity");
+if(all.length>maxEntities) all[0].remove();
+}
 
 /* UI */
 function update(){
@@ -224,73 +212,78 @@ document.getElementById("f").innerText="🐻 "+f;
 document.getElementById("r").innerText="🐀 "+r;
 document.getElementById("fix").innerText=fix;
 document.getElementById("happy").innerText=happy;
-
-document.getElementById("level").innerText="LEVEL: "+levels[lvl];
-
-document.getElementById("guide").innerHTML=
-"🐀 Лови баги (иначе -FIX)<br>"+
-"🐻 Фичи дают +FIX<br>"+
-"💨 Кальяны дают happiness<br>"+
-"🎯 50% happiness → БОСС";
+document.getElementById("level").innerText=levels[lvl];
 }
 
-/* LOOP */
-function loop(){
+/* SHAKE */
+function shake(){
+document.body.classList.add("shake");
+setTimeout(()=>document.body.classList.remove("shake"),200);
+}
 
-timer=setInterval(()=>{
+/* GAME LOOP */
+function game(){
+
+setInterval(()=>{
 
 if(!run) return;
 
-if(!bossStarted && happy>=50){
-bossStarted=true;
-clearInterval(timer);
-showBoss();
-return;
-}
+cleanup();
 
 if(fix<=0){
 document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
 return;
 }
 
-/* SPAWN */
-let rand=Math.random();
-let type="feature";
-
-if(rand<0.4) type="rat";
-if(rand>0.75) type="fun";
-
-/* RAT / FEATURE */
-if(type!=="fun"){
-let e=document.createElement("div");
-e.className="entity "+type;
-
-e.innerText=type==="rat"?"🐀":"🐻";
-
-e.style.left=Math.random()*window.innerWidth+"px";
-e.style.top=Math.random()*window.innerHeight+"px";
-
-e.onclick=()=>{
-if(type==="rat"){r++;fix+=2;}
-if(type==="feature"){f++;fix+=3;}
-
-if(f>=5 && lvl<2){lvl++;f=0;}
-
-update();
-};
-
-document.body.appendChild(e);
-setTimeout(()=>e.remove(),1500);
+if(happy>=50){
+boss();
+return;
 }
 
-/* KALYAN */
-if(type==="fun"){
+/* SPAWN */
+let type=Math.random();
+
+if(type<0.4) spawn("rat");
+else if(type<0.7) spawn("feature");
+else spawn("kalyan");
+
+spawnRate=Math.max(200,spawnRate-1);
+
+},spawnRate);
+}
+
+/* SPAWN */
+function spawn(type){
+
+let e=document.createElement("div");
+e.className="entity";
+
+e.style.left=Math.random()*innerWidth+"px";
+e.style.top=Math.random()*innerHeight+"px";
+
+if(type==="rat"){
+e.innerText="🐀";
+e.onclick=()=>{
+r++;fix-=2;shake();update();
+};
+}
+
+if(type==="feature"){
+e.innerText="🐻";
+e.onclick=()=>{
+f++;fix+=3;
+if(Math.random()<0.2) fix-=5;
+if(f>=5) lvl=2;
+update();
+};
+}
+
+if(type==="kalyan"){
 let img=document.createElement("img");
 img.src="Kalyan.PNG";
-img.className="entity kalyan fun";
-
-img.style.left=Math.random()*window.innerWidth+"px";
-img.style.top=Math.random()*window.innerHeight+"px";
+img.className="entity kalyan";
+img.style.left=Math.random()*innerWidth+"px";
+img.style.top=Math.random()*innerHeight+"px";
 
 img.onclick=()=>{
 happy+=5;
@@ -301,53 +294,48 @@ img.remove();
 
 document.body.appendChild(img);
 setTimeout(()=>img.remove(),1500);
+return;
 }
 
-},500);
+document.body.appendChild(e);
+setTimeout(()=>e.remove(),2000);
 }
 
 /* BOSS */
-function showBoss(){
+function boss(){
+
+run=false;
 
 let b=document.getElementById("boss");
 b.style.display="flex";
 
-let questions=[
-"Ты меня любишь?",
-"Ты будешь меня любить, если я буду рыбой?",
-"А если я превращусь в баг?",
-"А если я удалю прод?",
-"А если я буду просто console.log?",
-"А если я никогда не закрою тикет?"
-];
-
-let qIndex=0;
-
 function render(){
-b.innerHTML=
-"😈 ОЛЬГА БОСС<br><br>"+
-"<img src='Olga.JPG'><br>"+
-questions[qIndex]+"<br><br>";
+b.innerHTML=`
+<h2>😈 ОЛЬГА БОСС</h2>
+<img src="Olga.JPG">
+<p>HP: ${bossHP}</p>
+`;
 
-["БАО","На кальян","ЭТО ФИЧА","Лови пиццу","Я АРТЕМ","ТЫ БААААААГ"].forEach(t=>{
-let btn=document.createElement("div");
-btn.innerText=t;
-btn.style.border="1px solid white";
-btn.style.padding="10px";
-btn.style.margin="5px";
-btn.style.cursor="pointer";
+["Я АРТЕМ","ФИЧА","БАГ","console.log","DELETE PROD"].forEach(t=>{
+let d=document.createElement("div");
+d.className="btn";
+d.innerText=t;
 
-btn.onclick=()=>{
-qIndex++;
-if(qIndex>=questions.length){
-b.innerHTML="🎉 ПОБЕДА! PROD ПОЧИНЕН 🎉 Артем, с Днем рождения!";
+d.onclick=()=>{
+
+if(t==="Я АРТЕМ") bossHP-=20;
+else bossHP+=10;
+
+if(bossHP<=0){
+b.innerHTML="🏆 PROD ПОЧИНЕН! GG";
 return;
 }
+
 render();
 };
 
-b.appendChild(btn);
-});А
+b.appendChild(d);
+});
 }
 
 render();
