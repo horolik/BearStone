@@ -73,15 +73,18 @@ canvas{
   z-index:2;
 }
 
+/* BIG GUIDE BOTTOM LEFT */
 #guide{
   position:fixed;
   bottom:20px;
   left:20px;
-  right:20px;
+  max-width:420px;
   border:1px solid #00ff9f;
-  padding:10px;
-  background:rgba(0,0,0,0.5);
+  padding:15px;
+  background:rgba(0,0,0,0.6);
   z-index:2;
+  font-size:16px;
+  line-height:1.4;
 }
 
 .entity{
@@ -140,14 +143,23 @@ canvas{
   box-shadow:0 0 15px #00ff9f;
 }
 
-.answer.good{
-  background:#00ff9f;
-  color:black;
-  transform:scale(1.2);
+/* LEVEL OVERLAY */
+#levelTable{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  background:rgba(0,0,0,0.9);
+  z-index:9998;
+  color:#00ff9f;
+  font-size:28px;
+  text-align:center;
 }
 
-/* NEW OVERLAY */
-#preboss{
+/* PRE SUPER MESSAGE */
+#supermsg{
   position:fixed;
   inset:0;
   display:none;
@@ -156,13 +168,12 @@ canvas{
   flex-direction:column;
   background:black;
   z-index:9999;
+  font-size:28px;
   text-align:center;
-  color:#00ff9f;
-  font-size:26px;
 }
 
 .flame{
-  font-size:80px;
+  font-size:90px;
   animation:burn 0.3s infinite alternate;
 }
 
@@ -217,7 +228,13 @@ canvas{
 
 <div id="level"></div>
 <div id="stats">FIX: <span id="fix">30</span>% | HAPPY: <span id="happy">0</span></div>
-<div id="guide"></div>
+
+<div id="guide">
+🐀 баги: +2 FIX, -1 HAPPY<br>
+🐻 фичи: +3 FIX, +1 HAPPY<br>
+💨 кальян: -3 FIX, +5 HAPPY<br>
+🎯 50% → БОСС ОЛЬГА
+</div>
 
 <div id="boss">
   <img src="Olga.JPG" style="width:200px;border-radius:12px;box-shadow:0 0 20px #ff4dff;margin-bottom:10px;">
@@ -225,14 +242,14 @@ canvas{
   <div id="answers"></div>
 </div>
 
-<!-- PRE BOSS -->
-<div id="preboss">
-  <div>🎉 УРА! ТЫ ПОЧИНИЛ PROD</div>
-  <div style="margin-top:10px">НО ТЕПЕРЬ ТЕБЕ НАДО ПРОЙТИ БОССА ОЛЬГУ</div>
+<div id="levelTable"></div>
+
+<div id="supermsg">
+  <div>🔥 PROD ПОЧИНЕН</div>
+  <div style="margin-top:10px">НО СНОВА ЧТО-ТО СЛОМАЛОСЬ...</div>
   <div class="flame">🔥🔥🔥🔥🔥</div>
 </div>
 
-<!-- FINAL -->
 <div id="final">
   <div class="heart">❤️</div>
   <div>С ДНЁМ РОЖДЕНИЯ!</div>
@@ -277,8 +294,17 @@ let fix=30;
 let happy=0;
 let lvl=0;
 let seniorMode=false;
+let prevLvl=0;
+let superShown=false;
 
 const levels=["JUNIOR","MIDDLE","SENIOR"];
+
+function showLevelTable(l){
+  let t=document.getElementById("levelTable");
+  t.innerHTML="LEVEL UP → "+levels[l];
+  t.style.display="flex";
+  setTimeout(()=>t.style.display="none",1500);
+}
 
 function update(){
   document.getElementById("f").innerText="🐻 "+f;
@@ -290,15 +316,23 @@ function update(){
   else if(fix > 30) lvl = 1;
   else lvl = 0;
 
-  document.getElementById("level").innerText="LEVEL: "+levels[lvl];
-
-  if(lvl===2 && !seniorMode){
-    seniorMode=true;
-    startSeniorMode();
+  if(lvl !== prevLvl){
+    showLevelTable(lvl);
+    prevLvl = lvl;
   }
 
-  document.getElementById("guide").innerHTML=
-    "🐀 баги | 🐻 фичи | 💨 кальян | 🎯 50% → БОСС";
+  document.getElementById("level").innerText="LEVEL: "+levels[lvl];
+
+  if(fix > 50 && !superShown){
+    superShown = true;
+    document.getElementById("supermsg").style.display="flex";
+
+    setTimeout(()=>{
+      document.getElementById("supermsg").style.display="none";
+      startSeniorMode();
+    },3000);
+  }
+
 }
 
 function loop(){
@@ -322,8 +356,8 @@ function loop(){
       e.style.top=Math.random()*window.innerHeight+"px";
 
       e.onclick=()=>{
-        if(type==="rat"){r++;fix+=2;}
-        if(type==="feature"){f++;fix+=3;}
+        if(type==="rat"){r++;fix+=2;happy-=1;}
+        if(type==="feature"){f++;fix+=3;happy+=1;}
         update();
       };
 
@@ -354,7 +388,6 @@ function loop(){
   },500);
 }
 
-/* PRE BOSS + FLAME + BOSS */
 function startSeniorMode(){
   document.body.style.filter="hue-rotate(120deg) saturate(2)";
 
@@ -373,16 +406,12 @@ function startSeniorMode(){
     clearInterval(chaos);
     document.body.style.filter="none";
 
-    // PRE BOSS SCREEN
     let pb=document.getElementById("preboss");
-    pb.style.display="flex";
+    if(pb){ pb.remove(); }
 
-    setTimeout(()=>{
-      pb.style.display="none";
-      showBoss();
-    },4000);
+    showBoss();
 
-  },10000);
+  },8000);
 }
 
 function showBoss(){
