@@ -20,6 +20,7 @@ canvas{position:fixed;inset:0;z-index:0;}
 </style>
 </head>
 <body>
+
 <canvas id="matrix"></canvas>
 
 <div id="start">
@@ -44,6 +45,7 @@ canvas{position:fixed;inset:0;z-index:0;}
 <script>
 let c=document.getElementById("matrix"),ctx=c.getContext("2d");
 c.width=innerWidth;c.height=innerHeight;
+
 let drops=Array(Math.floor(c.width/14)).fill(1);
 setInterval(()=>{
 ctx.fillStyle="rgba(0,0,0,0.05)";
@@ -58,10 +60,12 @@ drops[i]=y*14>c.height?0:y+1;
 
 let run=false,f=0,r=0,fix=30,happy=0,lvl=0,combo=0,timer;
 const levels=["JUNIOR","MIDDLE","SENIOR"];
+
 let bossHP=80,bossTime=25;
 let speedMultiplier=1;
 
 let input=document.getElementById("input");
+
 input.addEventListener("keydown",e=>{
 if(e.key!="Enter")return;
 let v=input.value.toLowerCase();
@@ -80,11 +84,14 @@ function start(){
 document.getElementById("start").style.display="none";
 document.getElementById("hud").style.display="flex";
 document.getElementById("bg").play();
-run=true;loop();}
+run=true;loop();
+}
 
-let fEl=document.getElementById("f"),rEl=document.getElementById("r");
-let fixEl=document.getElementById("fix"),happyEl=document.getElementById("happy");
-let levelEl=document.getElementById("level");
+let fEl=document.getElementById("f"),
+rEl=document.getElementById("r"),
+fixEl=document.getElementById("fix"),
+happyEl=document.getElementById("happy"),
+levelEl=document.getElementById("level");
 
 function update(){
 fEl.innerText="🐻 "+f;
@@ -106,41 +113,39 @@ timer=setInterval(()=>{
 if(happy>=99){clearInterval(timer);bossFight();return;}
 if(fix<=0){document.body.innerHTML="<h1 style='color:red'>PROD DEAD</h1>";return;}
 
-// level-based difficulty
+// difficulty per level
 speedMultiplier+=0.008;
 let spawnChance=Math.random();
 let type="feature";
 
-if(lvl===0){ // JUNIOR
-  type=spawnChance<0.35?"rat":(spawnChance>0.9?"fun":"feature");
+if(lvl===0){
+type=spawnChance<0.35?"rat":(spawnChance>0.9?"fun":"feature");
 }
-else if(lvl===1){ // MIDDLE
-  type=spawnChance<0.5?"rat":(spawnChance>0.85?"fun":"feature");
+else if(lvl===1){
+type=spawnChance<0.5?"rat":(spawnChance>0.85?"fun":"feature");
 }
-else{ // SENIOR
-  type=spawnChance<0.6?"rat":(spawnChance>0.8?"fun":"feature");
+else{
+type=spawnChance<0.6?"rat":(spawnChance>0.8?"fun":"feature");
 }
 
 let e=document.createElement(type==="fun"?"img":"div");
 e.className="entity "+type;
 
-// special fast rats (MIDDLE+)
 let isFast=false;
 if(type==="rat" && lvl>=1 && Math.random()>0.6){
-  isFast=true;
-  e.innerText="💀";
+isFast=true;
+e.innerText="💀";
 }else{
-  if(type==="rat")e.innerText="🐀";
+if(type==="rat")e.innerText="🐀";
 }
 
 if(type==="feature")e.innerText="🐻";
 if(type==="fun"){e.src="Kalyan.PNG";e.classList.add("kalyan");}
 
-// mini boss (SENIOR)
 if(lvl===2 && Math.random()>0.92){
-  e.innerText="👾";
-  e.style.fontSize="80px";
-  e.dataset.miniboss="1";
+e.innerText="👾";
+e.style.fontSize="80px";
+e.dataset.miniboss="1";
 }
 
 e.style.left=Math.random()*innerWidth+"px";
@@ -157,37 +162,37 @@ e.style.left=e.offsetLeft+dx+"px";
 e.style.top=e.offsetTop+dy+"px";
 },30);
 
- e.onclick=()=>{
+e.onclick=()=>{
 combo++;
 e.style.transform="scale(1.4)";
 
 if(e.dataset.miniboss){
-  fix+=15;
-  happy+=10;
-  good.play();
+fix+=15;
+happy+=10;
+good.play();
 }
 else if(type==="rat"){
-  r++;
-  fix+=2+combo;
-  hit.play();
+r++;
+fix+=2+combo;
+hit.play();
 }
 else if(type==="feature"){
-  f++;
-  fix+=3+combo;
-  good.play();
-  if(f>=5 && lvl<2){lvl++;f=0;}
+f++;
+fix+=3+combo;
+good.play();
+if(f>=5 && lvl<2){lvl++;f=0;}
 }
 else if(type==="fun"){
-  happy+=5;
-  fix-=2;
-  bad.play();
+happy+=5;
+fix-=2;
+bad.play();
 }
 
 update();
 e.remove();
- };
+};
 
- document.body.appendChild(e);
+document.body.appendChild(e);
 
 let lifeTime = lvl===0?1600:(lvl===1?1300:1000);
 if(isFast) lifeTime*=0.7;
@@ -205,7 +210,10 @@ b.style.display="flex";
 let interval=setInterval(()=>{
 bossTime--;
 render();
-if(bossTime<=0){b.innerHTML="💀 YOU LOST";clearInterval(interval);} 
+if(bossTime<=0){
+b.innerHTML="💀 YOU LOST";
+clearInterval(interval);
+}
 },1000);
 
 function render(){
@@ -218,16 +226,23 @@ btn.innerText=ans;
 btn.style.border="1px solid white";
 btn.style.margin="5px";
 btn.style.padding="10px";
+
 btn.onclick=()=>{
 if(ans===correct){bossHP-=20;good.play();}
 else{bossHP+=5;fix-=3;bad.play();}
-if(bossHP<=0){b.innerHTML="🎉 VICTORY";clearInterval(interval);} 
+
+if(bossHP<=0){
+b.innerHTML="🎉 VICTORY";
+clearInterval(interval);
+}
 render();
 };
+
 b.appendChild(btn);
 });
 }
 }
 </script>
+
 </body>
 </html>
