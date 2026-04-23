@@ -87,9 +87,7 @@ width:120px;
 height:120px;
 object-fit:contain;
 }
-.kalyan:hover{
-transform:scale(1.2);
-}
+.kalyan:hover{transform:scale(1.2);}
 #boss{
 position:fixed;
 inset:0;
@@ -116,7 +114,7 @@ box-shadow:0 0 20px #ff4dff;
 
 <div id="start">
 <div id="terminal">
-> 🐀🐀🐀ALARM! PROD сломался. Его сможет починить только SUPER ARTEM! Введите команду для запуска:<br><br>
+> 🐀 PROD сломался. Введите: start<br><br>
 > <input id="input" autofocus placeholder="start">
 </div>
 </div>
@@ -150,6 +148,9 @@ let columns=c.width/fontSize;
 let drops=[];
 for(let i=0;i<columns;i++) drops[i]=1;
 
+let matrixSpeed=33;
+let matrixInterval=setInterval(drawMatrix,matrixSpeed);
+
 function drawMatrix(){
 ctx.fillStyle="rgba(0,0,0,0.05)";
 ctx.fillRect(0,0,c.width,c.height);
@@ -163,7 +164,6 @@ if(drops[i]*fontSize>c.height && Math.random()>0.975) drops[i]=0;
 drops[i]++;
 }
 }
-setInterval(drawMatrix,33);
 
 /* STATE */
 let run=false;
@@ -182,6 +182,8 @@ document.getElementById("start").style.display="none";
 document.getElementById("hud").style.display="flex";
 run=true;
 loop();
+startIncidents();
+startAutoFix();
 }
 });
 
@@ -192,11 +194,33 @@ document.getElementById("r").innerText="🐀 "+r;
 document.getElementById("fix").innerText=fix;
 document.getElementById("happy").innerText=happy;
 document.getElementById("level").innerText="LEVEL: "+levels[lvl];
+
 document.getElementById("guide").innerHTML=
-"🐀 Лови баги (иначе -FIX)<br>"+
-"🐻 Фичи дают +FIX<br>"+
-"💨 Кальяны дают happiness<br>"+
-"🎯 100% FIX → ПОБЕДА";
+"🐛 баги дают FIX<br>"+
+"🐻 фичи дают FIX<br>"+
+"💨 кальяны дают happiness<br>"+
+"🎯 100% FIX → WIN";
+}
+
+/* INCIDENTS */
+function startIncidents(){
+setInterval(()=>{
+let event=Math.random();
+
+if(event>0.7){
+happy+=10;
+document.getElementById("guide").innerHTML+="<br>😴 ПЕРЕРЫВ НА СОН +HAPPINESS";
+}
+update();
+},12000);
+}
+
+/* AUTO FIX SENIOR */
+function startAutoFix(){
+setInterval(()=>{
+if(lvl===2) fix++;
+update();
+},1000);
 }
 
 /* LOOP */
@@ -205,65 +229,101 @@ timer=setInterval(()=>{
 
 if(!run) return;
 
-/* WIN CONDITION */
+/* WIN */
 if(fix>=100){
 clearInterval(timer);
-document.body.innerHTML="<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 PROD ПОЧИНЕН! ARTEM WIN 🎉</h1>";
-return;
-}
 
-if(!bossStarted && happy>=50){
-bossStarted=true;
-clearInterval(timer);
-showBoss();
-return;
-}
+/* MATRIX BOOST */
+clearInterval(matrixInterval);
+matrixInterval=setInterval(drawMatrix,10);
 
-if(fix<=0){
-document.body.innerHTML="<h1 style='color:red;text-align:center;margin-top:20%'>PROD УПАЛ</h1>";
+/* CLEAN WORLD */
+document.querySelectorAll(".entity").forEach(e=>e.remove());
+
+document.body.innerHTML=
+"<h1 style='color:#00ff9f;text-align:center;margin-top:20%'>🎉 PROD STABLE - ARTEM WIN 🎉</h1>";
+
 return;
 }
 
 /* SPAWN */
 let rand=Math.random();
-let type="feature";
-if(rand<0.4) type="rat";
-if(rand>0.75) type="fun";
 
-/* RAT / FEATURE */
-if(type!=="fun"){
+/* BUGS */
+if(rand< (lvl===0?0.5:0.4)){
+let types=[
+{emoji:"🐛",type:"small",fix:2,speed:1500},
+{emoji:"💀🐛",type:"critical",fix:10,speed:800},
+{emoji:"🐞∞",type:"loop",fix:5,speed:1500}
+];
+
+let b=types[Math.floor(Math.random()*types.length)];
+
 let e=document.createElement("div");
-e.className="entity "+type;
-e.innerText=type==="rat"?"🐀":"🐻";
+e.className="entity rat";
+e.innerText=b.emoji;
 e.style.left=Math.random()*window.innerWidth+"px";
 e.style.top=Math.random()*window.innerHeight+"px";
 
 e.onclick=()=>{
-if(type==="rat"){r++;fix+=2;}
-if(type==="feature"){f++;fix+=3;}
-if(f>=5 && lvl<2){
-lvl++;
-f=0;
+fix+=b.fix;
+r++;
+
+if(b.type==="loop"){
+setTimeout(()=>document.body.appendChild(e.cloneNode(true)),300);
 }
+
 update();
+e.remove();
+};
+
+document.body.appendChild(e);
+setTimeout(()=>e.remove(),b.speed);
+}
+
+/* FEATURES */
+else if(rand<0.75){
+let e=document.createElement("div");
+e.className="entity feature";
+e.innerText="🐻";
+e.style.left=Math.random()*window.innerWidth+"px";
+e.style.top=Math.random()*window.innerHeight+"px";
+
+e.onclick=()=>{
+f++;
+
+if(lvl===0) fix+=2;
+else fix+=3;
+
+if(f>=5 && lvl<2){lvl++;f=0;}
+
+update();
+e.remove();
 };
 
 document.body.appendChild(e);
 setTimeout(()=>e.remove(),1500);
 }
 
-/* KALYAN (LEVEL DEPENDENT) */
-if(type==="fun"){
+/* KALYAN */
+else{
 let img=document.createElement("img");
 img.src="Kalyan.PNG";
-img.className="entity kalyan fun";
+img.className="entity kalyan";
 img.style.left=Math.random()*window.innerWidth+"px";
 img.style.top=Math.random()*window.innerHeight+"px";
 
 img.onclick=()=>{
-let mult = (lvl===0)?1:(lvl===1)?2:3;
-happy += 5 * mult;
-fix -= 3;
+
+if(lvl===0) happy+=5;
+if(lvl===1) happy+=10;
+if(lvl===2){
+happy+=15;
+document.body.style.filter="blur(2px)";
+setTimeout(()=>document.body.style.filter="none",1500);
+}
+
+fix-=3;
 update();
 img.remove();
 };
@@ -275,56 +335,9 @@ setTimeout(()=>img.remove(),1500);
 },500);
 }
 
-/* BOSS */
-function showBoss(){
-let b=document.getElementById("boss");
-b.style.display="flex";
-
-let questions=[
-"Ты меня любишь?",
-"Ты будешь меня любить, если я буду рыбой?",
-"А если я превращусь в баг?",
-"А если я удалю прод?",
-"А если я буду просто console.log?",
-"А если я никогда не закрою тикет?"
-];
-
-let qIndex=0;
-
-function render(){
-b.innerHTML=
-"😈 ОЛЬГА БОСС<br><br>"+
-"<img src='Olga.JPG'><br>"+
-questions[qIndex]+"<br><br>";
-
-["БАО","На кальян","ЭТО ФИЧА","Лови пиццу","Я АРТЕМ","ТЫ БААААААГ"]
-.forEach(t=>{
-let btn=document.createElement("div");
-btn.innerText=t;
-btn.style.border="1px solid white";
-btn.style.padding="10px";
-btn.style.margin="5px";
-btn.style.cursor="pointer";
-
-btn.onclick=()=>{
-qIndex++;
-if(qIndex>=questions.length){
-b.innerHTML="🎉 ПОБЕДА! PROD ПОЧИНЕН 🎉 Артем, с Днем рождения!";
-return;
-}
-render();
-};
-
-b.appendChild(btn);
-});
-}
-
-render();
-}
-
+/* INIT */
 update();
 
 </script>
-
 </body>
 </html>
