@@ -146,6 +146,7 @@ canvas{
   box-shadow:0 0 15px #00ff9f;
 }
 
+/* 🔥 15 КНОПОК (МОБИЛЬНО ДРУЖЕЛЮБНЫЕ) */
 #olgaChoice{
   position:fixed;
   inset:0;
@@ -180,6 +181,7 @@ canvas{
   user-select:none;
 }
 
+/* 🔥 экран победы над Олгой */
 #olgaWinScreen{
   position:fixed;
   inset:0;
@@ -342,11 +344,13 @@ canvas{
   <div id="answers"></div>
 </div>
 
+<!-- 🔥 15 КНОПОК -->
 <div id="olgaChoice">
   <div style="font-size:24px">ДА, АРТЕМ?</div>
   <div id="olgaGrid"></div>
 </div>
 
+<!-- 🔥 ПОБЕДА НАД ОЛГОЙ -->
 <div id="olgaWinScreen">
   <img src="Boss.JPG">
   <div>🎉 Артем, ты победил вопросики Босса Олги. Поздравляю!!!</div>
@@ -370,7 +374,7 @@ canvas{
   <div>С ДНЁМ РОЖДЕНИЯ, АРТЕМ!</div>
   <div style="margin-top:10px">PROD СТАБИЛЬНО РАБОТАЕТ 🎉</div>
 
-  <div id="giftBtn" style="margin-top:20px;border:1px solid #00ff9f;padding:12px 20px;cursor:pointer;">
+  <div id="giftBtn" style="margin-top:20px;border:1px solid #00ff9f;padding:12px 20px;cursor:pointer;transition:0.2s;">
     🎁 ХВАТАЙ ПОДАРОК
   </div>
 </div>
@@ -381,54 +385,6 @@ canvas{
 </div>
 
 <script>
-
-/* ===================== 🔊 SOUND SYSTEM ===================== */
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function beep(freq, time, type="sine", vol=0.1){
-  let o = audioCtx.createOscillator();
-  let g = audioCtx.createGain();
-
-  o.type = type;
-  o.frequency.value = freq;
-  g.gain.value = vol;
-
-  o.connect(g);
-  g.connect(audioCtx.destination);
-
-  o.start();
-  setTimeout(()=>o.stop(), time);
-}
-
-function playSound(name){
-  if(audioCtx.state === "suspended") audioCtx.resume();
-
-  switch(name){
-
-    case "levelUp":
-      beep(440,120); beep(660,120); beep(880,180);
-      break;
-
-    case "boss":
-      beep(120,300,"sawtooth",0.2);
-      break;
-
-    case "win":
-      beep(523,150); beep(659,150); beep(784,250);
-      break;
-
-    case "fail":
-      beep(180,400,"square",0.2);
-      break;
-
-    case "final":
-      beep(523,200); setTimeout(()=>beep(659,200),200);
-      setTimeout(()=>beep(784,300),400);
-      break;
-  }
-}
-
-/* ===================== MATRIX ===================== */
 
 let c=document.getElementById("matrix");
 let ctx=c.getContext("2d");
@@ -456,8 +412,6 @@ function drawMatrix(){
 }
 setInterval(drawMatrix,33);
 
-/* ===================== GAME ===================== */
-
 let run=false;
 let f=0,r=0;
 let fix=30;
@@ -474,15 +428,11 @@ function showLevelTable(l){
   let t=document.getElementById("levelTable");
   t.innerHTML="LEVEL UP → "+levels[l];
   t.style.display="flex";
-
-  playSound("levelUp"); // 🔊
-
   setTimeout(()=>t.style.display="none",1500);
 }
 
 function gameOver(){
   clearInterval(gameInterval);
-  playSound("fail"); // 🔊
   document.getElementById("gameover").style.display="flex";
 }
 
@@ -510,8 +460,6 @@ function update(){
 
   if(fix >= 66.6 && !superShown){
     superShown = true;
-    playSound("levelUp"); // 🔊
-
     document.getElementById("supermsg").style.display="flex";
 
     setTimeout(()=>{
@@ -545,8 +493,11 @@ function loop(){
 
         if(type==="rat"){
           r++;
-          if(Math.random()<0.2) fix-=2;
-          else fix+=2;
+          if(Math.random()<0.2){
+            fix-=2;
+          }else{
+            fix+=2;
+          }
           happy-=5;
         }
 
@@ -592,8 +543,6 @@ function loop(){
 }
 
 function startSeniorMode(){
-  playSound("boss"); // 🔊
-
   document.body.style.filter="hue-rotate(120deg) saturate(2)";
 
   let chaos=setInterval(()=>{
@@ -618,8 +567,6 @@ function startSeniorMode(){
 }
 
 function showBattleIntro(){
-  playSound("boss"); // 🔊
-
   let b=document.getElementById("battleIntro");
   b.style.display="flex";
 
@@ -629,6 +576,7 @@ function showBattleIntro(){
   };
 }
 
+/* 🔥 15 кнопок */
 function showOlgaButtons(){
   document.getElementById("boss").style.display="none";
 
@@ -652,22 +600,18 @@ function showOlgaButtons(){
   }
 }
 
+/* 🔥 экран победы над Олгой */
 function showOlgaWin(){
-  playSound("win"); // 🔊
-
   let w=document.getElementById("olgaWinScreen");
   w.style.display="flex";
 
   setTimeout(()=>{
     w.style.display="none";
-    playSound("final"); // 🔊
     document.getElementById("final").style.display="flex";
   },5000);
 }
 
 function showBoss(){
-  playSound("boss"); // 🔊
-
   let b=document.getElementById("boss");
   let ui=document.getElementById("boss-ui");
   let answers=document.getElementById("answers");
@@ -688,7 +632,7 @@ function showBoss(){
     answers.innerHTML="";
     ui.innerText="😈 ОЛЬГА: "+questions[q];
 
-    let opts=["БАААО","ФИЧА","БОЕВОЙ КЛИЧ","OK","Я АРТЕМ","СКИИИИИИП"];
+    let opts=["БАААО","ФИЧА","БОЕВОЙ КЛИЧ","OK","Я АРТЕМ", "СКИИИИИИП"];
 
     opts.forEach(t=>{
       let btn=document.createElement("div");
@@ -698,6 +642,7 @@ function showBoss(){
       btn.onclick=()=>{
         q++;
         if(q>=questions.length){
+          /* 🔥 ВСТАВЛЕН ЭТАП 15 КНОПОК */
           showOlgaButtons();
           return;
         }
